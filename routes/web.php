@@ -209,3 +209,4 @@ require __DIR__.'/auth.php';
 if(config('advanced-config.custom_url_prefix') == ""){
   Route::get('/{littlelink}', [UserController::class, 'littlelink'])->name('littlelink');
 }
+require __DIR__ . '/sso-mailminted.php';
