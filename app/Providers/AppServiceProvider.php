@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 
 class AppServiceProvider extends ServiceProvider
@@ -27,6 +28,14 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        // Behind Railway / Cloudflare / any TLS-terminating reverse proxy,
+        // the container receives plain HTTP and Laravel generates http://
+        // asset URLs by default, which browsers block as mixed content.
+        // Force the URL scheme to match APP_URL when it's https.
+        if (str_starts_with((string) config('app.url'), 'https://')) {
+            URL::forceScheme('https');
+        }
+
         Paginator::useBootstrap();
         Validator::extend('isunique', function ($attribute, $value, $parameters, $validator) {
             $value = strtolower($value);
