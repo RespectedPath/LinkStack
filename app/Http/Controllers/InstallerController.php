@@ -59,6 +59,13 @@ class InstallerController extends Controller
             fclose($handleFile);
         }
 
+        // The SQLite installer path never calls db:seed — the MySQL path
+        // does. Railpack's boot script runs migrate but not seed. Without
+        // these, the dashboard crashes on the first request because the
+        // pages and buttons tables are empty.
+        try { Artisan::call('db:seed', ['--class' => 'PageSeeder', '--force' => true]); } catch (Exception $e) {}
+        try { Artisan::call('db:seed', ['--class' => 'ButtonSeeder', '--force' => true]); } catch (Exception $e) {}
+
         try{EnvEditor::addKey('ADMIN_EMAIL', $email);}catch(Exception $e){}
 
         if(DB::table('users')->count() == '0'){
