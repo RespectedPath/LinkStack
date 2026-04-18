@@ -46,7 +46,16 @@ if(file_exists(base_path('INSTALLING')) or file_exists(base_path('INSTALLERLOCK'
 
   Route::get('{any}', function() {
     if(!DB::table('users')->get()->isEmpty()){
-    if(file_exists(base_path("INSTALLING")) and !file_exists(base_path('INSTALLERLOCK'))){unlink(base_path("INSTALLING"));header("Refresh:0");}
+      if(file_exists(base_path("INSTALLING")) and !file_exists(base_path('INSTALLERLOCK'))){
+        unlink(base_path("INSTALLING"));
+        // Route cache was built while INSTALLING existed, so it's frozen in
+        // installer mode. Drop the cached route file so the next request
+        // re-evaluates web.php against the now-absent INSTALLING marker.
+        foreach (glob(base_path('bootstrap/cache/routes*.php')) ?: [] as $cached) {
+          @unlink($cached);
+        }
+      }
+      return redirect(url('/'));
     } else {
       return redirect(url(''));
     }
