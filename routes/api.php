@@ -17,3 +17,6 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+// Mail Minted admin API (bearer-token authed; see the file for details).
+require __DIR__ . '/api-admin.php';

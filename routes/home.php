@@ -1,9 +1,31 @@
 <?php
 use App\Http\Controllers\UserController;
+use App\Models\User;
+use Illuminate\Support\Facades\Schema;
 
 Route::middleware('disableCookies')->group(function () {
 
 $host = request()->getHost();
+
+// Mail Minted-style per-domain routing: look up the user whose
+// `custom_domain` matches the incoming host. Guarded behind a Schema
+// check so the lookup is skipped on a fresh install (before the
+// migration that adds the column has run).
+if (Schema::hasColumn('users', 'custom_domain')) {
+    $mappedUser = User::where('custom_domain', $host)->first();
+    if ($mappedUser) {
+        $routeCallback = function () use ($mappedUser) {
+            $request = app('request');
+            $request->merge(['littlelink' => $mappedUser->littlelink_name]);
+            return app(UserController::class)->littlelink($request);
+        };
+
+        Route::get('/', $routeCallback)->name('littlelink');
+        return;
+    }
+}
+
+// Upstream custom_domains config-file fallback (unchanged behavior).
 $customConfigs = config('advanced-config.custom_domains', []);
 
 foreach ($customConfigs as $config) {
