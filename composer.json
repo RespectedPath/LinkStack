@@ -6,6 +6,9 @@
     "license": "GPL-3.0-or-later",
     "require": {
         "php": ">=8.0",
+        "ext-bcmath": "*",
+        "ext-gd": "*",
+        "ext-zip": "*",
         "awssat/laravel-visits": "^6.0",
         "cohensive/oembed": "^0.17",
         "doctrine/dbal": "^3.0",
