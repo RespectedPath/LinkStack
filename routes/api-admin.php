@@ -6,10 +6,13 @@
  * backend/src/services/linkstack/client.js) calls these endpoints to
  * create / enable / disable / delete a LinkStack user per customer
  * domain. All endpoints require the `MAILMINTED_ADMIN_API_TOKEN` env
- * var as a bearer token, verified inside each handler via
- * mailminted_admin_check() — Laravel's Route::middleware() only takes
- * string middleware names, not closures, so we can't stack it as
- * middleware without registering a proper class.
+ * var as a bearer token.
+ *
+ * The bearer check is inlined into every handler because Laravel's
+ * route:cache serializes closures but NOT top-level function
+ * declarations — a helper function defined in this file wouldn't be
+ * available at runtime inside a cached closure. Inlining is ugly but
+ * reliable.
  *
  * Endpoints:
  *   POST   /api/admin/users
@@ -23,31 +26,14 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 
-// ---------------------------------------------------------------------
-// Returns null when the bearer token matches. Returns a JsonResponse
-// when it doesn't (the handler should return that response directly).
-// ---------------------------------------------------------------------
-if (!function_exists('mailminted_admin_check')) {
-    function mailminted_admin_check(Request $request) {
-        $expected = env('MAILMINTED_ADMIN_API_TOKEN');
-        if (!$expected) {
-            return response()->json(['error' => 'admin API not configured'], 503);
-        }
-        $header = $request->header('Authorization', '');
-        $presented = Str::startsWith($header, 'Bearer ')
-            ? substr($header, 7)
-            : null;
-        if (!$presented || !hash_equals($expected, $presented)) {
-            return response()->json(['error' => 'unauthorized'], 401);
-        }
-        return null;
-    }
-}
-
 Route::prefix('admin')->group(function () {
 
     Route::post('/users', function (Request $request) {
-        if ($deny = mailminted_admin_check($request)) return $deny;
+        $expected = env('MAILMINTED_ADMIN_API_TOKEN');
+        $header = $request->header('Authorization', '');
+        $presented = Str::startsWith($header, 'Bearer ') ? substr($header, 7) : null;
+        if (!$expected) return response()->json(['error' => 'admin API not configured'], 503);
+        if (!$presented || !hash_equals($expected, $presented)) return response()->json(['error' => 'unauthorized'], 401);
 
         $email = trim((string) $request->input('email', ''));
         $username = trim((string) $request->input('username', ''));
@@ -102,7 +88,11 @@ Route::prefix('admin')->group(function () {
     });
 
     Route::patch('/users/{id}', function (Request $request, $id) {
-        if ($deny = mailminted_admin_check($request)) return $deny;
+        $expected = env('MAILMINTED_ADMIN_API_TOKEN');
+        $header = $request->header('Authorization', '');
+        $presented = Str::startsWith($header, 'Bearer ') ? substr($header, 7) : null;
+        if (!$expected) return response()->json(['error' => 'admin API not configured'], 503);
+        if (!$presented || !hash_equals($expected, $presented)) return response()->json(['error' => 'unauthorized'], 401);
 
         $user = User::find($id);
         if (!$user) {
@@ -122,7 +112,11 @@ Route::prefix('admin')->group(function () {
     });
 
     Route::delete('/users/{id}', function (Request $request, $id) {
-        if ($deny = mailminted_admin_check($request)) return $deny;
+        $expected = env('MAILMINTED_ADMIN_API_TOKEN');
+        $header = $request->header('Authorization', '');
+        $presented = Str::startsWith($header, 'Bearer ') ? substr($header, 7) : null;
+        if (!$expected) return response()->json(['error' => 'admin API not configured'], 503);
+        if (!$presented || !hash_equals($expected, $presented)) return response()->json(['error' => 'unauthorized'], 401);
 
         $user = User::find($id);
         if (!$user) {
