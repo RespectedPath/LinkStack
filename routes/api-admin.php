@@ -63,12 +63,13 @@ Route::prefix('admin')->group(function () {
             return response()->json(['error' => 'invalid custom_domain'], 400);
         }
 
-        // Reuse existing row on conflict so provisioning is idempotent
-        // (a retried Mail Minted provision shouldn't error).
-        $existing = User::where('email', $email)
-            ->orWhere('custom_domain', $customDomain)
-            ->orWhere('littlelink_name', $username)
-            ->first();
+        // Idempotency key is custom_domain ONLY. Matching on email or
+        // littlelink_name is wrong — a returning Mail Minted customer
+        // would alias every new domain's user onto their admin account
+        // (which owns the same email). If username or email happens to
+        // collide we'd rather fail loudly via the DB unique constraint
+        // below than silently return the wrong user.
+        $existing = User::where('custom_domain', $customDomain)->first();
         if ($existing) {
             return response()->json([
                 'user_id' => $existing->id,
