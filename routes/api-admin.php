@@ -6,57 +6,49 @@
  * backend/src/services/linkstack/client.js) calls these endpoints to
  * create / enable / disable / delete a LinkStack user per customer
  * domain. All endpoints require the `MAILMINTED_ADMIN_API_TOKEN` env
- * var as a bearer token.
+ * var as a bearer token, verified inside each handler via
+ * mailminted_admin_check() — Laravel's Route::middleware() only takes
+ * string middleware names, not closures, so we can't stack it as
+ * middleware without registering a proper class.
  *
  * Endpoints:
  *   POST   /api/admin/users
- *     body: { email, username, custom_domain }
- *     -> creates a LinkStack user, sets custom_domain so
- *        `routes/home.php` routes the customer's apex to it. Returns
- *        { user_id, username, email, custom_domain }.
- *
  *   PATCH  /api/admin/users/{id}
- *     body: { state: "enabled" | "disabled" }
- *     -> sets `block` on the user. 'disabled' -> block=yes.
- *
  *   DELETE /api/admin/users/{id}
- *     -> hard-deletes the user row. Caller is responsible for cleaning
- *        up related domain state in its own DB.
- *
- * Wired in via routes/api.php at the bottom of that file.
  */
 
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 
 // ---------------------------------------------------------------------
-// Bearer-token middleware. Inline rather than a named middleware class
-// so this file remains self-contained (no composer autoload registration
-// needed).
+// Returns null when the bearer token matches. Returns a JsonResponse
+// when it doesn't (the handler should return that response directly).
 // ---------------------------------------------------------------------
-$adminAuth = function (Request $request, \Closure $next) {
-    $expected = env('MAILMINTED_ADMIN_API_TOKEN');
-    if (!$expected) {
-        return response()->json(['error' => 'admin API not configured'], 503);
+if (!function_exists('mailminted_admin_check')) {
+    function mailminted_admin_check(Request $request) {
+        $expected = env('MAILMINTED_ADMIN_API_TOKEN');
+        if (!$expected) {
+            return response()->json(['error' => 'admin API not configured'], 503);
+        }
+        $header = $request->header('Authorization', '');
+        $presented = Str::startsWith($header, 'Bearer ')
+            ? substr($header, 7)
+            : null;
+        if (!$presented || !hash_equals($expected, $presented)) {
+            return response()->json(['error' => 'unauthorized'], 401);
+        }
+        return null;
     }
-    $header = $request->header('Authorization', '');
-    $presented = Str::startsWith($header, 'Bearer ')
-        ? substr($header, 7)
-        : null;
-    // hash_equals is timing-safe against token comparison attacks.
-    if (!$presented || !hash_equals($expected, $presented)) {
-        return response()->json(['error' => 'unauthorized'], 401);
-    }
-    return $next($request);
-};
+}
 
-Route::prefix('admin')->group(function () use ($adminAuth) {
+Route::prefix('admin')->group(function () {
 
     Route::post('/users', function (Request $request) {
+        if ($deny = mailminted_admin_check($request)) return $deny;
+
         $email = trim((string) $request->input('email', ''));
         $username = trim((string) $request->input('username', ''));
         $customDomain = strtolower(trim((string) $request->input('custom_domain', '')));
@@ -106,9 +98,11 @@ Route::prefix('admin')->group(function () use ($adminAuth) {
             'email' => $user->email,
             'custom_domain' => $user->custom_domain,
         ], 201);
-    })->middleware($adminAuth);
+    });
 
     Route::patch('/users/{id}', function (Request $request, $id) {
+        if ($deny = mailminted_admin_check($request)) return $deny;
+
         $user = User::find($id);
         if (!$user) {
             return response()->json(['error' => 'user not found'], 404);
@@ -124,9 +118,11 @@ Route::prefix('admin')->group(function () use ($adminAuth) {
             'state' => $state,
             'block' => $user->block,
         ]);
-    })->middleware($adminAuth);
+    });
 
-    Route::delete('/users/{id}', function ($id) {
+    Route::delete('/users/{id}', function (Request $request, $id) {
+        if ($deny = mailminted_admin_check($request)) return $deny;
+
         $user = User::find($id);
         if (!$user) {
             return response()->json(['error' => 'user not found'], 404);
@@ -137,6 +133,6 @@ Route::prefix('admin')->group(function () use ($adminAuth) {
         }
         $user->delete();
         return response()->json(['user_id' => (int) $id, 'deleted' => true]);
-    })->middleware($adminAuth);
+    });
 
 });
