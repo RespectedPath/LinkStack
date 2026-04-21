@@ -55,7 +55,28 @@
                     <h4>Role</h4>
                     <input type="text" class="form-control" value="{{ strtoupper($profile->role) }}" readonly>
                   </div>
-              
+
+              {{-- Stripe Connect onboarding --}}
+              <div class="form-group col-lg-8"><br><br><br>
+                <h4>Payments (Stripe)</h4>
+                @if(!empty($profile->stripe_account_id))
+                  <p class="mb-2">
+                    <span class="badge bg-success">Connected</span>
+                    <span class="text-muted small">Account <code>{{ $profile->stripe_account_id }}</code></span>
+                  </p>
+                  <p class="text-muted small">Payment blocks on your public page will route payouts to this Stripe account.</p>
+                  <form action="{{ route('stripe.disconnect') }}" method="post" onsubmit="return confirm('Disconnect this Stripe account? Payment blocks will stop working until you reconnect.');">
+                    @csrf
+                    <button type="submit" class="btn btn-outline-danger">Disconnect Stripe</button>
+                  </form>
+                @else
+                  <p class="text-muted">Connect your Stripe account to accept payments from your public page. You keep 100% of each transaction (minus Stripe's standard processing fee).</p>
+                  <a href="{{ route('stripe.connect') }}" class="btn btn-primary">
+                    <i class="bi bi-credit-card"></i> Connect Stripe
+                  </a>
+                @endif
+              </div>
+
               @if(env('ALLOW_USER_EXPORT') != false)
               <div class="mt-3"><br><br><br>
                 <h4>{{__('messages.Export user data')}}</h4>

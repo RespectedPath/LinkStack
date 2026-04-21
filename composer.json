@@ -26,6 +26,7 @@
         "rappasoft/laravel-livewire-tables": "^2.15",
         "simplesoftwareio/simple-qrcode": "~4",
         "spatie/laravel-backup": "^8.1.5",
+        "stripe/stripe-php": "*",
         "symfony/yaml": "^6.0"
     },
     "require-dev": {
