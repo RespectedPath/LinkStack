@@ -1,0 +1,128 @@
+/* Newsletter signup block — scoped under .newsletter-wrapper so
+   nothing leaks into the rest of the page. Mirrors contact_form
+   visual conventions. */
+
+.newsletter-wrapper {
+    width: 100%;
+    max-width: 520px;
+    margin: 16px auto;
+    padding: 16px;
+    box-sizing: border-box;
+    text-align: left;
+    font-family: inherit;
+    color: inherit;
+}
+
+.newsletter-wrapper .ns-heading {
+    margin: 0 0 12px 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+    text-align: center;
+}
+
+.newsletter-wrapper .ns-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.newsletter-wrapper .ns-name-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.newsletter-wrapper .ns-field {
+    display: flex;
+    flex-direction: column;
+}
+
+.newsletter-wrapper .ns-label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin: 6px 0 2px 0;
+}
+
+.newsletter-wrapper .ns-input {
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 1rem;
+    font-family: inherit;
+    color: inherit;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(128, 128, 128, 0.35);
+    border-radius: 8px;
+    box-sizing: border-box;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    min-height: 44px;
+}
+
+.newsletter-wrapper .ns-input:focus {
+    outline: none;
+    border-color: currentColor;
+    box-shadow: 0 0 0 2px rgba(128, 128, 128, 0.2);
+}
+
+.newsletter-wrapper .ns-input-error {
+    border-color: #d9534f;
+}
+
+.newsletter-wrapper .ns-field-error {
+    color: #d9534f;
+    font-size: 0.85rem;
+    margin-top: -4px;
+}
+
+.newsletter-wrapper .ns-submit {
+    margin-top: 10px;
+    padding: 12px 20px;
+    width: 100%;
+    cursor: pointer;
+    min-height: 44px;
+}
+
+.newsletter-wrapper .ns-banner {
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    font-size: 0.95rem;
+}
+
+.newsletter-wrapper .ns-banner.ns-success {
+    background: rgba(76, 175, 80, 0.15);
+    border: 1px solid rgba(76, 175, 80, 0.4);
+    color: #2e7d32;
+}
+
+.newsletter-wrapper .ns-banner.ns-info {
+    background: rgba(33, 150, 243, 0.12);
+    border: 1px solid rgba(33, 150, 243, 0.4);
+    color: #1565c0;
+}
+
+.newsletter-wrapper .ns-banner.ns-warn {
+    background: rgba(255, 193, 7, 0.15);
+    border: 1px solid rgba(255, 193, 7, 0.5);
+    color: #8a6d00;
+}
+
+.newsletter-wrapper .ns-banner.ns-error {
+    background: rgba(217, 83, 79, 0.12);
+    border: 1px solid rgba(217, 83, 79, 0.4);
+    color: #c9302c;
+}
+
+@media (max-width: 600px) {
+    .newsletter-wrapper {
+        padding: 12px;
+        margin: 12px auto;
+    }
+
+    .newsletter-wrapper .ns-heading {
+        font-size: 1.1rem;
+    }
+
+    .newsletter-wrapper .ns-name-row {
+        grid-template-columns: 1fr;
+    }
+}

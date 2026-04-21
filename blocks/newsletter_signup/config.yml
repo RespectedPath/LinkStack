@@ -1,0 +1,6 @@
+id: 501
+typename: newsletter_signup
+title: Mailchimp signup
+description: Add visitors to your Mailchimp audience from your public page.
+icon: "bi bi-envelope-paper-fill"
+custom_html: true
