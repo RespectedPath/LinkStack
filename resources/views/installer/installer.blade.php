@@ -4,7 +4,7 @@
 @Push('installer-body')
 <div class="container">
 
-@if($_SERVER['QUERY_STRING'] === '')
+@if(($_SERVER['QUERY_STRING'] ?? '') === '')
 {{-- Landing page --}}
 
 @if(!DB::table('users')->get()->isEmpty())
@@ -72,7 +72,7 @@
       
 @endif
 
-@if($_SERVER['QUERY_STRING'] === 'error')
+@if(($_SERVER['QUERY_STRING'] ?? '') === 'error')
 {{-- Landing page --}}
         
         <div class="logo-container fadein">
@@ -86,7 +86,7 @@
       
 @endif
 
-@if($_SERVER['QUERY_STRING'] === '2')
+@if(($_SERVER['QUERY_STRING'] ?? '') === '2')
 {{-- Landing page --}}
         
         <div class="logo-container fadein">
@@ -124,7 +124,7 @@
       
 @endif
 
-@if($_SERVER['QUERY_STRING'] === '3')
+@if(($_SERVER['QUERY_STRING'] ?? '') === '3')
 {{-- Landing page --}}
         
         <div class="logo-container fadein">
@@ -150,7 +150,7 @@
       
 @endif
 
-@if($_SERVER['QUERY_STRING'] === 'mysql')
+@if(($_SERVER['QUERY_STRING'] ?? '') === 'mysql')
 {{-- Landing page --}}
         
         <div class="logo-container fadein">
@@ -182,7 +182,7 @@
       
 @endif
 
-@if($_SERVER['QUERY_STRING'] === '4')
+@if(($_SERVER['QUERY_STRING'] ?? '') === '4')
 {{-- Landing page --}}
         
         <div class="logo-container fadein">
@@ -212,7 +212,7 @@
       
 @endif
 
-@if($_SERVER['QUERY_STRING'] === '5')
+@if(($_SERVER['QUERY_STRING'] ?? '') === '5')
 {{-- Landing page --}}
         
         <div class="logo-container fadein">

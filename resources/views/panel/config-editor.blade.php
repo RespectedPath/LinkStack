@@ -11,7 +11,7 @@
              <div class="row">
                  <div class="col-sm-12">  
 
-                  @if($_SERVER['QUERY_STRING'] == '')
+                  @if(($_SERVER['QUERY_STRING'] ?? '') == '')
                   
                   <div id="exTab2" class="">
                       <ul id="myTab" class="nav nav-tabs">
@@ -180,7 +180,7 @@
                   <!-- Back to top button -->
                   <a id="button-top"></a>
                   
-                  @elseif($_SERVER['QUERY_STRING'] == 'alternative-config' && !config('linkstack.single_user_mode'))
+                  @elseif(($_SERVER['QUERY_STRING'] ?? '') == 'alternative-config' && !config('linkstack.single_user_mode'))
                   @include('components.config.alternative-config')
                   @include('components.config.back-button')
                   @endif
