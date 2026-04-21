@@ -1,0 +1,4 @@
+id: 500
+typename: contact_form
+icon: "bi bi-chat-left-text-fill"
+custom_html: true

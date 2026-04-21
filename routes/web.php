@@ -6,6 +6,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\Auth\SocialLoginController;
 use App\Http\Controllers\LinkTypeViewController;
+use App\Http\Controllers\ContactFormController;
 use App\Http\Controllers\PagesController;
 use App\Http\Controllers\InstallerController;
 use Illuminate\Support\Facades\Auth;
@@ -104,6 +105,13 @@ Route::get('/demo-page', [App\Http\Controllers\HomeController::class, 'demo'])->
 
 Route::get('/block-asset/{type}', [LinkTypeViewController::class, 'blockAsset'])
   ->name('block.asset')->where(['type' => '[a-zA-Z0-9_-]+']);
+
+// Public submission endpoint for the "contact_form" block.
+// Rate-limited to prevent abuse; honeypot + validation live in the controller.
+Route::post('/contact-form/{id}/submit', [ContactFormController::class, 'submit'])
+  ->name('contactFormSubmit')
+  ->where(['id' => '[0-9]+'])
+  ->middleware('throttle:5,1');
 
 }
 
