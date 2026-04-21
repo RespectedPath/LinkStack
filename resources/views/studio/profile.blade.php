@@ -23,7 +23,7 @@
                   </div>
               @endif
               
-              @if($_SERVER['QUERY_STRING'] === '')
+              @if(($_SERVER['QUERY_STRING'] ?? '') === '')
               <section class="text-gray-400">
                       <h3 class="mb-4 card-header"><i class="bi bi-person">{{__('messages.Account Settings')}}</i></h3>
               <div class="card-body p-0 p-md-3">
@@ -100,7 +100,7 @@
                         @endforeach
               @endif
               
-              @if($_SERVER['QUERY_STRING'] === 'delete')
+              @if(($_SERVER['QUERY_STRING'] ?? '') === 'delete')
               <div class="d-flex justify-content-center align-items-center" style="height:100vh;">
                 <div class="text-center">
                   <h2 class="text-decoration-underline">{{__('messages.You are about to delete')}}</h2>

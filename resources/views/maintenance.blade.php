@@ -1,4 +1,4 @@
-@if($_SERVER['QUERY_STRING'] === '')
+@if(($_SERVER['QUERY_STRING'] ?? '') === '')
 <!DOCTYPE html>
 @include('layouts.lang')
 <head>
@@ -104,7 +104,7 @@ body {
   </div>
 </body>
 </html>
-@elseif($_SERVER['QUERY_STRING'] === 'maintenance=off')
+@elseif(($_SERVER['QUERY_STRING'] ?? '') === 'maintenance=off')
 @php
 EnvEditor::editKey('MAINTENANCE_MODE', false);
 ob_clean();

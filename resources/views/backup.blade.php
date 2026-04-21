@@ -5,7 +5,7 @@
 <div class="container">
 
 
-@if($_SERVER['QUERY_STRING'] === '')
+@if(($_SERVER['QUERY_STRING'] ?? '') === '')
 <?php //landing page ?>
         
         <div class="logo-container fadein">
@@ -22,7 +22,7 @@
         @endif
 
 
-@if($_SERVER['QUERY_STRING'] === 'backup')
+@if(($_SERVER['QUERY_STRING'] ?? '') === 'backup')
 <?php //creating backup... ?>
 @Push('updater-head')
 <meta http-equiv="refresh" content="2; URL={{url()->current()}}/?backups" />
@@ -33,7 +33,7 @@
         <h1 class="loadingtxt">{{__('messages.Creating backup')}}</h1>
 @endif
 
-@if($_SERVER['QUERY_STRING'] === 'backups')
+@if(($_SERVER['QUERY_STRING'] ?? '') === 'backups')
 <?php 
 try {Artisan::call('backup:clean');}
 catch (exception $e) {}
@@ -45,7 +45,7 @@ header("Location: ".$URL."?success");
 exit(); ?>
 @endif
 
-@if($_SERVER['QUERY_STRING'] === 'success')
+@if(($_SERVER['QUERY_STRING'] ?? '') === 'success')
       <?php //after successfully updating ?>
         
         <div class="logo-container fadein">

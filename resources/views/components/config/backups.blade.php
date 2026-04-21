@@ -62,7 +62,7 @@
 <!-- Custom icons font-awesome -->
 <script src="{{ asset('assets/external-dependencies/fontawesome.js') }}" crossorigin="anonymous"></script>
 @if (file_exists(base_path('backups/updater-backups/')) and is_dir(base_path('backups/updater-backups/')))
-    @if ($_SERVER['QUERY_STRING'] != '')
+    @if (($_SERVER['QUERY_STRING'] ?? '') != '')
         <?php
         
         if (isset($_GET['file'])) {
