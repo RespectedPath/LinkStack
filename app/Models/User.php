@@ -29,6 +29,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'littlelink_description',
         'custom_domain',
         'stripe_account_id',
+        'google_analytics_id',
     ];
 
     /**

@@ -96,7 +96,7 @@ class UserController extends Controller
             return abort(404);
         }
      
-        $userinfo = User::select('id', 'name', 'littlelink_name', 'littlelink_description', 'theme', 'role', 'block')->where('id', $id)->first();
+        $userinfo = User::select('id', 'name', 'littlelink_name', 'littlelink_description', 'theme', 'role', 'block', 'google_analytics_id')->where('id', $id)->first();
         $information = User::select('name', 'littlelink_name', 'littlelink_description', 'theme')->where('id', $id)->get();
         
         if ($userinfo->block == 'yes') {
@@ -138,7 +138,7 @@ class UserController extends Controller
             return abort(404);
         }
      
-        $userinfo = User::select('id', 'name', 'littlelink_name', 'littlelink_description', 'theme', 'role', 'block')->where('id', $id)->first();
+        $userinfo = User::select('id', 'name', 'littlelink_name', 'littlelink_description', 'theme', 'role', 'block', 'google_analytics_id')->where('id', $id)->first();
         $information = User::select('name', 'littlelink_name', 'littlelink_description', 'theme')->where('id', $id)->get();
         
         $links = DB::table('links')
@@ -816,6 +816,10 @@ class UserController extends Controller
             'name' => 'sometimes|required|unique:users',
             'email' => 'sometimes|required|email|unique:users',
             'password' => 'sometimes|min:8',
+            // GA4 measurement IDs look like G-XXXXXXXXXX. Empty string is
+            // allowed (clears the field); nullable covers Laravel's
+            // "empty string == null" semantics for HTML form input.
+            'google_analytics_id' => ['sometimes', 'nullable', 'string', 'max:30', 'regex:/^G-[A-Z0-9]+$/i'],
         ]);
 
         $userId = Auth::user()->id;
@@ -832,6 +836,15 @@ class UserController extends Controller
             User::where('id', $userId)->update(['password' => $password]);
             Auth::logout();
         }
+
+        // Independent branch so the GA form doesn't race with the
+        // name/email/password if/elseif above.
+        if ($request->has('google_analytics_id')) {
+            $gaId = trim((string) $request->input('google_analytics_id'));
+            $gaId = $gaId === '' ? null : strtoupper($gaId);
+            User::where('id', $userId)->update(['google_analytics_id' => $gaId]);
+        }
+
         return back();
     }
 

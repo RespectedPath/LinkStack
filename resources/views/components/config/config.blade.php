@@ -238,6 +238,21 @@ function text($key){
 
 {{text('ADMIN_EMAIL')}}
 
+{{-- Platform-wide Google Analytics tracking ID (GA4) --}}
+<?php $gaValue = str_replace('"', "", EnvEditor::keyExists('GOOGLE_ANALYTICS_TRACKING_ID') ? EnvEditor::getKey('GOOGLE_ANALYTICS_TRACKING_ID') : ''); ?>
+<form id="google-analytics-form" action="{{route('editConfig')}}" enctype="multipart/form-data" method="post">
+<div class="form-group col-lg-8">
+<input value="text" name="type" style="display:none;" type="text" class="form-control form-control-lg" required>
+<input value="GOOGLE_ANALYTICS_TRACKING_ID" name="entry" style="display:none;" type="text" class="form-control form-control-lg" required>
+<h5 style="margin-top:50px">Google Analytics Tracking ID</h5>
+<p class="text-muted">Platform-wide GA4 measurement ID (format: <code>G-XXXXXXXXXX</code>). Loaded on every public link page across all users. Leave blank to disable.</p>
+<div class="input-group">
+<input type="text" class="form-control form-control-lg" style="border-radius:.25rem;max-width:600px" name="value" value="{{$gaValue}}" pattern="^(G-[A-Z0-9]+)?$" placeholder="G-XXXXXXXXXX" maxlength="30">
+<input type="hidden" name="_token" value="{{csrf_token()}}">
+<button type="submit" class="btn btn-primary">{{__('messages.Apply')}}</button>
+</div></div>
+</form>
+
 {{-- start home url --}}
 <?php $configValue2 = str_replace('"', "", EnvEditor::getKey('HOME_URL')); ?>
 <form id="home-url-form" action="{{route('editConfig')}}" enctype="multipart/form-data" method="post">

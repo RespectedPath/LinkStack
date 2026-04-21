@@ -4,6 +4,9 @@
     @push('linkstack-head')
         @include('linkstack.modules.meta')
         @include('linkstack.modules.assets')
+        {{-- Google Analytics: platform-wide tracker + per-user tracker, each only renders if set --}}
+        @include('linkstack.modules.google-analytics', ['trackingId' => env('GOOGLE_ANALYTICS_TRACKING_ID')])
+        @include('linkstack.modules.google-analytics', ['trackingId' => $userinfo->google_analytics_id ?? null])
     @endpush
 
     @push('linkstack-head-end')
