@@ -1,0 +1,74 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Mail\ContactFormMail;
+use App\Models\Link;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+
+/**
+ * Handles public submissions from the "contact_form" block.
+ *
+ * One instance of this controller serves every contact_form block across
+ * the whole LinkStack installation. The {id} in the route path is the
+ * `links.id` of the specific block instance being submitted to — we look
+ * it up to find the destination e-mail and custom subject configured by
+ * the page owner.
+ */
+class ContactFormController extends Controller
+{
+    public function submit(Request $request, $id)
+    {
+        $link = Link::find($id);
+
+        // Guard: the link must exist and must actually be a contact_form block.
+        if (!$link || $link->type !== 'contact_form') {
+            abort(404);
+        }
+
+        // Honeypot: if the invisible `website` field is filled, assume bot.
+        // Return a success response so the bot thinks it worked — but do
+        // not send any mail. Never log this as an error.
+        if (filled($request->input('website'))) {
+            return back()
+                ->with('contact_form_success', (int) $id)
+                ->withFragment("contact-form-$id");
+        }
+
+        $data = $request->validate([
+            'name'    => ['required', 'string', 'max:100'],
+            'email'   => ['required', 'email', 'max:255'],
+            'message' => ['required', 'string', 'max:5000'],
+        ]);
+
+        $params = json_decode($link->type_params ?? '{}', true);
+        if (!is_array($params)) {
+            $params = [];
+        }
+        $customSubject = trim((string) ($params['subject'] ?? ''));
+        $subject = $customSubject !== ''
+            ? $customSubject
+            : 'New message from your LinkStack contact form';
+
+        try {
+            Mail::to($link->link)->send(new ContactFormMail($data, $subject, $link));
+        } catch (\Throwable $e) {
+            Log::error('Contact form send failed', [
+                'link_id' => (int) $id,
+                'to'      => $link->link,
+                'error'   => $e->getMessage(),
+            ]);
+
+            return back()
+                ->with('contact_form_error', (int) $id)
+                ->withFragment("contact-form-$id")
+                ->withInput();
+        }
+
+        return back()
+            ->with('contact_form_success', (int) $id)
+            ->withFragment("contact-form-$id");
+    }
+}
