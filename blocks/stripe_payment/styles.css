@@ -1,0 +1,90 @@
+/* Stripe payment block — scoped to .stripe-payment-wrapper. */
+
+.stripe-payment-wrapper {
+    width: 100%;
+    max-width: 520px;
+    margin: 16px auto;
+    padding: 16px;
+    box-sizing: border-box;
+    text-align: center;
+    font-family: inherit;
+    color: inherit;
+}
+
+.stripe-payment-wrapper .sp-heading {
+    margin: 0 0 12px 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.stripe-payment-wrapper .sp-form {
+    display: block;
+}
+
+.stripe-payment-wrapper .sp-submit {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 14px 28px;
+    width: 100%;
+    max-width: 420px;
+    cursor: pointer;
+    min-height: 56px;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 8px;
+}
+
+.stripe-payment-wrapper .sp-cta {
+    font-size: 1.05rem;
+    font-weight: 600;
+    line-height: 1.15;
+}
+
+.stripe-payment-wrapper .sp-amount {
+    font-size: 0.85rem;
+    font-weight: 400;
+    opacity: 0.85;
+    line-height: 1.15;
+}
+
+.stripe-payment-wrapper .sp-trust {
+    margin: 8px 0 0 0;
+    font-size: 0.8rem;
+    color: inherit;
+    opacity: 0.65;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.stripe-payment-wrapper .sp-trust i {
+    font-size: 0.9rem;
+}
+
+.stripe-payment-wrapper .sp-banner {
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    font-size: 0.95rem;
+    text-align: left;
+}
+
+.stripe-payment-wrapper .sp-banner.sp-error {
+    background: rgba(217, 83, 79, 0.12);
+    border: 1px solid rgba(217, 83, 79, 0.4);
+    color: #c9302c;
+}
+
+@media (max-width: 600px) {
+    .stripe-payment-wrapper {
+        padding: 12px;
+        margin: 12px auto;
+    }
+    .stripe-payment-wrapper .sp-heading {
+        font-size: 1.1rem;
+    }
+}

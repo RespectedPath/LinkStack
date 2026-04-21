@@ -1,0 +1,6 @@
+id: 502
+typename: stripe_payment
+title: Stripe payment
+description: Accept one-time payments routed to your connected Stripe account.
+icon: "bi bi-credit-card-2-front-fill"
+custom_html: true

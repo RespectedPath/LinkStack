@@ -8,6 +8,9 @@ use App\Http\Controllers\Auth\SocialLoginController;
 use App\Http\Controllers\LinkTypeViewController;
 use App\Http\Controllers\ContactFormController;
 use App\Http\Controllers\NewsletterSignupController;
+use App\Http\Controllers\StripeConnectController;
+use App\Http\Controllers\StripeWebhookController;
+use App\Http\Controllers\StripePaymentController;
 use App\Http\Controllers\PagesController;
 use App\Http\Controllers\InstallerController;
 use Illuminate\Support\Facades\Auth;
@@ -121,6 +124,19 @@ Route::post('/newsletter/{id}/subscribe', [NewsletterSignupController::class, 's
   ->where(['id' => '[0-9]+'])
   ->middleware('throttle:5,1');
 
+// Stripe webhook endpoint — Stripe POSTs events here. Signature is
+// verified in the controller; CSRF is excluded via VerifyCsrfToken.
+Route::post('/stripe/webhook', [StripeWebhookController::class, 'handle'])
+  ->name('stripe.webhook');
+
+// Public Checkout Session creator for the "stripe_payment" block.
+// Visitor clicks the button, lands here, we create a session server-side
+// and redirect them to Stripe.
+Route::post('/stripe/checkout/{id}', [StripePaymentController::class, 'checkout'])
+  ->name('stripePaymentCheckout')
+  ->where(['id' => '[0-9]+'])
+  ->middleware('throttle:20,1');
+
 }
 
 Route::middleware(['auth', 'blocked', 'impersonate'])->group(function () {
@@ -151,6 +167,11 @@ Route::post('/studio/background', [UserController::class, 'themeBackground'])->n
 Route::get('/studio/rem-background', [UserController::class, 'removeBackground'])->name('removeBackground');
 Route::get('/studio/profile', [UserController::class, 'showProfile'])->name('showProfile');
 Route::post('/studio/profile', [UserController::class, 'editProfile'])->name('editProfile');
+
+// Stripe Connect OAuth onboarding (requires auth)
+Route::get('/stripe/connect', [StripeConnectController::class, 'connect'])->name('stripe.connect');
+Route::get('/stripe/connect/callback', [StripeConnectController::class, 'callback'])->name('stripe.connect.callback');
+Route::post('/stripe/disconnect', [StripeConnectController::class, 'disconnect'])->name('stripe.disconnect');
 Route::post('/edit-icons', [UserController::class, 'editIcons'])->name('editIcons');
 Route::get('/clearIcon/{id}', [UserController::class, 'clearIcon'])->name('clearIcon');
 Route::get('/studio/page/delprofilepicture', [UserController::class, 'delProfilePicture'])->name('delProfilePicture');
