@@ -77,6 +77,17 @@
                 @endif
               </div>
 
+              {{-- Google Analytics tracking ID (per-user) --}}
+              <div class="form-group col-lg-8"><br><br><br>
+                <h4>Google Analytics</h4>
+                <p class="text-muted">Paste your GA4 measurement ID to track visits to your public page. Format: <code>G-XXXXXXXXXX</code>. Leave blank to disable.</p>
+                <form action="{{ route('editProfile') }}" method="post">
+                  @csrf
+                  <input type="text" class="form-control" name="google_analytics_id" value="{{ $profile->google_analytics_id }}" placeholder="G-XXXXXXXXXX" maxlength="30" pattern="^(G-[A-Z0-9]+)?$">
+                  <button type="submit" class="mt-3 ml-3 btn btn-primary">Save tracking ID</button>
+                </form>
+              </div>
+
               @if(env('ALLOW_USER_EXPORT') != false)
               <div class="mt-3"><br><br><br>
                 <h4>{{__('messages.Export user data')}}</h4>

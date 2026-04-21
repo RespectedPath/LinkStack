@@ -766,6 +766,8 @@ class AdminController extends Controller
     } elseif ($type === "text") {
       if (EnvEditor::keyExists($entry)) {
         EnvEditor::editKey($entry, '"' . $value . '"');
+      } else {
+        EnvEditor::addKey($entry, '"' . $value . '"');
       }
     } elseif ($type === "debug") {
       if ($request->toggle != "") {
