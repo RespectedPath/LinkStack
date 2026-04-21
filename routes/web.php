@@ -7,6 +7,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\Auth\SocialLoginController;
 use App\Http\Controllers\LinkTypeViewController;
 use App\Http\Controllers\ContactFormController;
+use App\Http\Controllers\NewsletterSignupController;
 use App\Http\Controllers\PagesController;
 use App\Http\Controllers\InstallerController;
 use Illuminate\Support\Facades\Auth;
@@ -110,6 +111,13 @@ Route::get('/block-asset/{type}', [LinkTypeViewController::class, 'blockAsset'])
 // Rate-limited to prevent abuse; honeypot + validation live in the controller.
 Route::post('/contact-form/{id}/submit', [ContactFormController::class, 'submit'])
   ->name('contactFormSubmit')
+  ->where(['id' => '[0-9]+'])
+  ->middleware('throttle:5,1');
+
+// Public submission endpoint for the "newsletter_signup" block (Mailchimp).
+// Rate-limited; honeypot + validation + API call live in the controller.
+Route::post('/newsletter/{id}/subscribe', [NewsletterSignupController::class, 'subscribe'])
+  ->name('newsletterSubscribe')
   ->where(['id' => '[0-9]+'])
   ->middleware('throttle:5,1');
 
