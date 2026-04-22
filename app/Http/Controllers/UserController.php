@@ -860,14 +860,6 @@ class UserController extends Controller
             'name' => 'sometimes|required|unique:users',
             'email' => 'sometimes|required|email|unique:users',
             'password' => 'sometimes|min:8',
-            // GA4 measurement IDs look like G-XXXXXXXXXX. Empty string is
-            // allowed (clears the field); nullable covers Laravel's
-            // "empty string == null" semantics for HTML form input.
-            'google_analytics_id' => ['sometimes', 'nullable', 'string', 'max:30', 'regex:/^G-[A-Z0-9]+$/i'],
-            // Temporary redirect toggle + destination URL. URL must begin
-            // with http:// or https:// when set; empty string clears it.
-            'redirect_enabled' => ['sometimes', 'in:0,1'],
-            'redirect_url'     => ['sometimes', 'nullable', 'string', 'max:2048', 'regex:/^https?:\/\/.+/i'],
         ]);
 
         $userId = Auth::user()->id;
@@ -884,27 +876,43 @@ class UserController extends Controller
             User::where('id', $userId)->update(['password' => $password]);
             Auth::logout();
         }
+        return back();
+    }
 
-        // Independent branch so the GA form doesn't race with the
-        // name/email/password if/elseif above.
-        if ($request->has('google_analytics_id')) {
-            $gaId = trim((string) $request->input('google_analytics_id'));
-            $gaId = $gaId === '' ? null : strtoupper($gaId);
-            User::where('id', $userId)->update(['google_analytics_id' => $gaId]);
-        }
+    /**
+     * Save per-user Google Analytics measurement ID. Empty string
+     * clears it. GA4 format only (G-XXXXXXXXXX); value is uppercased
+     * on save. See resources/views/studio/partials/integration-analytics.blade.php.
+     */
+    public function editAnalytics(request $request)
+    {
+        $request->validate([
+            'google_analytics_id' => ['nullable', 'string', 'max:30', 'regex:/^G-[A-Z0-9]+$/i'],
+        ]);
+        $gaId = trim((string) $request->input('google_analytics_id', ''));
+        $gaId = $gaId === '' ? null : strtoupper($gaId);
+        User::where('id', Auth::id())->update(['google_analytics_id' => $gaId]);
+        return back();
+    }
 
-        // Temporary-redirect form. Detected by presence of redirect_url
-        // (always submitted by that form, even when blank). The hidden
-        // input pattern guarantees redirect_enabled is always "0" or "1".
-        if ($request->has('redirect_url')) {
-            $enabled = (string) $request->input('redirect_enabled') === '1';
-            $url = trim((string) $request->input('redirect_url'));
-            User::where('id', $userId)->update([
-                'redirect_enabled' => $enabled,
-                'redirect_url'     => $url === '' ? null : $url,
-            ]);
-        }
-
+    /**
+     * Save temporary-redirect settings. `redirect_enabled` is always
+     * "0" or "1" because the form pairs the checkbox with a hidden
+     * default. `redirect_url` is nullable; empty clears the URL.
+     * See resources/views/studio/partials/integration-redirect.blade.php.
+     */
+    public function editRedirect(request $request)
+    {
+        $request->validate([
+            'redirect_enabled' => ['required', 'in:0,1'],
+            'redirect_url'     => ['nullable', 'string', 'max:2048', 'regex:/^https?:\/\/.+/i'],
+        ]);
+        $enabled = (string) $request->input('redirect_enabled') === '1';
+        $url = trim((string) $request->input('redirect_url', ''));
+        User::where('id', Auth::id())->update([
+            'redirect_enabled' => $enabled,
+            'redirect_url'     => $url === '' ? null : $url,
+        ]);
         return back();
     }
 
