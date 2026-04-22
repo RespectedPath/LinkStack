@@ -110,32 +110,31 @@ Route::get('/demo-page', [App\Http\Controllers\HomeController::class, 'demo'])->
 Route::get('/block-asset/{type}', [LinkTypeViewController::class, 'blockAsset'])
   ->name('block.asset')->where(['type' => '[a-zA-Z0-9_-]+']);
 
-// Public submission endpoint for the "contact_form" block.
-// Rate-limited to prevent abuse; honeypot + validation live in the controller.
+// ==== Custom block: public form submissions ====
+// Each block that accepts visitor input has its POST endpoint here.
+// Throttle protects against bot-driven abuse; validation + business
+// logic live in the respective controllers.
+
 Route::post('/contact-form/{id}/submit', [ContactFormController::class, 'submit'])
   ->name('contactFormSubmit')
   ->where(['id' => '[0-9]+'])
   ->middleware('throttle:5,1');
 
-// Public submission endpoint for the "newsletter_signup" block (Mailchimp).
-// Rate-limited; honeypot + validation + API call live in the controller.
 Route::post('/newsletter/{id}/subscribe', [NewsletterSignupController::class, 'subscribe'])
   ->name('newsletterSubscribe')
   ->where(['id' => '[0-9]+'])
   ->middleware('throttle:5,1');
 
-// Stripe webhook endpoint — Stripe POSTs events here. Signature is
-// verified in the controller; CSRF is excluded via VerifyCsrfToken.
-Route::post('/stripe/webhook', [StripeWebhookController::class, 'handle'])
-  ->name('stripe.webhook');
-
-// Public Checkout Session creator for the "stripe_payment" block.
-// Visitor clicks the button, lands here, we create a session server-side
-// and redirect them to Stripe.
 Route::post('/stripe/checkout/{id}', [StripePaymentController::class, 'checkout'])
   ->name('stripePaymentCheckout')
   ->where(['id' => '[0-9]+'])
   ->middleware('throttle:20,1');
+
+// ==== Stripe webhook (Stripe → us) ====
+// Signature verified in the controller via STRIPE_WEBHOOK_SECRET.
+// CSRF excluded in app/Http/Middleware/VerifyCsrfToken.php.
+Route::post('/stripe/webhook', [StripeWebhookController::class, 'handle'])
+  ->name('stripe.webhook');
 
 }
 
@@ -167,8 +166,10 @@ Route::post('/studio/background', [UserController::class, 'themeBackground'])->n
 Route::get('/studio/rem-background', [UserController::class, 'removeBackground'])->name('removeBackground');
 Route::get('/studio/profile', [UserController::class, 'showProfile'])->name('showProfile');
 Route::post('/studio/profile', [UserController::class, 'editProfile'])->name('editProfile');
+Route::post('/studio/profile/analytics', [UserController::class, 'editAnalytics'])->name('editAnalytics');
+Route::post('/studio/profile/redirect',  [UserController::class, 'editRedirect'])->name('editRedirect');
 
-// Stripe Connect OAuth onboarding (requires auth)
+// ==== Stripe Connect OAuth onboarding (auth-scoped) ====
 Route::get('/stripe/connect', [StripeConnectController::class, 'connect'])->name('stripe.connect');
 Route::get('/stripe/connect/callback', [StripeConnectController::class, 'callback'])->name('stripe.connect.callback');
 Route::post('/stripe/disconnect', [StripeConnectController::class, 'disconnect'])->name('stripe.disconnect');

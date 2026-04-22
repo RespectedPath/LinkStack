@@ -56,67 +56,17 @@
                     <input type="text" class="form-control" value="{{ strtoupper($profile->role) }}" readonly>
                   </div>
 
-              {{-- Stripe Connect onboarding --}}
-              <div class="form-group col-lg-8"><br><br><br>
-                <h4>Payments (Stripe)</h4>
-                @if(!empty($profile->stripe_account_id))
-                  <p class="mb-2">
-                    <span class="badge bg-success">Connected</span>
-                    <span class="text-muted small">Account <code>{{ $profile->stripe_account_id }}</code></span>
-                  </p>
-                  <p class="text-muted small">Payment blocks on your public page will route payouts to this Stripe account.</p>
-                  <form action="{{ route('stripe.disconnect') }}" method="post" onsubmit="return confirm('Disconnect this Stripe account? Payment blocks will stop working until you reconnect.');">
-                    @csrf
-                    <button type="submit" class="btn btn-outline-danger">Disconnect Stripe</button>
-                  </form>
-                @else
-                  <p class="text-muted">Connect your Stripe account to accept payments from your public page. You keep 100% of each transaction (minus Stripe's standard processing fee).</p>
-                  <a href="{{ route('stripe.connect') }}" class="btn btn-primary">
-                    <i class="bi bi-credit-card"></i> Connect Stripe
-                  </a>
-                @endif
-              </div>
+              {{-- ================= Integrations =================
+                   Each card is a self-contained partial under
+                   resources/views/studio/partials/.
+              --}}
+              <div class="col-lg-8 mt-5">
+                <h3 class="card-header mb-3"><i class="bi bi-plug"></i> Integrations</h3>
+                <p class="text-muted mb-4">Connect external services to your public page.</p>
 
-              {{-- Temporary redirect --}}
-              <div class="form-group col-lg-8"><br><br><br>
-                <h4>Temporary redirect</h4>
-                <p class="text-muted small">When enabled, visitors to your page will be sent directly to the URL below instead of seeing your links. Your links and blocks are preserved &mdash; turning this off returns your page to normal.</p>
-                <form action="{{ route('editProfile') }}" method="post">
-                  @csrf
-                  {{-- Hidden default so the field is always submitted, even when the checkbox is unchecked. --}}
-                  <input type="hidden" name="redirect_enabled" value="0">
-                  <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" id="redirect-toggle" name="redirect_enabled" value="1" @if($profile->redirect_enabled) checked @endif>
-                    <label class="form-check-label" for="redirect-toggle">Send all visitors to a URL</label>
-                  </div>
-
-                  <div id="redirect-url-wrap" class="mt-3" @if(!$profile->redirect_enabled) style="display:none" @endif>
-                    <label for="redirect-url" class="form-label">Destination URL</label>
-                    <input type="url" class="form-control" id="redirect-url" name="redirect_url" value="{{ $profile->redirect_url }}" placeholder="https://example.com" maxlength="2048" pattern="https?://.+">
-                    <div class="alert alert-warning mt-2 mb-0 small">Your link page will not be visible to visitors while this is active.</div>
-                  </div>
-
-                  <button type="submit" class="mt-3 ml-3 btn btn-primary">Save redirect settings</button>
-                </form>
-                <script>
-                  (function(){
-                    var cb = document.getElementById('redirect-toggle');
-                    var wrap = document.getElementById('redirect-url-wrap');
-                    if (!cb || !wrap) return;
-                    cb.addEventListener('change', function(){ wrap.style.display = cb.checked ? '' : 'none'; });
-                  })();
-                </script>
-              </div>
-
-              {{-- Google Analytics tracking ID (per-user) --}}
-              <div class="form-group col-lg-8"><br><br><br>
-                <h4>Google Analytics</h4>
-                <p class="text-muted">Paste your GA4 measurement ID to track visits to your public page. Format: <code>G-XXXXXXXXXX</code>. Leave blank to disable.</p>
-                <form action="{{ route('editProfile') }}" method="post">
-                  @csrf
-                  <input type="text" class="form-control" name="google_analytics_id" value="{{ $profile->google_analytics_id }}" placeholder="G-XXXXXXXXXX" maxlength="30" pattern="^(G-[A-Z0-9]+)?$">
-                  <button type="submit" class="mt-3 ml-3 btn btn-primary">Save tracking ID</button>
-                </form>
+                @include('studio.partials.integration-stripe',    ['profile' => $profile])
+                @include('studio.partials.integration-analytics', ['profile' => $profile])
+                @include('studio.partials.integration-redirect',  ['profile' => $profile])
               </div>
 
               @if(env('ALLOW_USER_EXPORT') != false)
