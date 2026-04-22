@@ -13,6 +13,10 @@
         @foreach($information as $info)
             @include('linkstack.modules.theme')
         @endforeach
+        {{-- User Appearance customization overrides — renders AFTER
+             theme CSS so its !important rules cascade and win. Skipped
+             entirely when the user hasn't customized anything. --}}
+        @include('linkstack.modules.appearance-override', ['userinfo' => $userinfo])
     @endpush
 
     @push('linkstack-body-start')

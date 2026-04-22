@@ -11,6 +11,7 @@ use App\Http\Controllers\NewsletterSignupController;
 use App\Http\Controllers\StripeConnectController;
 use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\StripePaymentController;
+use App\Http\Controllers\AppearanceController;
 use App\Http\Controllers\PagesController;
 use App\Http\Controllers\InstallerController;
 use Illuminate\Support\Facades\Auth;
@@ -168,6 +169,11 @@ Route::get('/studio/profile', [UserController::class, 'showProfile'])->name('sho
 Route::post('/studio/profile', [UserController::class, 'editProfile'])->name('editProfile');
 Route::post('/studio/profile/analytics', [UserController::class, 'editAnalytics'])->name('editAnalytics');
 Route::post('/studio/profile/redirect',  [UserController::class, 'editRedirect'])->name('editRedirect');
+
+// Live-preview Appearance editor (colors, background, typography, button + avatar shape).
+Route::get('/studio/appearance',        [AppearanceController::class, 'show'])->name('showAppearance');
+Route::post('/studio/appearance',       [AppearanceController::class, 'save'])->name('saveAppearance');
+Route::post('/studio/appearance/reset', [AppearanceController::class, 'reset'])->name('resetAppearance');
 
 // ==== Stripe Connect OAuth onboarding (auth-scoped) ====
 Route::get('/stripe/connect', [StripeConnectController::class, 'connect'])->name('stripe.connect');

@@ -32,6 +32,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'google_analytics_id',
         'redirect_enabled',
         'redirect_url',
+        'theme_customization',
     ];
 
     /**
