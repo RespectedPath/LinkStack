@@ -224,6 +224,16 @@ $usrhandl = Auth::user()->littlelink_name;
                             <span class="item-name">{{__('messages.Themes')}}</span>
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ Request::segment(2) == 'appearance' ? 'active' : ''}}" href="{{ url('/studio/appearance') }}">
+                            <i class="icon">
+                                <svg class="icon-20" width="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12c0 5.52 4.48 10 10 10a2.5 2.5 0 0 0 2.5-2.5c0-.61-.23-1.2-.64-1.67-.08-.09-.13-.21-.13-.33 0-.28.22-.5.5-.5H16a5 5 0 0 0 5-5c0-4.42-4.03-8-9-8zm-5.5 9A1.5 1.5 0 1 1 8 9.5 1.5 1.5 0 0 1 6.5 11zm3-4A1.5 1.5 0 1 1 11 5.5 1.5 1.5 0 0 1 9.5 7zm5 0A1.5 1.5 0 1 1 16 5.5 1.5 1.5 0 0 1 14.5 7zm3 4A1.5 1.5 0 1 1 19 9.5a1.5 1.5 0 0 1-1.5 1.5z" fill="currentColor"/>
+                                </svg>
+                            </i>
+                            <span class="item-name">Appearance</span>
+                        </a>
+                    </li>
                         </ul>
                     </li>
                 </ul>
