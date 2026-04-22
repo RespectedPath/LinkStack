@@ -77,6 +77,37 @@
                 @endif
               </div>
 
+              {{-- Temporary redirect --}}
+              <div class="form-group col-lg-8"><br><br><br>
+                <h4>Temporary redirect</h4>
+                <p class="text-muted small">When enabled, visitors to your page will be sent directly to the URL below instead of seeing your links. Your links and blocks are preserved &mdash; turning this off returns your page to normal.</p>
+                <form action="{{ route('editProfile') }}" method="post">
+                  @csrf
+                  {{-- Hidden default so the field is always submitted, even when the checkbox is unchecked. --}}
+                  <input type="hidden" name="redirect_enabled" value="0">
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="redirect-toggle" name="redirect_enabled" value="1" @if($profile->redirect_enabled) checked @endif>
+                    <label class="form-check-label" for="redirect-toggle">Send all visitors to a URL</label>
+                  </div>
+
+                  <div id="redirect-url-wrap" class="mt-3" @if(!$profile->redirect_enabled) style="display:none" @endif>
+                    <label for="redirect-url" class="form-label">Destination URL</label>
+                    <input type="url" class="form-control" id="redirect-url" name="redirect_url" value="{{ $profile->redirect_url }}" placeholder="https://example.com" maxlength="2048" pattern="https?://.+">
+                    <div class="alert alert-warning mt-2 mb-0 small">Your link page will not be visible to visitors while this is active.</div>
+                  </div>
+
+                  <button type="submit" class="mt-3 ml-3 btn btn-primary">Save redirect settings</button>
+                </form>
+                <script>
+                  (function(){
+                    var cb = document.getElementById('redirect-toggle');
+                    var wrap = document.getElementById('redirect-url-wrap');
+                    if (!cb || !wrap) return;
+                    cb.addEventListener('change', function(){ wrap.style.display = cb.checked ? '' : 'none'; });
+                  })();
+                </script>
+              </div>
+
               {{-- Google Analytics tracking ID (per-user) --}}
               <div class="form-group col-lg-8"><br><br><br>
                 <h4>Google Analytics</h4>

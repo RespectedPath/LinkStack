@@ -96,13 +96,21 @@ class UserController extends Controller
             return abort(404);
         }
      
-        $userinfo = User::select('id', 'name', 'littlelink_name', 'littlelink_description', 'theme', 'role', 'block', 'google_analytics_id')->where('id', $id)->first();
+        $userinfo = User::select('id', 'name', 'littlelink_name', 'littlelink_description', 'theme', 'role', 'block', 'google_analytics_id', 'redirect_enabled', 'redirect_url')->where('id', $id)->first();
         $information = User::select('name', 'littlelink_name', 'littlelink_description', 'theme')->where('id', $id)->get();
         
         if ($userinfo->block == 'yes') {
             return abort(404);
         }
-        
+
+        // Temporary redirect: if the page owner has enabled the toggle
+        // and supplied a valid http(s) URL, 302 the visitor away before
+        // rendering any page content.
+        $redirectTo = $this->resolveTemporaryRedirect($userinfo);
+        if ($redirectTo !== null) {
+            return redirect()->away($redirectTo, 302);
+        }
+
         $links = DB::table('links')
         ->join('buttons', 'buttons.id', '=', 'links.button_id')
         ->select('links.*', 'buttons.name') // Assuming 'links.*' to fetch all columns including 'type_params'
@@ -128,6 +136,31 @@ class UserController extends Controller
         return view('linkstack.linkstack', ['userinfo' => $userinfo, 'information' => $information, 'links' => $links, 'littlelink_name' => $littlelink_name]);
     }
 
+    /**
+     * Returns the destination URL if the owner has enabled a temporary
+     * redirect AND their stored URL is a syntactically valid http/https
+     * URL. Returns null otherwise — in which case callers should render
+     * the page normally. Never throws on bad input.
+     */
+    private function resolveTemporaryRedirect($userinfo)
+    {
+        if (!$userinfo || !$userinfo->redirect_enabled) {
+            return null;
+        }
+        $url = trim((string) $userinfo->redirect_url);
+        if ($url === '') {
+            return null;
+        }
+        if (!filter_var($url, FILTER_VALIDATE_URL)) {
+            return null;
+        }
+        $scheme = strtolower((string) parse_url($url, PHP_URL_SCHEME));
+        if ($scheme !== 'http' && $scheme !== 'https') {
+            return null;
+        }
+        return $url;
+    }
+
     //Show littlelink page as home page if set in config
     public function littlelinkhome(request $request)
     {
@@ -138,9 +171,16 @@ class UserController extends Controller
             return abort(404);
         }
      
-        $userinfo = User::select('id', 'name', 'littlelink_name', 'littlelink_description', 'theme', 'role', 'block', 'google_analytics_id')->where('id', $id)->first();
+        $userinfo = User::select('id', 'name', 'littlelink_name', 'littlelink_description', 'theme', 'role', 'block', 'google_analytics_id', 'redirect_enabled', 'redirect_url')->where('id', $id)->first();
         $information = User::select('name', 'littlelink_name', 'littlelink_description', 'theme')->where('id', $id)->get();
-        
+
+        // Temporary redirect (same gate as littlelink) — applies when the
+        // user's page is serving as the instance home URL.
+        $redirectTo = $this->resolveTemporaryRedirect($userinfo);
+        if ($redirectTo !== null) {
+            return redirect()->away($redirectTo, 302);
+        }
+
         $links = DB::table('links')
         ->join('buttons', 'buttons.id', '=', 'links.button_id')
         ->select('links.*', 'buttons.name') // Assuming 'links.*' to fetch all columns including 'type_params'
@@ -804,7 +844,11 @@ class UserController extends Controller
     {
         $userId = Auth::user()->id;
 
-        $data['profile'] = User::where('id', $userId)->select('name', 'email', 'role')->get();
+        $data['profile'] = User::where('id', $userId)
+            ->select('id', 'name', 'email', 'role', 'littlelink_name',
+                     'stripe_account_id', 'google_analytics_id',
+                     'redirect_enabled', 'redirect_url')
+            ->get();
 
         return view('/studio/profile', $data);
     }
@@ -820,6 +864,10 @@ class UserController extends Controller
             // allowed (clears the field); nullable covers Laravel's
             // "empty string == null" semantics for HTML form input.
             'google_analytics_id' => ['sometimes', 'nullable', 'string', 'max:30', 'regex:/^G-[A-Z0-9]+$/i'],
+            // Temporary redirect toggle + destination URL. URL must begin
+            // with http:// or https:// when set; empty string clears it.
+            'redirect_enabled' => ['sometimes', 'in:0,1'],
+            'redirect_url'     => ['sometimes', 'nullable', 'string', 'max:2048', 'regex:/^https?:\/\/.+/i'],
         ]);
 
         $userId = Auth::user()->id;
@@ -843,6 +891,18 @@ class UserController extends Controller
             $gaId = trim((string) $request->input('google_analytics_id'));
             $gaId = $gaId === '' ? null : strtoupper($gaId);
             User::where('id', $userId)->update(['google_analytics_id' => $gaId]);
+        }
+
+        // Temporary-redirect form. Detected by presence of redirect_url
+        // (always submitted by that form, even when blank). The hidden
+        // input pattern guarantees redirect_enabled is always "0" or "1".
+        if ($request->has('redirect_url')) {
+            $enabled = (string) $request->input('redirect_enabled') === '1';
+            $url = trim((string) $request->input('redirect_url'));
+            User::where('id', $userId)->update([
+                'redirect_enabled' => $enabled,
+                'redirect_url'     => $url === '' ? null : $url,
+            ]);
         }
 
         return back();
