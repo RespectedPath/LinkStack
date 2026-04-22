@@ -1,8 +1,43 @@
 <?php
-  // Defaults pre-fill sensible Stripe-friendly values for a new block.
+  require_once base_path('blocks/stripe_payment/currencies.php');
+
   $defaultSuccessUrl = url('/@' . (auth()->user()->littlelink_name ?? ''));
   $defaultCancelUrl  = $defaultSuccessUrl;
+
+  // LinkTypeViewController::getParamForm merges type_params JSON into
+  // the view data, so these variables are set when editing an existing
+  // block. For new blocks they're unset — we fall back to defaults.
+  $currentMode = $mode ?? 'fixed_price';
+
+  // Backward compat: pre-expansion blocks have amount_cents but no
+  // options array. Synthesize a single-option array from the legacy
+  // field so the form pre-fills correctly on edit.
+  $optionsList = $options ?? [];
+  if (empty($optionsList) && isset($amount_cents)) {
+      $optionsList = [[
+          'label'        => $link ?? 'Option 1',
+          'amount_cents' => (int) $amount_cents,
+      ]];
+  }
+
+  $currencyCode = strtolower($currency ?? 'usd');
+
+  // Convert stored smallest-unit integers back to decimal strings for
+  // pre-filling the form inputs.
+  $fmt = function ($cents) use ($currencyCode) {
+      if ($cents === null || $cents === '') return '';
+      return stripe_payment_format_smallest_unit((int) $cents, $currencyCode);
+  };
+
+  $pinned    = stripe_payment_pinned_currencies();
+  $allCurr   = stripe_payment_all_currencies();
+  $remaining = array_diff_key($allCurr, $pinned);
 ?>
+
+{{-- Select2 for the searchable currency picker. Loaded from CDN;
+     admin-only so CDN latency is not a concern. --}}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <select style="display:none" name="button" class="form-control"><option class="button button-default stripe_payment" value="default stripe_payment">Stripe payment</option></select>
 
@@ -12,15 +47,83 @@
 
 <label for='link' class='form-label'>Button label</label>
 <input type='text' name='link' value='{{ $link ?? '' }}' class='form-control' maxlength="50" placeholder="Pay now" required />
-<span class='small text-muted'>Text on the payment button. The amount will be shown beneath it automatically.</span><br>
+<span class='small text-muted'>Text on the main button. For multiple price options this appears above the option buttons; for a tip jar this is the button visitors click to open the amount input.</span><br>
 
-<label for='amount' class='form-label'>Amount</label>
-<input type='number' name='amount' value='{{ isset($amount_cents) ? number_format($amount_cents / 100, 2, '.', '') : '' }}' class='form-control' min="0.50" step="0.01" required placeholder="5.00" />
-<span class='small text-muted'>The amount to charge, in the currency below. Minimum 0.50.</span><br>
+{{-- Mode selector --}}
+<label class='form-label' style='margin-top:20px;'>Payment mode</label>
+<div class="form-check">
+    <input class="form-check-input sp-mode-radio" type="radio" name="mode" id="sp-mode-fixed" value="fixed_price" @if($currentMode === 'fixed_price') checked @endif>
+    <label class="form-check-label" for="sp-mode-fixed"><strong>Fixed price</strong> &mdash; one or more preset amounts</label>
+</div>
+<div class="form-check">
+    <input class="form-check-input sp-mode-radio" type="radio" name="mode" id="sp-mode-tip" value="tip_jar" @if($currentMode === 'tip_jar') checked @endif>
+    <label class="form-check-label" for="sp-mode-tip"><strong>Tip jar</strong> &mdash; visitor enters their own amount</label>
+</div>
 
-<label for='currency' class='form-label'>Currency</label>
-<input type='text' name='currency' value='{{ $currency ?? 'usd' }}' class='form-control' maxlength="3" pattern="[a-zA-Z]{3}" required placeholder="usd" />
-<span class='small text-muted'>Three-letter ISO currency code (e.g. <code>usd</code>, <code>eur</code>, <code>gbp</code>). See Stripe's supported currencies.</span><br>
+{{-- Fixed-price fields --}}
+<div id="sp-fixed-fields" class="mt-3" @if($currentMode !== 'fixed_price') style="display:none" @endif>
+    <p class="text-muted small">Configure up to three preset amounts. Visitors see one button per option. Only option 1 is required.</p>
+
+    @for($i = 1; $i <= 3; $i++)
+      @php
+        $prevLabel  = $optionsList[$i - 1]['label']        ?? '';
+        $prevAmount = $optionsList[$i - 1]['amount_cents'] ?? null;
+      @endphp
+      <div class="row mt-2">
+        <div class="col-md-6">
+          <label for="option_{{ $i }}_label" class="form-label">Option {{ $i }} label @if($i === 1)<span class="text-muted">(required)</span>@else<span class="text-muted">(optional)</span>@endif</label>
+          <input type="text" name="option_{{ $i }}_label" id="option_{{ $i }}_label" value="{{ $prevLabel }}" class="form-control" maxlength="50" placeholder="{{ ['Basic','Standard','Premium'][$i-1] }}" @if($i === 1) @endif>
+        </div>
+        <div class="col-md-6">
+          <label for="option_{{ $i }}_amount" class="form-label">Option {{ $i }} amount</label>
+          <div class="input-group">
+            <span class="input-group-text sp-currency-symbol">{{ stripe_payment_currency_symbol($currencyCode) }}</span>
+            <input type="number" name="option_{{ $i }}_amount" id="option_{{ $i }}_amount" value="{{ $fmt($prevAmount) }}" class="form-control" min="0.01" step="0.01" placeholder="5.00">
+          </div>
+        </div>
+      </div>
+    @endfor
+</div>
+
+{{-- Tip-jar fields --}}
+<div id="sp-tip-fields" class="mt-3" @if($currentMode !== 'tip_jar') style="display:none" @endif>
+    <p class="text-muted small">Visitors click the button, enter their own amount, then proceed to Stripe. The button label above is what they click to open the amount input.</p>
+
+    <div class="row mt-2">
+        <div class="col-md-6">
+            <label for="min_amount" class="form-label">Minimum amount <span class="text-muted">(optional)</span></label>
+            <div class="input-group">
+                <span class="input-group-text sp-currency-symbol">{{ stripe_payment_currency_symbol($currencyCode) }}</span>
+                <input type="number" name="min_amount" id="min_amount" value="{{ $fmt($min_amount_cents ?? null) }}" class="form-control" min="0.01" step="0.01" placeholder="1.00">
+            </div>
+            <span class="small text-muted">Defaults to {{ stripe_payment_currency_symbol($currencyCode) }}1.00 if blank.</span>
+        </div>
+        <div class="col-md-6">
+            <label for="suggested_amount" class="form-label">Suggested amount <span class="text-muted">(optional)</span></label>
+            <div class="input-group">
+                <span class="input-group-text sp-currency-symbol">{{ stripe_payment_currency_symbol($currencyCode) }}</span>
+                <input type="number" name="suggested_amount" id="suggested_amount" value="{{ $fmt($suggested_amount_cents ?? null) }}" class="form-control" min="0.01" step="0.01" placeholder="5.00">
+            </div>
+            <span class="small text-muted">Pre-fills the visitor's input — remains editable.</span>
+        </div>
+    </div>
+</div>
+
+{{-- Currency picker (shared) --}}
+<label for='currency' class='form-label' style='margin-top:20px;'>Currency</label>
+<select name='currency' id='sp-currency' class='form-control' required>
+    <optgroup label="Popular">
+        @foreach($pinned as $code => $name)
+            <option value="{{ $code }}" @if($code === $currencyCode) selected @endif>{{ strtoupper($code) }} &mdash; {{ $name }} ({{ stripe_payment_currency_symbol($code) }})</option>
+        @endforeach
+    </optgroup>
+    <optgroup label="All currencies">
+        @foreach($remaining as $code => $name)
+            <option value="{{ $code }}" @if($code === $currencyCode) selected @endif>{{ strtoupper($code) }} &mdash; {{ $name }} ({{ stripe_payment_currency_symbol($code) }})</option>
+        @endforeach
+    </optgroup>
+</select>
+<span class='small text-muted'>Type to search by code or name. ISO 4217 three-letter code is stored (e.g. <code>usd</code>, <code>jpy</code>).</span><br>
 
 <label for='product_description' class='form-label'>Product description</label>
 <input type='text' name='product_description' value='{{ $product_description ?? '' }}' class='form-control' maxlength="200" required placeholder="One coffee for James" />
@@ -33,3 +136,49 @@
 <label for='cancel_url' class='form-label'>Cancel redirect URL</label>
 <input type='url' name='cancel_url' value='{{ $cancel_url ?? $defaultCancelUrl }}' class='form-control' maxlength="500" required />
 <span class='small text-muted'>Where to send the customer if they cancel at checkout</span>
+
+<script>
+(function () {
+    // Toggle between fixed-price and tip-jar field groups based on
+    // the mode radio selection.
+    var fixed = document.getElementById('sp-fixed-fields');
+    var tip   = document.getElementById('sp-tip-fields');
+    document.querySelectorAll('.sp-mode-radio').forEach(function (r) {
+        r.addEventListener('change', function () {
+            if (r.value === 'fixed_price' && r.checked) {
+                fixed.style.display = '';
+                tip.style.display   = 'none';
+            } else if (r.value === 'tip_jar' && r.checked) {
+                fixed.style.display = 'none';
+                tip.style.display   = '';
+            }
+        });
+    });
+
+    // Live-update the currency-symbol prefix spans when the dropdown changes.
+    var symbols = @json(array_combine(
+        array_keys(stripe_payment_all_currencies()),
+        array_map('stripe_payment_currency_symbol', array_keys(stripe_payment_all_currencies()))
+    ));
+    var $curr = document.getElementById('sp-currency');
+    function syncSymbols() {
+        var sym = symbols[$curr.value] || ($curr.value || '').toUpperCase();
+        document.querySelectorAll('.sp-currency-symbol').forEach(function (el) { el.textContent = sym; });
+    }
+    $curr.addEventListener('change', syncSymbols);
+
+    // Initialize Select2 for searchable currency picker. Poll up to 2s
+    // because the Select2 <script> above is inserted alongside this
+    // form via AJAX and may not have finished loading yet.
+    (function tryInitSelect2(attempts) {
+        if (window.jQuery && window.jQuery.fn && window.jQuery.fn.select2) {
+            window.jQuery('#sp-currency').select2({
+                width: '100%',
+                templateSelection: function (data) { return data.text; },
+            }).on('change', syncSymbols);
+        } else if (attempts < 20) {
+            setTimeout(function () { tryInitSelect2(attempts + 1); }, 100);
+        }
+    })(0);
+})();
+</script>
