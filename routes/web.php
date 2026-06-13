@@ -174,6 +174,8 @@ Route::post('/studio/profile/redirect',  [UserController::class, 'editRedirect']
 Route::get('/studio/appearance',        [AppearanceController::class, 'show'])->name('showAppearance');
 Route::post('/studio/appearance',       [AppearanceController::class, 'save'])->name('saveAppearance');
 Route::post('/studio/appearance/reset', [AppearanceController::class, 'reset'])->name('resetAppearance');
+Route::post('/studio/appearance/background-image',        [AppearanceController::class, 'uploadBackgroundImage'])->name('uploadBackgroundImage');
+Route::post('/studio/appearance/background-image/remove', [AppearanceController::class, 'removeBackgroundImage'])->name('removeBackgroundImage');
 
 // ==== Stripe Connect OAuth onboarding (auth-scoped) ====
 Route::get('/stripe/connect', [StripeConnectController::class, 'connect'])->name('stripe.connect');
@@ -182,6 +184,7 @@ Route::post('/stripe/disconnect', [StripeConnectController::class, 'disconnect']
 Route::post('/edit-icons', [UserController::class, 'editIcons'])->name('editIcons');
 Route::get('/clearIcon/{id}', [UserController::class, 'clearIcon'])->name('clearIcon');
 Route::get('/studio/page/delprofilepicture', [UserController::class, 'delProfilePicture'])->name('delProfilePicture');
+Route::post('/studio/profile-picture', [UserController::class, 'editProfilePicture'])->name('editProfilePicture');
 Route::get('/studio/delete-user/{id}', [UserController::class, 'deleteUser'])->name('deleteUser')->middleware('verified');
 Route::post('/auth-as', [AdminController::class, 'authAs'])->name('authAs');
 

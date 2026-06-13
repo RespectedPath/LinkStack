@@ -26,23 +26,44 @@
     @endif
 
     @php
-        // Build the background declaration based on selected type.
+        // Build the background declaration with all longhand props
+        // explicit. Using shorthand would leak stale longhand values
+        // from the preview override stacked on top.
         $bg = $ac['background'];
         switch ($bg['type']) {
             case 'gradient':
-                $bgCss = "background: linear-gradient({$bg['gradient_direction']}, {$bg['gradient_start']}, {$bg['gradient_end']}) !important; background-attachment: fixed !important;";
+                $bgCss = "background-image: linear-gradient({$bg['gradient_direction']}, {$bg['gradient_start']}, {$bg['gradient_end']}) !important;"
+                       . "background-color: transparent !important;"
+                       . "background-size: auto !important;"
+                       . "background-position: 0% 0% !important;"
+                       . "background-repeat: no-repeat !important;"
+                       . "background-attachment: fixed !important;";
                 break;
             case 'image':
                 $url = $bg['image_url'] ?? '';
-                if (!empty($url) && preg_match('/^https?:\/\//i', $url)) {
-                    $bgCss = "background-image: url('" . addslashes($url) . "') !important; background-size: cover !important; background-position: center !important; background-attachment: fixed !important; background-repeat: no-repeat !important; background-color: {$ac['colors']['background']} !important;";
+                // Accept http(s) URLs (legacy/external) OR /assets/...
+                // local paths (new uploaded bg).
+                $isOk = !empty($url) && (preg_match('/^https?:\/\//i', $url) || strpos($url, '/assets/') === 0);
+                if ($isOk) {
+                    $bgCss = "background-image: url('" . addslashes($url) . "') !important;"
+                           . "background-size: cover !important;"
+                           . "background-position: center !important;"
+                           . "background-repeat: no-repeat !important;"
+                           . "background-attachment: fixed !important;"
+                           . "background-color: {$ac['colors']['background']} !important;";
                 } else {
-                    $bgCss = "background-color: {$ac['colors']['background']} !important;";
+                    $bgCss = "background-image: none !important;"
+                           . "background-color: {$ac['colors']['background']} !important;";
                 }
                 break;
             case 'solid':
             default:
-                $bgCss = "background-color: {$bg['solid']} !important; background-image: none !important;";
+                $bgCss = "background-image: none !important;"
+                       . "background-color: {$bg['solid']} !important;"
+                       . "background-size: auto !important;"
+                       . "background-position: 0% 0% !important;"
+                       . "background-repeat: repeat !important;"
+                       . "background-attachment: scroll !important;";
         }
 
         // Button style maps to a CSS class suffix on body that our
@@ -53,6 +74,7 @@
 
         $shapeRadius = ['pill' => '999px', 'rounded' => '10px', 'square' => '0'][$shape] ?? '10px';
         $avatarRadius = $avatarShape === 'rounded_square' ? '14px' : '50%';
+        $avatarHidden = $avatarShape === 'off';
 
         $primary      = $ac['colors']['primary'];
         $buttonText   = $ac['colors']['button_text'];
@@ -109,9 +131,20 @@
             filter: brightness(0.92);
         }
 
-        /* Avatar — .rounded-avatar is the always-present class */
-        .rounded-avatar, img.rounded-avatar {
+        /* Avatar — #avatar is present on the user's uploaded image,
+           the instance avatar fallback, and the logo fallback; each
+           branch in resources/views/linkstack/elements/avatar.blade.php
+           emits the same id, so hiding it here always works. */
+        @if($avatarHidden)
+        /* Hide the avatar visually while keeping its space reserved so
+           links and blocks below don't jump up when it's off. */
+        #avatar {
+            visibility: hidden !important;
+        }
+        @else
+        #avatar, .rounded-avatar, img.rounded-avatar {
             border-radius: {{ $avatarRadius }} !important;
         }
+        @endif
     </style>
 @endif

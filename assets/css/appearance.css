@@ -18,6 +18,25 @@
     min-width: 0; /* prevent input-group overflow in grid cells */
 }
 
+/* Tab nav for the settings panel */
+
+.appearance-tabs {
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.appearance-tabs .nav-link {
+    padding: 6px 14px;
+    font-size: 0.9rem;
+    border-radius: 999px;
+}
+
+.appearance-save-form {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(128, 128, 128, 0.2);
+}
+
 .appearance-section {
     border: 1px solid rgba(128, 128, 128, 0.2);
     border-radius: 8px;
@@ -40,6 +59,87 @@
     display: flex;
     gap: 10px;
     margin-top: 20px;
+}
+
+/* Profile-photo section (own multipart form at the top of the panel).
+   Circular stage holds the raw image; mask is pure overflow:hidden on
+   the round container. JS positions/scales the <img> inside. */
+
+.appearance-photo-row {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.appearance-photo-stage {
+    position: relative;
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: rgba(128, 128, 128, 0.08);
+    border: 1px solid rgba(128, 128, 128, 0.25);
+    flex-shrink: 0;
+    touch-action: none; /* let our pointer handlers fully own drag */
+    user-select: none;
+}
+
+.appearance-photo-stage.is-draggable {
+    cursor: grab;
+}
+.appearance-photo-stage.is-dragging {
+    cursor: grabbing;
+}
+
+.appearance-photo-stage-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: block;
+    user-select: none;
+    -webkit-user-drag: none;
+    pointer-events: none;
+    max-width: none; /* override Bootstrap's img-fluid defaults if they bleed in */
+    max-height: none;
+}
+
+.appearance-photo-stage-image-logo {
+    /* placeholder logo: always centered, don't drag it */
+    width: 60%;
+    height: auto;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #fff;
+    padding: 10px;
+    border-radius: 50%;
+}
+
+.appearance-photo-controls {
+    flex: 1 1 260px;
+    min-width: 0;
+}
+
+#photo-zoom {
+    width: 100%;
+}
+
+/* Background-image upload: current-bg thumbnail + remove button */
+
+.appearance-bg-current {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.appearance-bg-thumb {
+    width: 120px;
+    height: 68px;   /* ~16:9 thumbnail */
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid rgba(128, 128, 128, 0.25);
+    background: rgba(128, 128, 128, 0.08);
 }
 
 /* ---------- Color picker ---------- */
@@ -149,6 +249,20 @@
 
 .appearance-swatch-avatar-circle         { border-radius: 50%; }
 .appearance-swatch-avatar-rounded_square { border-radius: 14px; }
+.appearance-swatch-avatar-off            {
+    background: transparent;
+    border: 2px dashed rgba(128, 128, 128, 0.5);
+    position: relative;
+}
+.appearance-swatch-avatar-off::after {
+    content: '';
+    position: absolute;
+    top: 50%; left: 8%; right: 8%;
+    height: 2px;
+    background: rgba(128, 128, 128, 0.6);
+    transform: rotate(-20deg);
+    transform-origin: center;
+}
 
 /* ---------- Preview panel ---------- */
 
