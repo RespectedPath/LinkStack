@@ -86,6 +86,92 @@ class AppearanceController extends Controller
     }
 
     /**
+     * Upload a background image. The browser has already resized the
+     * file to ≤1920px longest dimension at JPEG q=0.82 (see
+     * appearance.js), so the max:2048 server cap is just a safety net.
+     * Writes the file to /assets/img/background-img/ and stores the
+     * leading-slash path on users.theme_customization JSON under
+     * background.image_url. Also flips background.type to 'image' so
+     * the upload immediately takes effect.
+     */
+    public function uploadBackgroundImage(Request $request)
+    {
+        $request->validate([
+            'image' => ['required', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2048'],
+        ], [
+            'image.image' => __('messages.The selected file must be an image'),
+            'image.mimes' => __('messages.The image must be') . ' JPEG, JPG, PNG, webP.',
+            'image.max'   => __('messages.The image size should not exceed 2MB'),
+        ]);
+
+        $userId = Auth::id();
+        $dir = base_path('assets/img/background-img');
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0755, true);
+        }
+
+        $this->removeBackgroundFileIfPresent($userId);
+
+        $file = $request->file('image');
+        $fileName = $userId . '_' . time() . '.' . $file->extension();
+        $file->move($dir, $fileName);
+
+        $user = User::find($userId);
+        $cfg  = self::loadForUser($user);
+        $cfg['background']['type']      = 'image';
+        $cfg['background']['image_url'] = '/assets/img/background-img/' . $fileName;
+        $user->theme_customization = json_encode($cfg, JSON_UNESCAPED_SLASHES);
+        $user->save();
+
+        return response()->json(['ok' => true, 'image_url' => $cfg['background']['image_url']]);
+    }
+
+    /**
+     * Remove the user's uploaded background. Deletes the file on disk
+     * and clears background.image_url in the JSON blob. Type is reset
+     * to 'solid' so the page falls through to the solid color rather
+     * than showing a broken image URL.
+     */
+    public function removeBackgroundImage(Request $request)
+    {
+        $userId = Auth::id();
+        $this->removeBackgroundFileIfPresent($userId);
+
+        $user = User::find($userId);
+        if ($user->theme_customization) {
+            $cfg = self::loadForUser($user);
+            $cfg['background']['image_url'] = '';
+            if (($cfg['background']['type'] ?? '') === 'image') {
+                $cfg['background']['type'] = 'solid';
+            }
+            $user->theme_customization = json_encode($cfg, JSON_UNESCAPED_SLASHES);
+            $user->save();
+        }
+
+        return response()->json(['ok' => true]);
+    }
+
+    /**
+     * Delete any existing background file(s) for this user. Same
+     * scandir-directly pattern the avatar cleanup uses so a stale
+     * reference never spins us into an infinite loop.
+     */
+    private function removeBackgroundFileIfPresent($userId): void
+    {
+        $dir = base_path('assets/img/background-img');
+        if (!is_dir($dir)) return;
+        $prefix = $userId . '_';
+        foreach (scandir($dir) ?: [] as $entry) {
+            if ($entry === '.' || $entry === '..') continue;
+            if (strpos($entry, $prefix) !== 0) continue;
+            $full = $dir . '/' . $entry;
+            if (is_file($full)) {
+                @unlink($full);
+            }
+        }
+    }
+
+    /**
      * Returns the user's saved customization merged against defaults so
      * consumers can always reach every key without null-checking. Used
      * by both the editor view and (public-side) by UserController.
@@ -131,7 +217,9 @@ class AppearanceController extends Controller
 
         $rules = [
             'colors.primary'     => $hex,
-            'colors.background'  => $hex,
+            // colors.background is no longer in the UI (the Background
+            // section's solid / gradient covers it); it stays in storage
+            // from defaults() so the image-type fallback color survives.
             'colors.text'        => $hex,
             'colors.button_text' => $hex,
 
@@ -140,14 +228,17 @@ class AppearanceController extends Controller
             'background.gradient_start'     => ['nullable', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
             'background.gradient_end'       => ['nullable', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
             'background.gradient_direction' => ['nullable', 'in:to bottom,to right,to bottom right'],
-            'background.image_url'          => ['nullable', 'string', 'max:2048', 'regex:/^(https?:\/\/.+)?$/i'],
+            // Accept http(s) URLs (legacy / external) or local paths
+            // starting with '/assets/' (uploaded backgrounds). Empty
+            // clears the field.
+            'background.image_url'          => ['nullable', 'string', 'max:2048', 'regex:#^(|https?://.+|/assets/img/background-img/.+)$#i'],
 
             'typography.font' => ['nullable', 'string', 'in:' . implode(',', array_merge([''], self::GOOGLE_FONTS))],
 
             'buttons.shape' => ['required', 'in:pill,rounded,square'],
             'buttons.style' => ['required', 'in:filled,outline,soft'],
 
-            'avatar.shape' => ['required', 'in:circle,rounded_square'],
+            'avatar.shape' => ['required', 'in:circle,rounded_square,off'],
         ];
 
         $validated = $request->validate($rules);

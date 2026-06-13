@@ -960,15 +960,58 @@ class UserController extends Controller
     //Delete profile picture
     public function delProfilePicture()
     {
-        $userId = Auth::user()->id;
-
-        // Delete the user's current avatar if it exists
-        while (findAvatar($userId) !== "error.error") {
-            $avatarName = findAvatar($userId);
-            unlink(base_path($avatarName));
-        }
-
+        $this->removeAvatarFileIfPresent(Auth::id());
         return back();
+    }
+
+    /**
+     * Unlink the user's current avatar file(s) if they exist on disk.
+     * findAvatar() consults a 1-hour directory cache, so a stale
+     * reference to an already-missing file would otherwise have spun
+     * the previous while-loop forever (only saved by unlink throwing
+     * ErrorException). Iterate on *actual disk contents* instead.
+     */
+    private function removeAvatarFileIfPresent($userId): void
+    {
+        $dir = base_path('assets/img');
+        if (!is_dir($dir)) return;
+        $prefix = $userId . '_';
+        foreach (scandir($dir) ?: [] as $entry) {
+            if ($entry === '.' || $entry === '..') continue;
+            // Match files like "1_1776830642.jpg" for this user id.
+            if (strpos($entry, $prefix) !== 0) continue;
+            $full = $dir . '/' . $entry;
+            if (is_file($full)) {
+                @unlink($full);
+            }
+        }
+    }
+
+    /**
+     * Standalone avatar upload — dedicated endpoint so the
+     * Appearance editor's photo form doesn't have to carry name /
+     * handle / description just to avoid clobbering them in
+     * editPage(). Replaces any existing avatar.
+     */
+    public function editProfilePicture(Request $request)
+    {
+        $request->validate([
+            'image' => ['required', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2048'],
+        ], [
+            'image.image' => __('messages.The selected file must be an image'),
+            'image.mimes' => __('messages.The image must be') . ' JPEG, JPG, PNG, webP.',
+            'image.max'   => __('messages.The image size should not exceed 2MB'),
+        ]);
+
+        $userId = Auth::id();
+        $profilePhoto = $request->file('image');
+
+        $this->removeAvatarFileIfPresent($userId);
+
+        $fileName = $userId . '_' . time() . '.' . $profilePhoto->extension();
+        $profilePhoto->move(base_path('assets/img'), $fileName);
+
+        return back()->with('success', 'Profile photo updated.');
     }
 
     //Export user links

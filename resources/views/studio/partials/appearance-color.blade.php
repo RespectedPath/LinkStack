@@ -4,7 +4,9 @@
     appearance.js. Optional $presets array renders quick-click tiles.
 
     Required: $id, $name, $label, $value
-    Optional: $help, $presets (array of hex strings)
+    Optional: $help, $presets, $form (HTML form= id to associate when
+              this input sits outside the form's DOM tree — used by
+              the Appearance editor's tabbed layout)
 --}}
 <div class="appearance-color-field mb-3">
     <label for="{{ $id }}-hex" class="form-label d-flex justify-content-between align-items-center mb-1">
@@ -18,8 +20,8 @@
         @endif
     </label>
     <div class="input-group">
-        <input type="color" class="form-control form-control-color appearance-color-swatch" id="{{ $id }}" data-pair="{{ $id }}-hex" value="{{ $value }}">
-        <input type="text" class="form-control appearance-color-hex" id="{{ $id }}-hex" name="{{ $name }}" value="{{ $value }}" pattern="^#[0-9a-fA-F]{6}$" maxlength="7" data-pair="{{ $id }}" placeholder="#000000">
+        <input type="color" class="form-control form-control-color appearance-color-swatch" id="{{ $id }}" data-pair="{{ $id }}-hex" value="{{ $value }}" @if(!empty($form ?? null)) form="{{ $form }}" @endif>
+        <input type="text" class="form-control appearance-color-hex" id="{{ $id }}-hex" name="{{ $name }}" value="{{ $value }}" pattern="^#[0-9a-fA-F]{6}$" maxlength="7" data-pair="{{ $id }}" placeholder="#000000" @if(!empty($form ?? null)) form="{{ $form }}" @endif>
     </div>
     @if(!empty($help ?? null))
         <small class="text-muted">{{ $help }}</small>

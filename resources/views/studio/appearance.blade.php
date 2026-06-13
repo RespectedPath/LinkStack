@@ -29,130 +29,222 @@
             <div class="appearance-layout">
 
               {{-- ===== Settings panel ===== --}}
-              <form id="appearance-form" class="appearance-form" action="{{ route('saveAppearance') }}" method="post">
-                @csrf
+              {{-- Wrapper: holds the tab nav + tab panes + the main save form.
+                   Inputs in tab panes other than "profile" use form="appearance-form"
+                   so they post with the main save even though they sit outside
+                   the form's DOM subtree. The profile tab contains its own
+                   independent multipart form for the photo upload. --}}
+              <div class="appearance-form" id="appearance-wrap">
 
-                {{-- Colors --}}
-                <fieldset class="appearance-section">
-                  <legend>Colors</legend>
+                <ul class="nav nav-pills appearance-tabs mb-3" role="tablist">
+                  <li class="nav-item" role="presentation"><button class="nav-link active" type="button" data-bs-toggle="pill" data-bs-target="#t-profile"    role="tab">Profile</button></li>
+                  <li class="nav-item" role="presentation"><button class="nav-link"        type="button" data-bs-toggle="pill" data-bs-target="#t-colors"     role="tab">Colors</button></li>
+                  <li class="nav-item" role="presentation"><button class="nav-link"        type="button" data-bs-toggle="pill" data-bs-target="#t-background" role="tab">Background</button></li>
+                  <li class="nav-item" role="presentation"><button class="nav-link"        type="button" data-bs-toggle="pill" data-bs-target="#t-type"       role="tab">Type</button></li>
+                  <li class="nav-item" role="presentation"><button class="nav-link"        type="button" data-bs-toggle="pill" data-bs-target="#t-buttons"    role="tab">Buttons</button></li>
+                </ul>
 
-                  @include('studio.partials.appearance-color', ['id' => 'c-primary',     'name' => 'colors[primary]',     'label' => 'Primary',       'help' => 'Button fill and accent elements',            'value' => $saved['colors']['primary']])
-                  @include('studio.partials.appearance-color', ['id' => 'c-background', 'name' => 'colors[background]',  'label' => 'Background',    'help' => 'Page background when no image is set',       'value' => $saved['colors']['background']])
-                  @include('studio.partials.appearance-color', ['id' => 'c-text',       'name' => 'colors[text]',        'label' => 'Text',          'help' => 'Primary text on the page',                   'value' => $saved['colors']['text'],        'presets' => ['#111111', '#ffffff']])
-                  @include('studio.partials.appearance-color', ['id' => 'c-btn-text',   'name' => 'colors[button_text]', 'label' => 'Button text',   'help' => 'Text on link buttons',                        'value' => $saved['colors']['button_text']])
-                </fieldset>
+                <div class="tab-content">
 
-                {{-- Background --}}
-                <fieldset class="appearance-section">
-                  <legend>Background</legend>
+                  {{-- ===== Profile tab: own multipart form ===== --}}
+                  <div class="tab-pane fade show active" id="t-profile" role="tabpanel">
+                    <form class="appearance-section appearance-photo" action="{{ route('editProfilePicture') }}" method="post" enctype="multipart/form-data" id="appearance-photo-form">
+                      @csrf
+                      <legend>Profile photo</legend>
+                      <div class="appearance-photo-row">
+                        <div class="appearance-photo-stage" id="photo-stage" aria-label="Profile photo preview — drag the image to reposition" style="display:none">
+                          <img id="photo-stage-image" class="appearance-photo-stage-image" alt="Selected photo preview" draggable="false">
+                        </div>
+                        <div class="appearance-photo-controls">
+                          <div class="input-group">
+                            <input type="file" id="photo-file" name="image" class="form-control" accept="image/jpeg,image/jpg,image/png,image/webp" required>
+                            <button type="submit" class="btn btn-primary" id="photo-upload-btn">
+                              <i class="bi bi-upload"></i> Upload
+                            </button>
+                          </div>
 
-                  <div class="mb-3">
-                    <label class="form-label d-block">Background type</label>
-                    @foreach([['solid','Solid color'],['gradient','Gradient'],['image','Image URL']] as [$val, $lab])
-                      <div class="form-check form-check-inline">
-                        <input class="form-check-input appearance-bg-type" type="radio" name="background[type]" id="bgt-{{ $val }}" value="{{ $val }}" @if($saved['background']['type'] === $val) checked @endif>
-                        <label class="form-check-label" for="bgt-{{ $val }}">{{ $lab }}</label>
+                          <div id="photo-edit-controls" class="mt-2" style="display:none">
+                            <label for="photo-zoom" class="small mb-1 d-block">
+                              Zoom
+                              <input type="range" id="photo-zoom" min="100" max="300" value="100" step="1" class="form-range">
+                            </label>
+                            <button type="button" id="photo-reset-btn" class="btn btn-sm btn-outline-secondary">
+                              <i class="bi bi-arrow-counterclockwise"></i> Recenter
+                            </button>
+                          </div>
+
+                          <small class="text-muted d-block mt-2">
+                            Pick a photo, then drag inside the circle to reposition. JPG, PNG, or WebP &mdash; up to 2&nbsp;MB.
+                          </small>
+                          @if(file_exists(base_path(findAvatar(Auth::id()))))
+                            <a href="{{ route('delProfilePicture') }}" class="small text-danger mt-1 d-inline-block" onclick="return confirm('Delete your profile photo?');">
+                              <i class="bi bi-trash"></i> Remove current photo
+                            </a>
+                          @endif
+                        </div>
                       </div>
-                    @endforeach
+                    </form>
+
+                    {{-- Photo shape picker — same subject as the photo
+                         upload above, so it lives in this tab. Its
+                         inputs use form="appearance-form" so they post
+                         with the main save (not the photo upload). --}}
+                    <fieldset class="appearance-section">
+                      <legend>Photo shape</legend>
+                      <div class="appearance-swatch-group" role="radiogroup">
+                        @foreach([['circle','Circle'],['rounded_square','Rounded square'],['off','Hidden']] as [$val, $lab])
+                          <label class="appearance-swatch" data-swatch="avatar-{{ $val }}">
+                            <input type="radio" name="avatar[shape]" value="{{ $val }}" form="appearance-form" @if($saved['avatar']['shape'] === $val) checked @endif>
+                            <span class="appearance-swatch-preview appearance-swatch-avatar appearance-swatch-avatar-{{ $val }}"></span>
+                            <span class="appearance-swatch-name">{{ $lab }}</span>
+                          </label>
+                        @endforeach
+                      </div>
+                    </fieldset>
                   </div>
 
-                  <div class="appearance-bg-panel" data-bg-panel="solid" @if($saved['background']['type'] !== 'solid') style="display:none" @endif>
-                    @include('studio.partials.appearance-color', ['id' => 'bg-solid', 'name' => 'background[solid]', 'label' => 'Solid color', 'help' => null, 'value' => $saved['background']['solid']])
+                  {{-- ===== Colors tab ===== --}}
+                  <div class="tab-pane fade" id="t-colors" role="tabpanel">
+                    <fieldset class="appearance-section">
+                      <legend>Colors</legend>
+                      @include('studio.partials.appearance-color', ['id' => 'c-text', 'name' => 'colors[text]', 'label' => 'Text', 'help' => 'Primary text on the page', 'value' => $saved['colors']['text'], 'presets' => ['#111111', '#ffffff'], 'form' => 'appearance-form'])
+                    </fieldset>
                   </div>
 
-                  <div class="appearance-bg-panel" data-bg-panel="gradient" @if($saved['background']['type'] !== 'gradient') style="display:none" @endif>
-                    <div class="row g-2">
-                      <div class="col-md-6">
-                        @include('studio.partials.appearance-color', ['id' => 'bg-grad-start', 'name' => 'background[gradient_start]', 'label' => 'Gradient start', 'help' => null, 'value' => $saved['background']['gradient_start']])
+                  {{-- ===== Background tab ===== --}}
+                  <div class="tab-pane fade" id="t-background" role="tabpanel">
+                    <fieldset class="appearance-section">
+                      <legend>Background</legend>
+
+                      <div class="mb-3">
+                        <label class="form-label d-block">Background type</label>
+                        @foreach([['solid','Solid color'],['gradient','Gradient'],['image','Image']] as [$val, $lab])
+                          <div class="form-check form-check-inline">
+                            <input class="form-check-input appearance-bg-type" type="radio" name="background[type]" id="bgt-{{ $val }}" value="{{ $val }}" form="appearance-form" @if($saved['background']['type'] === $val) checked @endif>
+                            <label class="form-check-label" for="bgt-{{ $val }}">{{ $lab }}</label>
+                          </div>
+                        @endforeach
                       </div>
-                      <div class="col-md-6">
-                        @include('studio.partials.appearance-color', ['id' => 'bg-grad-end',   'name' => 'background[gradient_end]',   'label' => 'Gradient end',   'help' => null, 'value' => $saved['background']['gradient_end']])
+
+                      <div class="appearance-bg-panel" data-bg-panel="solid" @if($saved['background']['type'] !== 'solid') style="display:none" @endif>
+                        @include('studio.partials.appearance-color', ['id' => 'bg-solid', 'name' => 'background[solid]', 'label' => 'Solid color', 'help' => null, 'value' => $saved['background']['solid'], 'form' => 'appearance-form'])
                       </div>
-                    </div>
-                    <div class="mt-2">
-                      <label class="form-label">Direction</label>
-                      <select class="form-select" name="background[gradient_direction]">
-                        @foreach([['to bottom','Top to bottom'],['to right','Left to right'],['to bottom right','Diagonal']] as [$val, $lab])
-                          <option value="{{ $val }}" @if($saved['background']['gradient_direction'] === $val) selected @endif>{{ $lab }}</option>
+
+                      <div class="appearance-bg-panel" data-bg-panel="gradient" @if($saved['background']['type'] !== 'gradient') style="display:none" @endif>
+                        <div class="row g-2">
+                          <div class="col-md-6">
+                            @include('studio.partials.appearance-color', ['id' => 'bg-grad-start', 'name' => 'background[gradient_start]', 'label' => 'Gradient start', 'help' => null, 'value' => $saved['background']['gradient_start'], 'form' => 'appearance-form'])
+                          </div>
+                          <div class="col-md-6">
+                            @include('studio.partials.appearance-color', ['id' => 'bg-grad-end',   'name' => 'background[gradient_end]',   'label' => 'Gradient end',   'help' => null, 'value' => $saved['background']['gradient_end'], 'form' => 'appearance-form'])
+                          </div>
+                        </div>
+                        <div class="mt-2">
+                          <label class="form-label">Direction</label>
+                          <select class="form-select" name="background[gradient_direction]" form="appearance-form">
+                            @foreach([['to bottom','Top to bottom'],['to right','Left to right'],['to bottom right','Diagonal']] as [$val, $lab])
+                              <option value="{{ $val }}" @if($saved['background']['gradient_direction'] === $val) selected @endif>{{ $lab }}</option>
+                            @endforeach
+                          </select>
+                        </div>
+                      </div>
+
+                      <div class="appearance-bg-panel" data-bg-panel="image" @if($saved['background']['type'] !== 'image') style="display:none" @endif>
+                        <input type="hidden" name="background[image_url]" id="bg-image-url-hidden" value="{{ $saved['background']['image_url'] }}" form="appearance-form">
+
+                        @if(!empty($saved['background']['image_url']))
+                          <div class="appearance-bg-current mb-2" id="bg-current-wrap">
+                            <img src="{{ $saved['background']['image_url'] }}" alt="Current background" class="appearance-bg-thumb">
+                            <button type="button" id="bg-remove-btn" class="btn btn-sm btn-outline-danger">
+                              <i class="bi bi-trash"></i> Remove
+                            </button>
+                          </div>
+                        @endif
+
+                        <label for="bg-file" class="form-label">Upload background image</label>
+                        <div class="input-group">
+                          <input type="file" id="bg-file" class="form-control" accept="image/jpeg,image/jpg,image/png,image/webp">
+                          <button type="button" id="bg-upload-btn" class="btn btn-primary">
+                            <i class="bi bi-upload"></i> Upload
+                          </button>
+                        </div>
+                        <small class="text-muted d-block mt-1">Auto-resized to 1920&nbsp;px max in your browser before upload. JPG, PNG, or WebP.</small>
+                        <div id="bg-upload-status" class="small mt-2"></div>
+                      </div>
+                    </fieldset>
+                  </div>
+
+                  {{-- ===== Typography tab ===== --}}
+                  <div class="tab-pane fade" id="t-type" role="tabpanel">
+                    <fieldset class="appearance-section">
+                      <legend>Typography</legend>
+                      <label for="font-select" class="form-label">Font</label>
+                      <select id="font-select" class="form-select" name="typography[font]" form="appearance-form">
+                        <option value="" @if(empty($saved['typography']['font'])) selected @endif>Theme default</option>
+                        @foreach($fonts as $f)
+                          <option value="{{ $f }}" style="font-family: '{{ $f }}', sans-serif" @if($saved['typography']['font'] === $f) selected @endif>{{ $f }}</option>
                         @endforeach
                       </select>
-                    </div>
+                      <small class="text-muted">Only the selected font is loaded from Google Fonts.</small>
+                    </fieldset>
                   </div>
 
-                  <div class="appearance-bg-panel" data-bg-panel="image" @if($saved['background']['type'] !== 'image') style="display:none" @endif>
-                    <label for="bg-image-url" class="form-label">Image URL</label>
-                    <input type="url" id="bg-image-url" name="background[image_url]" class="form-control" value="{{ $saved['background']['image_url'] }}" maxlength="2048" placeholder="https://example.com/bg.jpg">
-                    <small class="text-muted">Paste a direct link to a hosted image. No file upload.</small>
+                  {{-- ===== Buttons tab ===== --}}
+                  <div class="tab-pane fade" id="t-buttons" role="tabpanel">
+                    <fieldset class="appearance-section">
+                      <legend>Buttons</legend>
+
+                      <label class="form-label d-block">Shape</label>
+                      <div class="appearance-swatch-group" role="radiogroup">
+                        @foreach(['pill','rounded','square'] as $shape)
+                          <label class="appearance-swatch" data-swatch="shape-{{ $shape }}">
+                            <input type="radio" name="buttons[shape]" value="{{ $shape }}" form="appearance-form" @if($saved['buttons']['shape'] === $shape) checked @endif>
+                            <span class="appearance-swatch-preview appearance-swatch-btn appearance-swatch-btn-{{ $shape }}">Button</span>
+                            <span class="appearance-swatch-name">{{ ucfirst($shape) }}</span>
+                          </label>
+                        @endforeach
+                      </div>
+
+                      <label class="form-label d-block mt-3">Style</label>
+                      <div class="appearance-swatch-group" role="radiogroup">
+                        @foreach(['filled','outline','soft'] as $style)
+                          <label class="appearance-swatch" data-swatch="style-{{ $style }}">
+                            <input type="radio" name="buttons[style]" value="{{ $style }}" form="appearance-form" @if($saved['buttons']['style'] === $style) checked @endif>
+                            <span class="appearance-swatch-preview appearance-swatch-btn-style-{{ $style }}">Button</span>
+                            <span class="appearance-swatch-name">{{ ucfirst($style) }}</span>
+                          </label>
+                        @endforeach
+                      </div>
+
+                      <div class="mt-3">
+                        @include('studio.partials.appearance-color', ['id' => 'c-primary',  'name' => 'colors[primary]',     'label' => 'Button color',      'help' => 'Fill (filled style) or border/text (outline, soft)', 'value' => $saved['colors']['primary'], 'form' => 'appearance-form'])
+                        @include('studio.partials.appearance-color', ['id' => 'c-btn-text', 'name' => 'colors[button_text]', 'label' => 'Button text color', 'help' => 'Text on filled buttons',                              'value' => $saved['colors']['button_text'], 'form' => 'appearance-form'])
+                      </div>
+                    </fieldset>
                   </div>
-                </fieldset>
 
-                {{-- Typography --}}
-                <fieldset class="appearance-section">
-                  <legend>Typography</legend>
-                  <label for="font-select" class="form-label">Font</label>
-                  <select id="font-select" class="form-select" name="typography[font]">
-                    <option value="" @if(empty($saved['typography']['font'])) selected @endif>Theme default</option>
-                    @foreach($fonts as $f)
-                      <option value="{{ $f }}" style="font-family: '{{ $f }}', sans-serif" @if($saved['typography']['font'] === $f) selected @endif>{{ $f }}</option>
-                    @endforeach
-                  </select>
-                  <small class="text-muted">Only the selected font is loaded from Google Fonts.</small>
-                </fieldset>
+                </div> {{-- /.tab-content --}}
 
-                {{-- Buttons --}}
-                <fieldset class="appearance-section">
-                  <legend>Buttons</legend>
-
-                  <label class="form-label d-block">Shape</label>
-                  <div class="appearance-swatch-group" role="radiogroup">
-                    @foreach(['pill','rounded','square'] as $shape)
-                      <label class="appearance-swatch" data-swatch="shape-{{ $shape }}">
-                        <input type="radio" name="buttons[shape]" value="{{ $shape }}" @if($saved['buttons']['shape'] === $shape) checked @endif>
-                        <span class="appearance-swatch-preview appearance-swatch-btn appearance-swatch-btn-{{ $shape }}">Button</span>
-                        <span class="appearance-swatch-name">{{ ucfirst($shape) }}</span>
-                      </label>
-                    @endforeach
+                {{-- Main save form — nearly empty; inputs across tabs post
+                     to it via their form="appearance-form" attribute. The
+                     Save button lives here so it's always visible below
+                     whichever tab the user is on. --}}
+                <form id="appearance-form" action="{{ route('saveAppearance') }}" method="post" class="appearance-save-form">
+                  @csrf
+                  <div class="appearance-actions">
+                    <button type="submit" class="btn btn-primary">
+                      <i class="bi bi-save"></i> Save appearance
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" id="appearance-reset-btn">
+                      <i class="bi bi-arrow-counterclockwise"></i> Reset to defaults
+                    </button>
                   </div>
+                </form>
 
-                  <label class="form-label d-block mt-3">Style</label>
-                  <div class="appearance-swatch-group" role="radiogroup">
-                    @foreach(['filled','outline','soft'] as $style)
-                      <label class="appearance-swatch" data-swatch="style-{{ $style }}">
-                        <input type="radio" name="buttons[style]" value="{{ $style }}" @if($saved['buttons']['style'] === $style) checked @endif>
-                        <span class="appearance-swatch-preview appearance-swatch-btn-style-{{ $style }}">Button</span>
-                        <span class="appearance-swatch-name">{{ ucfirst($style) }}</span>
-                      </label>
-                    @endforeach
-                  </div>
-                </fieldset>
-
-                {{-- Avatar --}}
-                <fieldset class="appearance-section">
-                  <legend>Avatar</legend>
-                  <div class="appearance-swatch-group" role="radiogroup">
-                    @foreach([['circle','Circle'],['rounded_square','Rounded square']] as [$val, $lab])
-                      <label class="appearance-swatch" data-swatch="avatar-{{ $val }}">
-                        <input type="radio" name="avatar[shape]" value="{{ $val }}" @if($saved['avatar']['shape'] === $val) checked @endif>
-                        <span class="appearance-swatch-preview appearance-swatch-avatar appearance-swatch-avatar-{{ $val }}"></span>
-                        <span class="appearance-swatch-name">{{ $lab }}</span>
-                      </label>
-                    @endforeach
-                  </div>
-                </fieldset>
-
-                <div class="appearance-actions">
-                  <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-save"></i> Save appearance
-                  </button>
-                  <button type="button" class="btn btn-outline-secondary" id="appearance-reset-btn">
-                    <i class="bi bi-arrow-counterclockwise"></i> Reset to defaults
-                  </button>
-                </div>
-              </form>
-
-              <form id="appearance-reset-form" action="{{ route('resetAppearance') }}" method="post" style="display:none">
-                @csrf
-              </form>
+                <form id="appearance-reset-form" action="{{ route('resetAppearance') }}" method="post" style="display:none">
+                  @csrf
+                </form>
+              </div> {{-- /#appearance-wrap --}}
 
               {{-- ===== Live preview ===== --}}
               <aside class="appearance-preview">
