@@ -15,3 +15,5 @@
 <label for='list_id' class='form-label'>Audience List ID</label>
 <input type='text' name='list_id' value='{{ $list_id ?? '' }}' class='form-control' maxlength="50" required autocomplete="off" pattern="[a-zA-Z0-9]+" />
 <span class='small text-muted'>Mailchimp &rarr; Audience &rarr; Settings &rarr; "Audience name and defaults" &rarr; Audience ID.</span>
+
+@include('studio.partials.block-collapsed-toggle')

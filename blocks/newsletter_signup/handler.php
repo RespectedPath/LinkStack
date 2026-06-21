@@ -33,10 +33,12 @@ function handleLinkType($request, $linkType) {
     ];
 
     $linkData = [
-        'title'   => strip_tags((string) $request->input('title')),
-        'link'    => strip_tags((string) $request->input('link')),
-        'api_key' => trim((string) $request->input('api_key')),
-        'list_id' => trim((string) $request->input('list_id')),
+        'title'     => strip_tags((string) $request->input('title')),
+        'link'      => strip_tags((string) $request->input('link')),
+        'api_key'   => trim((string) $request->input('api_key')),
+        'list_id'   => trim((string) $request->input('list_id')),
+        // Per-instance "Start collapsed" toggle — see block-collapsed-toggle partial.
+        'collapsed' => (bool) $request->input('collapsed'),
     ];
 
     return ['rules' => $rules, 'linkData' => $linkData];

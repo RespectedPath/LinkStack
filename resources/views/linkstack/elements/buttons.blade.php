@@ -1,8 +1,66 @@
 <?php use App\Models\UserData; ?>
 
-        @php 
-        $initial = 1; 
+        @php
+        $initial = 1;
+        // Only emit the accordion CSS when at least one link on this
+        // page is configured to start collapsed. Keeps the public
+        // page byte-for-byte unchanged when the feature is unused.
+        $hasCollapsedBlock = false;
+        foreach ($links as $__l) {
+            if (!empty($__l->collapsed) && !empty($__l->custom_html)) { $hasCollapsedBlock = true; break; }
+        }
         @endphp
+
+        @if($hasCollapsedBlock)
+        <style>
+            /* Collapsible custom_html blocks. <details>/<summary> native
+               element — no JS, browser auto-opens it when a URL fragment
+               points inside (which makes contact_form's withFragment()
+               redirect-after-error continue to work). */
+            .block-accordion {
+                margin: 12px auto;
+                width: 100%;
+                max-width: 520px;
+                border: 1px solid rgba(128, 128, 128, 0.25);
+                border-radius: 10px;
+                background: rgba(128, 128, 128, 0.04);
+                overflow: hidden;
+            }
+            .block-accordion-summary {
+                padding: 14px 18px;
+                cursor: pointer;
+                font-weight: 600;
+                list-style: none;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                user-select: none;
+            }
+            .block-accordion-summary::-webkit-details-marker { display: none; }
+            .block-accordion-summary::after {
+                content: '⌄';
+                font-size: 1.1rem;
+                line-height: 1;
+                opacity: 0.6;
+                transition: transform 0.2s ease;
+                transform-origin: center 45%;
+            }
+            .block-accordion[open] .block-accordion-summary::after {
+                transform: rotate(180deg);
+            }
+            .block-accordion[open] .block-accordion-summary {
+                border-bottom: 1px solid rgba(128, 128, 128, 0.18);
+            }
+            /* Hide each custom block's own heading when it's inside an
+               accordion — the summary text already shows the heading,
+               so showing it again inside would duplicate. */
+            .block-accordion .cf-heading,
+            .block-accordion .ns-heading,
+            .block-accordion .sp-heading {
+                display: none !important;
+            }
+        </style>
+        @endif
 
         @include('linkstack.modules.block-libraries', ['links' => $links])
 
@@ -12,7 +70,14 @@
             </div></div></div>
             @endif
                 @php setBlockAssetContext($link->type); @endphp
-                @include('blocks::' . $link->type . '.display', ['link' => $link, 'initial' => $initial++])
+                @if(!empty($link->collapsed))
+                    <details class="block-accordion" id="block-{{ $link->id }}">
+                        <summary class="block-accordion-summary">{{ $link->title ?: 'View more' }}</summary>
+                        @include('blocks::' . $link->type . '.display', ['link' => $link, 'initial' => $initial++])
+                    </details>
+                @else
+                    @include('blocks::' . $link->type . '.display', ['link' => $link, 'initial' => $initial++])
+                @endif
             @if(isset($link->ignore_container) && $link->ignore_container)
             <div class="container"><div class="row"><div class="column">
             @endif

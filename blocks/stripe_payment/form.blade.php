@@ -182,3 +182,5 @@
     })(0);
 })();
 </script>
+
+@include('studio.partials.block-collapsed-toggle')
