@@ -169,6 +169,8 @@ Restart the dev server if `.env` changed.
 
 **"Where does this run in production?"** &mdash; It doesn't, currently. The project is local-only for now &mdash; develop with `php artisan serve`, commit to GitHub for safekeeping, deploy somewhere later (any Docker host works: Fly.io, Hetzner, DigitalOcean App Platform, etc. &mdash; the upstream `linkstackorg/linkstack` image is the deployment target). The previous Railway deployment was retired.
 
+**"How do I remove the 'Powered by LinkStack' badge before launching?"** &mdash; Set `DISPLAY_CREDIT=false` in `.env`. The badge SVG (`assets/linkstack/images/powered-by-linkstack.svg`) and its link to `linkstack.org` live in `resources/views/linkstack/modules/footer.blade.php`. The companion `DISPLAY_FOOTER` toggle controls the Home / Terms / Privacy / Contact link row above it. License is AGPL-3.0 &mdash; source availability is required for network users, but visible UI attribution is not.
+
 **"My local `.env` has secrets but `.env` is in git?"** &mdash; LinkStack tracks a default `.env` template (with blank secret fields). Your local `.env` is `git update-index --assume-unchanged` so your Purelymail / Stripe / Mailchimp creds don't leak. See `git ls-files -v | grep '^[a-z]'` to list assume-unchanged files.
 
 ---
