@@ -85,6 +85,8 @@ function handleLinkType($request, $linkType)
         'product_description' => strip_tags((string) $request->input('product_description')),
         'success_url'         => trim((string) $request->input('success_url')),
         'cancel_url'          => trim((string) $request->input('cancel_url')),
+        // Per-instance "Start collapsed" toggle — see block-collapsed-toggle partial.
+        'collapsed'           => (bool) $request->input('collapsed'),
     ];
 
     if ($mode === 'fixed_price') {

@@ -28,9 +28,14 @@ function handleLinkType($request, $linkType) {
     ];
 
     $linkData = [
-        'title'   => strip_tags((string) $request->input('title')),
-        'link'    => strtolower(trim((string) $request->input('link'))),
-        'subject' => trim((string) $request->input('subject', '')),
+        'title'     => strip_tags((string) $request->input('title')),
+        'link'      => strtolower(trim((string) $request->input('link'))),
+        'subject'   => trim((string) $request->input('subject', '')),
+        // Per-instance "Start collapsed" toggle — set by the shared
+        // resources/views/studio/partials/block-collapsed-toggle.blade.php
+        // partial in form.blade.php. Wrapped in <details> by
+        // resources/views/linkstack/elements/buttons.blade.php.
+        'collapsed' => (bool) $request->input('collapsed'),
     ];
 
     return ['rules' => $rules, 'linkData' => $linkData];

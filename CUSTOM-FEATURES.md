@@ -127,6 +127,20 @@ the user's choosing until they turn it off. Links / blocks are preserved.
   - `resources/views/studio/partials/integration-redirect.blade.php` &mdash; profile card
 - **Route**: `POST /studio/profile/redirect`
 
+## Collapsible blocks
+
+Per-block-instance "Start collapsed" toggle for any `custom_html` block (contact form, Mailchimp, Stripe payment, Appearance editor's per-user customisation aside). Visitor sees the block's heading text as a clickable bar with a chevron; clicking expands the form/content. Native `<details>/<summary>` &mdash; no JS, accessible by default.
+
+- **Configure**: Studio &rarr; edit any contact / Mailchimp / Stripe payment block &rarr; bottom of the form &rarr; **Start collapsed** switch.
+- **Public page**: when set, the block renders as a `<details>` wrapper around the existing `display.blade.php` include. The block's own H3 heading is suppressed via CSS so the summary text and inner heading don't duplicate.
+- **Fragment auto-open**: browsers automatically open a `<details>` whose subtree contains the URL fragment, so the contact form's `back()->withFragment("contact-form-$id")` redirect after a validation error continues to work &mdash; the details opens and the error is visible.
+- **Storage**: `collapsed` boolean inside the existing `links.type_params` JSON. No schema change.
+- **Files**:
+  - `resources/views/studio/partials/block-collapsed-toggle.blade.php` &mdash; shared toggle partial
+  - `resources/views/linkstack/elements/buttons.blade.php` &mdash; wraps the custom_html include in `<details>` when `$link->collapsed` is set; conditionally emits the accordion CSS only when at least one collapsed block exists on the page
+  - Each block's `form.blade.php` &mdash; appends `@include('studio.partials.block-collapsed-toggle')`
+  - Each block's `handler.php` &mdash; adds `'collapsed' => (bool) $request->input('collapsed')` to `$linkData`
+
 ## Mail Minted integration points
 
 Mail Minted (the SaaS platform this fork serves) hits LinkStack through:
