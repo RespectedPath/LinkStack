@@ -58,7 +58,7 @@ Each LinkStack user can OAuth-connect their own Stripe account so
 payment blocks route funds to them.
 
 - **Configure** (user): Studio &rarr; *Account Settings* &rarr; **Integrations** &rarr; click **Connect Stripe** &rarr; walk through Stripe's authorization.
-- **Configure** (admin on Stripe side): enable **Standard OAuth** at <https://dashboard.stripe.com/test/settings/connect> and add `http://localhost:8000/stripe/connect/callback` (and the production equivalent) under Redirect URIs.
+- **Configure** (admin on Stripe side): enable **Standard OAuth** at <https://dashboard.stripe.com/test/settings/connect> and add `http://localhost:8000/stripe/connect/callback` under Redirect URIs (add whatever production host is in use too, once the app is deployed somewhere).
 - **Env vars**:
   - `STRIPE_SECRET` (`sk_test_…` / `sk_live_…`)
   - `STRIPE_CONNECT_CLIENT_ID` (`ca_…`)
@@ -167,7 +167,7 @@ Restart the dev server if `.env` changed.
 
 **"I want to test with a sandbox Stripe account."** &mdash; Dashboard &rarr; test mode toggle (top right). All Stripe env vars in this fork accept test (`sk_test_…`, `ca_test_…`, `whsec_…` from a test-mode webhook) or live keys &mdash; the code is agnostic.
 
-**"A push to GitHub triggers a Railway redeploy."** &mdash; Yes. If you want to iterate locally without touching production, work on a branch and don't `git push origin main` until you're ready.
+**"Where does this run in production?"** &mdash; It doesn't, currently. The project is local-only for now &mdash; develop with `php artisan serve`, commit to GitHub for safekeeping, deploy somewhere later (any Docker host works: Fly.io, Hetzner, DigitalOcean App Platform, etc. &mdash; the upstream `linkstackorg/linkstack` image is the deployment target). The previous Railway deployment was retired.
 
 **"My local `.env` has secrets but `.env` is in git?"** &mdash; LinkStack tracks a default `.env` template (with blank secret fields). Your local `.env` is `git update-index --assume-unchanged` so your Purelymail / Stripe / Mailchimp creds don't leak. See `git ls-files -v | grep '^[a-z]'` to list assume-unchanged files.
 
