@@ -28,10 +28,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        // Behind Railway / Cloudflare / any TLS-terminating reverse proxy,
-        // the container receives plain HTTP and Laravel generates http://
-        // asset URLs by default, which browsers block as mixed content.
-        // Force the URL scheme to match APP_URL when it's https.
+        // Behind a TLS-terminating reverse proxy (Cloudflare, nginx,
+        // any future PaaS), the container receives plain HTTP and
+        // Laravel generates http:// asset URLs by default, which the
+        // browser blocks as mixed content. Force the URL scheme to
+        // match APP_URL when it's https.
         if (str_starts_with((string) config('app.url'), 'https://')) {
             URL::forceScheme('https');
         }
