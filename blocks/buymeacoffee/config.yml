@@ -1,0 +1,6 @@
+id: 506
+typename: buymeacoffee
+title: Buy Me a Coffee
+description: Branded "Buy me a coffee" button that opens your BMC page.
+icon: "bi bi-cup-hot-fill"
+custom_html: true
