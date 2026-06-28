@@ -656,15 +656,23 @@ class UserController extends Controller
         $sharebtn = $request->sharebtn;
         $tablinks = $request->tablinks;
 
-        if(env('HOME_URL') !== '' && $pageName != $littlelink_name && $littlelink_name == env('HOME_URL')){
-            EnvEditor::editKey('HOME_URL', $pageName);
-        }
-    
-        User::where('id', $userId)->update([
-            'littlelink_name' => $pageName,
+        // Only touch littlelink_name (the handle) if the input was
+        // actually submitted. The Studio UI no longer exposes that
+        // field — handles are managed by Mail Minted provisioning and
+        // the admin panel. Skipping the update protects against an
+        // empty submit blanking the column to null.
+        $updates = [
             'littlelink_description' => $pageDescription,
-            'name' => $name
-        ]);
+            'name'                   => $name,
+        ];
+        if ($request->filled('littlelink_name')) {
+            $updates['littlelink_name'] = $pageName;
+            if(env('HOME_URL') !== '' && $pageName != $littlelink_name && $littlelink_name == env('HOME_URL')){
+                EnvEditor::editKey('HOME_URL', $pageName);
+            }
+        }
+
+        User::where('id', $userId)->update($updates);
     
         if ($request->hasFile('image')) {
 

@@ -211,19 +211,11 @@
                           </div>-->
                 
                     <div class="form-group col-lg-8">
-                        <?php
-                            $url = $_SERVER['REQUEST_URI'];
-                             if( strpos( $url, "no_page_name" ) == true ) echo '<span style="color:#FF0000; font-size:120%;">You do not have a Page URL</span>'; ?>
-                        <br>
-                        <label for="littlelink_name" class="form-label">{{__('messages.Page URL')}}</label>
-                        <div class="input-group mb-3 has-validation">
-                          <span class="input-group-text" id="basic-addon3">{{str_replace(['http://', 'https://'], '', url(''))}}/@</span>
-                          <input type="littlelink_name" class="form-control" id="littlelink_name" name="littlelink_name" aria-describedby="littlelink_name" value="{{ $page->littlelink_name ?? '' }}" :value="old('littlelink_name')" required autofocus >
-                        </div>
-                        <script>var exceptionvar = " value="{{ $page->littlelink_name }}";</script>
-                        @include('auth.url-validation')
-                
-                         <label style="margin-top:15px">{{__('messages.Display name')}}</label>
+                        {{-- Page URL (handle) is intentionally not user-editable here:
+                             it's tied to Mail Minted provisioning + the customer's
+                             shared URLs. Admin panel can still change it via
+                             /admin/edit-user/{id} for legitimate support cases. --}}
+                        <label style="margin-top:15px">{{__('messages.Display name')}}</label>
                         <div class="input-group">
                             {{-- <div class="input-group-prepend">
                                 <div class="input-group-text">{{__('messages.Name')}}</div>
