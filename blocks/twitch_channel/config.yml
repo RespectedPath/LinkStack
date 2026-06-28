@@ -1,0 +1,6 @@
+id: 505
+typename: twitch_channel
+title: Twitch channel
+description: Embed your Twitch channel — shows your live stream or the most recent broadcast.
+icon: "bi bi-twitch"
+custom_html: true
