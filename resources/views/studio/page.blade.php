@@ -226,8 +226,51 @@
                 
                     <div class="form-group col-lg-8">
                         <label>{{__('messages.Page Description')}}</label>
-                        <textarea class="form-control @if(env('ALLOW_USER_HTML') === true) ckeditor @endif" name="pageDescription" rows="3">{{ $page->littlelink_description ?? '' }}</textarea>
+                        <textarea class="form-control @if(env('ALLOW_USER_HTML') === true) ckeditor @endif" name="pageDescription" rows="3" maxlength="250">{{ $page->littlelink_description ?? '' }}</textarea>
+                        <small id="pageDescription-counter" class="text-muted d-block mt-1">0 / 250 characters</small>
                     </div>
+                    {{-- Constrain the rich-text editor to a sensible size for
+                         a 1-3 sentence bio. CKEditor ignores rows="3" and
+                         renders ~150px tall by default; pin it.
+
+                         CKEditor 5 also ships its own theme and ignores OS
+                         dark mode — by default it renders dark-grey text on
+                         white, which becomes unreadable when the surrounding
+                         dashboard is in dark mode. The prefers-color-scheme
+                         block below adapts the editor surface, toolbar, and
+                         button colours to match. WCAG contrast > 7:1 for
+                         text in both modes. --}}
+                    <style>
+                        .ck-editor__editable_inline {
+                            min-height: 80px !important;
+                            max-height: 200px;
+                            overflow-y: auto;
+                            background: #ffffff !important;
+                            color: #212529 !important;
+                        }
+                        @media (prefers-color-scheme: dark) {
+                            .ck.ck-editor__main > .ck-editor__editable,
+                            .ck-editor__editable_inline {
+                                background: #1f2329 !important;
+                                color: #e9ecef !important;
+                            }
+                            .ck.ck-toolbar {
+                                background: #14171a !important;
+                                border-color: #2a2e33 !important;
+                            }
+                            .ck.ck-toolbar .ck-button,
+                            .ck.ck-toolbar .ck-button .ck-icon {
+                                color: #e9ecef !important;
+                            }
+                            .ck.ck-toolbar .ck-button:hover,
+                            .ck.ck-toolbar .ck-button.ck-on {
+                                background: #2a2e33 !important;
+                            }
+                            .ck.ck-editor__main {
+                                border-color: #2a2e33 !important;
+                            }
+                        }
+                    </style>
                 
                     @if(auth()->user()->role == 'admin' || auth()->user()->role == 'vip')
                         <div class="form-group col-lg-8">
@@ -265,20 +308,16 @@
                 <script>
                   ClassicEditor
                       .create(document.querySelector('.ckeditor'), {
+                          // Minimal toolbar — only the formatting that
+                          // survives editPage's strip_tags allowlist
+                          // (<a><strong><i>). Anything else used to be
+                          // offered in the toolbar, formatted in preview,
+                          // then silently stripped on save.
                           toolbar: {
                               items: [
-                                  'exportPDF', 'exportWord', '|',
-                                  'findAndReplace', 'selectAll', '|',
-                                  'heading', '|',
-                                  'bold', 'italic', 'strikethrough', 'underline', 'code', 'subscript', 'superscript', 'removeFormat', '|',
-                                  'bulletedList', 'numberedList', 'todoList', '|',
-                                  'outdent', 'indent', '|',
+                                  'bold', 'italic', '|',
+                                  'link', '|',
                                   'undo', 'redo',
-                                  'fontSize', 'fontFamily', 'fontColor', 'fontBackgroundColor', 'highlight', '|',
-                                  'alignment', '|',
-                                  'link', 'blockQuote', '|',
-                                  'specialCharacters', 'horizontalLine', '|',
-                                  'textPartLanguage', '|',
                               ],
                               shouldNotGroupWhenFull: true
                           },
@@ -314,6 +353,23 @@
                                   }
                               }
                           }
+                      })
+                      .then(editor => {
+                          // Live character counter for the description.
+                          // Counts the plain-text content (HTML tags
+                          // excluded) and warns visually once 90% used.
+                          var counter = document.getElementById('pageDescription-counter');
+                          var limit = 250;
+                          var update = function () {
+                              var text = (editor.getData() || '').replace(/<[^>]*>/g, '');
+                              var len = text.length;
+                              if (counter) {
+                                  counter.textContent = len + ' / ' + limit + ' characters';
+                                  counter.className = 'd-block mt-1 ' + (len > limit * 0.9 ? 'text-danger' : 'text-muted');
+                              }
+                          };
+                          editor.model.document.on('change:data', update);
+                          update();
                       })
                       .catch(error => {
                           console.error(error);
