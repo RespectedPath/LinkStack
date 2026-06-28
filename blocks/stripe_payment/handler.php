@@ -60,8 +60,12 @@ function handleLinkType($request, $linkType)
         'mode'                => ['required', 'in:fixed_price,tip_jar'],
         'currency'            => ['required', 'string', 'size:3', 'regex:/^[a-zA-Z]{3}$/'],
         'product_description' => ['required', 'string', 'max:200'],
-        'success_url'         => ['required', 'url', 'max:500'],
-        'cancel_url'          => ['required', 'url', 'max:500'],
+        // success_url / cancel_url are no longer user-input; the form
+        // hides them and we auto-fill below. Validation is still
+        // present so a future "Advanced settings" UI can re-expose
+        // the fields without controller changes.
+        'success_url'         => ['nullable', 'url', 'max:500'],
+        'cancel_url'          => ['nullable', 'url', 'max:500'],
 
         // fixed_price: at minimum option 1 is required; 2 and 3 are optional.
         'option_1_label'  => ['required_if:mode,fixed_price', 'nullable', 'string', 'max:50'],
@@ -77,14 +81,24 @@ function handleLinkType($request, $linkType)
     ];
 
     // --- Build linkData ---
+    // Default redirect URLs to the page owner's own bio page when the
+    // form doesn't submit them (which is the normal path now that the
+    // UI no longer exposes the inputs). url() resolves against APP_URL,
+    // so this works in both local dev and any future hosted env.
+    $bioUrl = url('/@' . (\Illuminate\Support\Facades\Auth::user()->littlelink_name ?? ''));
+    $successUrl = trim((string) $request->input('success_url'));
+    $cancelUrl  = trim((string) $request->input('cancel_url'));
+    if ($successUrl === '') { $successUrl = $bioUrl; }
+    if ($cancelUrl  === '') { $cancelUrl  = $bioUrl; }
+
     $linkData = [
         'title'               => strip_tags((string) $request->input('title')),
         'link'                => strip_tags((string) $request->input('link')),
         'mode'                => $mode,
         'currency'            => $currency,
         'product_description' => strip_tags((string) $request->input('product_description')),
-        'success_url'         => trim((string) $request->input('success_url')),
-        'cancel_url'          => trim((string) $request->input('cancel_url')),
+        'success_url'         => $successUrl,
+        'cancel_url'          => $cancelUrl,
         // Per-instance "Start collapsed" toggle — see block-collapsed-toggle partial.
         'collapsed'           => (bool) $request->input('collapsed'),
     ];
