@@ -1,0 +1,6 @@
+id: 507
+typename: spotify
+title: Spotify
+description: Embed a Spotify track, album, playlist, artist, podcast show, or episode.
+icon: "bi bi-spotify"
+custom_html: true
