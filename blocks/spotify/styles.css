@@ -1,0 +1,37 @@
+/* Spotify block — Spotify's own player handles its rendering, so the
+   wrapper only sizes / positions the iframe. Height is set inline
+   per content type (track/episode: 152px, album/playlist/show/artist:
+   352px) in display.blade.php so the right player layout shows. */
+
+.spotify-block-wrapper {
+    width: 100%;
+    max-width: 520px;
+    margin: 16px auto;
+    box-sizing: border-box;
+    text-align: center;
+    font-family: inherit;
+    color: inherit;
+}
+
+.spotify-block-wrapper .sp-heading {
+    margin: 0 0 10px 0;
+    font-size: 1.15rem;
+    font-weight: 600;
+}
+
+.spotify-block-wrapper .sp-frame {
+    display: block;
+    width: 100%;
+    border: 0;
+    border-radius: 12px;
+    background: rgba(30, 215, 96, 0.08); /* faint Spotify green while iframe loads */
+}
+
+@media (max-width: 600px) {
+    .spotify-block-wrapper {
+        margin: 12px auto;
+    }
+    .spotify-block-wrapper .sp-heading {
+        font-size: 1.05rem;
+    }
+}
