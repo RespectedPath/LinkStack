@@ -634,6 +634,11 @@ class UserController extends Controller
                 'isunique:users,id,'.$userId,
             ],
             'name' => 'sometimes|max:255|string',
+            // pageDescription accepts up to 250 chars of source text;
+            // little_link_description is VARCHAR(255), and the 5-char
+            // budget covers the small HTML overhead from the trimmed
+            // CKEditor (a single <a> or <strong> wrapper).
+            'pageDescription' => 'sometimes|nullable|string|max:500',
             'image' => 'sometimes|image|mimes:jpeg,jpg,png,webp|max:2048', // Max file size: 2MB
         ], [
             'littlelink_name.unique' => __('messages.That handle has already been taken'),
