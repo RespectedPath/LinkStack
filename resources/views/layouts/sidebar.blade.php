@@ -66,6 +66,64 @@ $usrhandl = Auth::user()->littlelink_name;
 	  <link rel="stylesheet" href="{{ asset('assets/linkstack/css/animate.css') }}">
 	  <link rel="stylesheet" href="{{ asset('assets/external-dependencies/bootstrap-icons.css') }}">
 
+	  {{-- Dark-mode modal contrast fix. Bootstrap 4.3 doesn't ship
+	       any dark-mode awareness for its modal chrome (default
+	       background: #fff, default border/text: light-grey). The
+	       dashboard's dark theme makes the body text light-grey,
+	       which on a white modal becomes a ~3:1 contrast failure.
+	       Inverting the modal surface, header/footer borders, and
+	       close-button colour brings it to WCAG AAA at ~13:1. --}}
+	  <style>
+	    /* Force tall modals to scroll their body instead of growing
+	       past the viewport. BS4's .modal-dialog-scrollable alone is
+	       finicky — pinning an explicit max-height on .modal-body
+	       makes it bullet-proof. The 220px accounts for header,
+	       footer, and the dialog's top/bottom margins. */
+	    .modal-dialog-scrollable .modal-body {
+	      max-height: calc(100vh - 220px);
+	      overflow-y: auto;
+	    }
+	    @media (prefers-color-scheme: dark) {
+	      .modal-content {
+	        background-color: #1f2329 !important;
+	        color: #e9ecef !important;
+	        border: 1px solid #2a2e33 !important;
+	      }
+	      .modal-header,
+	      .modal-footer {
+	        border-color: #2a2e33 !important;
+	      }
+	      .modal-title {
+	        color: #e9ecef !important;
+	      }
+	      .modal-body,
+	      .modal-body label,
+	      .modal-body .form-label,
+	      .modal-body .text-muted,
+	      .modal-body small {
+	        color: #cfd3d8 !important;
+	      }
+	      .modal-body .form-control,
+	      .modal-body .form-select {
+	        background-color: #2a2e33;
+	        color: #e9ecef;
+	        border-color: #3a3f45;
+	      }
+	      .modal-body .form-control::placeholder {
+	        color: #7a8089;
+	      }
+	      .modal-body .input-group-text {
+	        background-color: #2a2e33;
+	        color: #cfd3d8;
+	        border-color: #3a3f45;
+	      }
+	      .modal-header .btn-close,
+	      .modal-header .close {
+	        filter: invert(1) grayscale(100%) brightness(2);
+	      }
+	    }
+	  </style>
+
   </head>
   <body class="  ">
     <!-- loader Start -->
@@ -130,18 +188,6 @@ $usrhandl = Auth::user()->littlelink_name;
                             <span class="item-name">{{__('messages.Dashboard')}}</span>
                         </a>
                     </li>
-                     <li class="nav-item">
-                        <a class="nav-link {{ Request::segment(2) == 'add-link' ? 'active' : ''}}" aria-current="page" href="{{ url('/studio/add-link') }}">
-                            <i class="icon">
-                                 <svg class="icon-20" width="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-									<path fill-rule="evenodd" clip-rule="evenodd" d="M7.33 2H16.66C20.06 2 22 3.92 22 7.33V16.67C22 20.06 20.07 22 16.67 22H7.33C3.92 22 2 20.06 2 16.67V7.33C2 3.92 3.92 2 7.33 2ZM12.82 12.83H15.66C16.12 12.82 16.49 12.45 16.49 11.99C16.49 11.53 16.12 11.16 15.66 11.16H12.82V8.34C12.82 7.88 12.45 7.51 11.99 7.51C11.53 7.51 11.16 7.88 11.16 8.34V11.16H8.33C8.11 11.16 7.9 11.25 7.74 11.4C7.59 11.56 7.5 11.769 7.5 11.99C7.5 12.45 7.87 12.82 8.33 12.83H11.16V15.66C11.16 16.12 11.53 16.49 11.99 16.49C12.45 16.49 12.82 16.12 12.82 15.66V12.83Z" fill="currentColor"></path>
-                                    <circle cx="18" cy="11.8999" r="1" fill="currentColor"></circle>
-                                </svg>
-                                                         
-                            </i>
-                            <span class="item-name">{{__('messages.Add Link')}}</span>
-                        </a>
-                    </li>
                     @if(auth()->user()->role == 'admin')
                     <li class="nav-item static-item">
                         <a class="nav-link static-item disabled" href="#" tabindex="-1">
@@ -204,6 +250,16 @@ $usrhandl = Auth::user()->littlelink_name;
 									<path fill-rule="evenodd" clip-rule="evenodd" d="M4.54 2H7.92C9.33 2 10.46 3.15 10.46 4.561V7.97C10.46 9.39 9.33 10.53 7.92 10.53H4.54C3.14 10.53 2 9.39 2 7.97V4.561C2 3.15 3.14 2 4.54 2ZM4.54 13.4697H7.92C9.33 13.4697 10.46 14.6107 10.46 16.0307V19.4397C10.46 20.8497 9.33 21.9997 7.92 21.9997H4.54C3.14 21.9997 2 20.8497 2 19.4397V16.0307C2 14.6107 3.14 13.4697 4.54 13.4697ZM19.4601 2H16.0801C14.6701 2 13.5401 3.15 13.5401 4.561V7.97C13.5401 9.39 14.6701 10.53 16.0801 10.53H19.4601C20.8601 10.53 22.0001 9.39 22.0001 7.97V4.561C22.0001 3.15 20.8601 2 19.4601 2ZM16.0801 13.4697H19.4601C20.8601 13.4697 22.0001 14.6107 22.0001 16.0307V19.4397C22.0001 20.8497 20.8601 21.9997 19.4601 21.9997H16.0801C14.6701 21.9997 13.5401 20.8497 13.5401 19.4397V16.0307C13.5401 14.6107 14.6701 13.4697 16.0801 13.4697Z" fill="currentColor"></path></svg> 
                             </i>
                             <span class="item-name">{{__('messages.Links')}}</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ Request::segment(2) == 'social-icons' ? 'active' : ''}}" href="{{ url('/studio/social-icons') }}">
+                            <i class="icon">
+                                <svg class="icon-20" width="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M18 8a3 3 0 1 0-2.83-4H15a3 3 0 0 0 .17 1H15l-6.45 3.73A3 3 0 0 0 6 8a3 3 0 0 0 0 6 3 3 0 0 0 2.55-1.27L15 16.51a3 3 0 1 0 .77-1.36L9.32 11.4a3 3 0 0 0 0-2.83l6.32-3.7A3 3 0 0 0 18 8z" fill="currentColor"/>
+                                </svg>
+                            </i>
+                            <span class="item-name">Social icons</span>
                         </a>
                     </li>
                     <li class="nav-item">
