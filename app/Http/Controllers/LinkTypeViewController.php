@@ -35,15 +35,33 @@ class LinkTypeViewController extends Controller
             }
         }
         if ($typename === 'predefined') {
+            // The `buttons` table ships two rows per brand (one for the
+            // "button" variant, one for the "icon" variant), with the
+            // same `name` and `alt`. The dropdown was rendering both,
+            // which is why every brand appeared twice ("Amazon Amazon").
+            // Dedupe by `name`, preferring the row whose id matches the
+            // user's already-saved button_id so the dropdown's "selected"
+            // option resolves to the correct row on edit.
             $buttons = Button::select()->orderBy('name', 'asc')->get();
+            $savedButtonId = ($linkId && isset($link)) ? $link->button_id : null;
+            $byName = [];
             foreach ($buttons as $btn) {
-                $data['buttons'][] = [
-                    'name' => $btn->name,
-                    'title' => $btn->alt,
-                    'exclude' => $btn->exclude,
-                    'selected' => ($linkId && isset($link) && $link->button_id == $btn->id),
-                ];
+                $isSelected = ($savedButtonId !== null && $savedButtonId == $btn->id);
+                if (!isset($byName[$btn->name])) {
+                    $byName[$btn->name] = [
+                        'name'     => $btn->name,
+                        'title'    => $btn->alt,
+                        'exclude'  => $btn->exclude,
+                        'selected' => $isSelected,
+                    ];
+                } elseif ($isSelected) {
+                    // The variant the user actually has stored is the
+                    // tie-breaker; replace the dedupe entry with this
+                    // one so the dropdown opens with the right pick.
+                    $byName[$btn->name]['selected'] = true;
+                }
             }
+            $data['buttons'] = array_values($byName);
             return view('components.pageitems.predefined-form', $data);
         }
     
