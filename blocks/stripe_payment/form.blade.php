@@ -127,15 +127,15 @@
 
 <label for='product_description' class='form-label'>Product description</label>
 <input type='text' name='product_description' value='{{ $product_description ?? '' }}' class='form-control' maxlength="200" required placeholder="One coffee for James" />
-<span class='small text-muted'>Shown to the customer on Stripe's checkout page</span><br>
+<span class='small text-muted'>Shown to the customer on Stripe's checkout page</span>
 
-<label for='success_url' class='form-label'>Success redirect URL</label>
-<input type='url' name='success_url' value='{{ $success_url ?? $defaultSuccessUrl }}' class='form-control' maxlength="500" required />
-<span class='small text-muted'>Where to send the customer after a successful payment</span><br>
-
-<label for='cancel_url' class='form-label'>Cancel redirect URL</label>
-<input type='url' name='cancel_url' value='{{ $cancel_url ?? $defaultCancelUrl }}' class='form-control' maxlength="500" required />
-<span class='small text-muted'>Where to send the customer if they cancel at checkout</span>
+{{-- Success / cancel URLs are intentionally NOT shown in the form.
+     The handler.php auto-fills both with the user's bio-page URL so
+     visitors always end up back where they started. If a future user
+     genuinely needs custom redirect URLs (e.g. a thank-you page),
+     wrap these two inputs in a <details>Advanced settings</details>
+     block — the storage shape and Stripe Checkout call already
+     support arbitrary URLs. --}}
 
 <script>
 (function () {
