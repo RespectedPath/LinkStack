@@ -153,6 +153,7 @@ Route::post('/studio/edit-link', [UserController::class, 'saveLink'])->name('add
 Route::get('/studio/edit-link/{id}', [UserController::class, 'AddUpdateLink'])->name('showLink')->middleware('link-id');
 Route::post('/studio/sort-link', [UserController::class, 'sortLinks'])->name('sortLinks');
 Route::get('/studio/links', [UserController::class, $LinkPage])->name($LinkPage);
+Route::get('/studio/social-icons', [UserController::class, 'showSocialIcons'])->name('showSocialIcons');
 Route::get('/studio/theme', [UserController::class, 'showTheme'])->name('showTheme');
 Route::post('/studio/theme', [UserController::class, 'editTheme'])->name('editTheme');
 Route::get('/deleteLink/{id}', [UserController::class, 'deleteLink'])->name('deleteLink')->middleware('link-id');

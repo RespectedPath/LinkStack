@@ -472,9 +472,24 @@ class UserController extends Controller
     {
         $userId = Auth::user()->id;
         $data['pagePage'] = 10;
-        
+
         $data['links'] = Link::select()->where('user_id', $userId)->orderBy('up_link', 'asc')->orderBy('order', 'asc')->paginate(99999);
         return view('studio/links', $data);
+    }
+
+    /**
+     * Social-icons page — the small brand badges (Facebook, Instagram,
+     * etc.) that render as a row near the top of the public bio page.
+     * Used to live as a section underneath the Links list; extracted to
+     * its own page because the discoverability was poor — owners didn't
+     * realize the section was hidden below their main link cards.
+     *
+     * The form posts to the existing `editIcons` route — no controller-
+     * side changes there; only the housing UI moved.
+     */
+    public function showSocialIcons()
+    {
+        return view('studio/social-icons');
     }
 
     //Delete link
@@ -1207,33 +1222,103 @@ class UserController extends Controller
     }
 
     //Edit/save page icons
+    /**
+     * Brand → URL-prefix map for the Social Icons page. When a user
+     * types just a handle ("jameskoch") into one of these brand
+     * inputs, we prepend the base URL on save. Brands NOT in this
+     * map keep the legacy "paste a full URL" behaviour — used for
+     * brands with non-standard identifier formats (Mastodon =
+     * federated, WhatsApp = phone, Discord = invite code, Bluesky =
+     * handle-is-a-domain).
+     */
+    private function iconBaseUrls(): array
+    {
+        return [
+            'facebook'  => 'https://facebook.com/',
+            'instagram' => 'https://instagram.com/',
+            'x-twitter' => 'https://x.com/',
+            'github'    => 'https://github.com/',
+            'twitch'    => 'https://twitch.tv/',
+            'linkedin'  => 'https://linkedin.com/in/',
+            'tiktok'    => 'https://tiktok.com/@',
+            'youtube'   => 'https://youtube.com/@',
+            'threads'   => 'https://threads.net/@',
+            'pinterest' => 'https://pinterest.com/',
+            'snapchat'  => 'https://snapchat.com/add/',
+            'reddit'    => 'https://reddit.com/user/',
+            'telegram'  => 'https://t.me/',
+            'behance'   => 'https://behance.net/',
+            'dribbble'  => 'https://dribbble.com/',
+        ];
+    }
+
+    /**
+     * Normalizes whatever the user typed into a Social Icons input
+     * to a full URL. Three input shapes accepted:
+     *   - empty                  → empty (no save)
+     *   - "https://…"            → save as-is (escape hatch for
+     *                              non-standard profile URLs)
+     *   - "jameskoch" / "@jameskoch" / "user/jameskoch" etc. → prepend
+     *                              the brand's base URL from iconBaseUrls()
+     * Brands not in the map and not starting with http(s):// pass
+     * through unchanged (legacy paste-anything behaviour).
+     */
+    private function normalizeIconUrl(string $platform, ?string $value): string
+    {
+        $value = trim((string) ($value ?? ''));
+        if ($value === '') {
+            return '';
+        }
+        if (preg_match('#^https?://#i', $value)) {
+            return $value;
+        }
+        // Strip a leading @ that users habitually add (TikTok, YouTube, …).
+        $value = ltrim($value, '@');
+        if ($value === '') {
+            return '';
+        }
+        $bases = $this->iconBaseUrls();
+        if (isset($bases[$platform])) {
+            return $bases[$platform] . $value;
+        }
+        return $value;
+    }
+
     public function editIcons(Request $request)
     {
         $inputKeys = array_keys($request->except('_token'));
 
+        // Validate length only at this stage — exturl can't apply since
+        // some inputs may now arrive as bare handles. Server-side
+        // normalization (normalizeIconUrl) converts to full URL before
+        // saving; the database stores only valid URLs as a result.
         $validationRules = [];
-
         foreach ($inputKeys as $platform) {
-            $validationRules[$platform] = 'nullable|exturl|max:255';
+            $validationRules[$platform] = 'nullable|string|max:255';
         }
-
         $request->validate($validationRules);
 
         foreach ($inputKeys as $platform) {
-            $link = $request->input($platform);
+            $link = $this->normalizeIconUrl($platform, $request->input($platform));
 
-            if (!empty($link)) {
+            if ($link !== '') {
                 $iconId = $this->searchIcon($platform);
-
                 if (!is_null($iconId)) {
                     $this->updateIcon($platform, $link);
                 } else {
                     $this->addIcon($platform, $link);
                 }
+            } else {
+                // Submitted blank for an existing icon → delete the
+                // row so the public page stops rendering it.
+                $iconId = $this->searchIcon($platform);
+                if (!is_null($iconId)) {
+                    Link::where('id', $iconId)->delete();
+                }
             }
         }
 
-        return redirect('studio/links#icons');
+        return redirect()->route('showSocialIcons')->with('success', 'Social icons updated.');
     }
 
     private function searchIcon($icon)
