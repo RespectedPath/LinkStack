@@ -7,134 +7,173 @@
 @endpush
 
 <div class="conatiner-fluid content-inner mt-n5 py-0">
-    <div class="row">   
-        
+    <div class="row">
      <div class="col-lg-12">
         <div class="card rounded">
             <div class="card-body">
                <div class="row">
-                   <div class="col-sm-12">  
-  
+                   <div class="col-sm-12">
+
                     @push('sidebar-stylesheets')
                     <script src="{{ asset('assets/js/jquery.min.js') }}"></script>
                     @endpush
-                    
-                    <section class='text-gray-400'>
-                    
-                        <h3 class="card-header"><i class="bi bi-journal-plus"> @if($LinkID !== 0) {{__('messages.Edit')}} @else {{__('messages.Add')}} @endif {{__('messages.Block')}}</i></h3>
-                    
-                        <div class='card-body'>
-                            <form action="{{ route('addLink') }}" method="post" id="my-form">
-                                @method('POST')
-                                @csrf
-                                <input type='hidden' name='linkid' value="{{ $LinkID }}" />
-                    
-                                <div class="form-group col-lg-8 flex justify-around">
-                                    <div class="btn-group shadow m-2">
-                                        <button type="button" id='btnLinkType' class="btn btn-primary rounded-pill" title='{{__('messages.Click to change link blocks')}}' data-toggle="modal" data-target="#SelectLinkType">{{__('messages.Select Block')}}
-                                            <span class="btn-inner">
-                                                <i class="bi bi-window-plus"></i>
-                                            </span>
-                                        </button>{{infoIcon(__('messages.Click for a list of available link blocks'))}}
-                                          
-                                        <input type='hidden' name='typename' value='{{$typename}}'>
-                    
-                                    </div>
-                                </div>
-                    
-                                <div id='link_params' class='col-lg-8'></div>
-                    
-                                <div class="d-flex align-items-center pt-4">
-                                    <a class="btn btn-danger me-3" href="{{ url('studio/links') }}">{{__('messages.Cancel')}}</a>
-                                    <button type="submit" class="btn btn-primary me-3">{{__('messages.Save')}}</button>
-                                    <button type="button" class="btn btn-soft-primary me-3" onclick="submitFormWithParam('add_more')">{{__('messages.Save and Add More')}}</button>
-                                    <script>
-                                        function submitFormWithParam(paramValue) {
-                                            // get the form element
-                                            var form = document.getElementById("my-form");
-                                            
-                                            // create a hidden input field with the parameter value
-                                            var paramField = document.createElement("input");
-                                            paramField.setAttribute("type", "hidden");
-                                            paramField.setAttribute("name", "param");
-                                            paramField.setAttribute("value", paramValue);
-                                            // append the hidden input field to the form
-                                            form.appendChild(paramField);
-                                            // submit the form
-                                            form.submit();
-                                        }
-                                        </script>
-                                </div>                                
-                    
-                            </form>
-                        </div>
-                    </section>
-                    <br><br>
 
-                    <!-- Modal -->
-                    <style>.modal-title{color:#000!important;}</style>
-                    <x-modal title="{{__('messages.Select Block')}}" id="SelectLinkType">
-                    
-                        <div class="d-flex flex-row  flex-wrap p-3">
-                            @foreach ($LinkTypes as $lt)
-                            @php 
-                            if(block_text_translation_check($lt['title'])) {$title = bt($lt['title']);} else {$title = __('messages.block.title.'.$lt['typename']);}
-                            $description = bt($lt['description']) ?? __('messages.block.description.'.$lt['typename']); 
-                            @endphp
-                            <a href="#" data-dismiss="modal" data-typeid="{{$lt['typename']}}" data-typename="{{$title}}" class="hvr-grow m-2 w-100 d-block doSelectLinkType">
-                                <div class="rounded mb-3 shadow-lg">
-                                    <div class="row g-0">
-                                        <div class="col-auto bg-light d-flex align-items-center justify-content-center p-3">
-                                            <i class="{{$lt['icon']}} text-primary h1 mb-0"></i>
-                                        </div>
-                                        <div class="col">
-                                            <div class="card-body">
-                                                <h5 class="card-title text-dark mb-0">{{$title}}</h5>
-                                                <p class="card-text text-muted">{{$description}}</p>
+                    @if($LinkID === 0)
+                        {{-- ====================================================
+                             ADD MODE: page is a grid of block-type tiles.
+                             Each tile opens a modal containing that block's
+                             form. A new block (separate row in the `links`
+                             table) is created each time the user saves —
+                             which is how multiple Mailchimp / contact form /
+                             Stripe payment blocks coexist on one page.
+                             ==================================================== --}}
+                        <section class='text-gray-400'>
+                            <h3 class="card-header"><i class="bi bi-journal-plus"></i> {{__('messages.Add')}} {{__('messages.Block')}}</h3>
+                            <div class='card-body'>
+                                <p class="text-muted mb-3">Choose what kind of block to add to your page. You can add as many of each type as you want &mdash; each one is independent.</p>
+
+                                <div id="blockTypeGrid" class="d-flex flex-row flex-wrap p-0">
+                                    @foreach ($LinkTypes as $lt)
+                                        @php
+                                            if (block_text_translation_check($lt['title'])) {
+                                                $title = bt($lt['title']);
+                                            } else {
+                                                $title = __('messages.block.title.' . $lt['typename']);
+                                            }
+                                            $description = bt($lt['description']) ?? __('messages.block.description.' . $lt['typename']);
+                                        @endphp
+                                        <a href="#" data-typeid="{{ $lt['typename'] }}" data-typename="{{ $title }}" class="hvr-grow m-2 w-100 d-block doSelectLinkType">
+                                            <div class="rounded mb-3 shadow-lg">
+                                                <div class="row g-0">
+                                                    <div class="col-auto bg-light d-flex align-items-center justify-content-center p-3">
+                                                        <i class="{{ $lt['icon'] }} text-primary h1 mb-0"></i>
+                                                    </div>
+                                                    <div class="col">
+                                                        <div class="card-body">
+                                                            <h5 class="card-title text-dark mb-0">{{ $title }}</h5>
+                                                            <p class="card-text text-muted">{{ $description }}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
+                                        </a>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </section>
+
+                        {{-- Modal: hosts the chosen block's form. The whole
+                             <form> wraps body+footer so the Save button
+                             actually submits. data-bs-dismiss uses BS5 syntax;
+                             page already loads BS5 via the sidebar layout. --}}
+                        <div class="modal fade" id="addBlockModal" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-scrollable modal-lg modal-dialog-centered">
+                                <div class="modal-content">
+                                    <form action="{{ route('addLink') }}" method="post" id="my-form">
+                                        @method('POST')
+                                        @csrf
+                                        <input type='hidden' name='linkid' value="0" />
+                                        <input type='hidden' name='typename' value='' />
+
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">
+                                                {{__('messages.Add')}}: <span id="selectedBlockName" class="text-primary">&mdash;</span>
+                                            </h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" data-dismiss="modal" aria-label="Close"></button>
                                         </div>
-                                    </div>
-                                </div>      
-                            </a>                     
-                            @endforeach
-                    
+                                        <div class="modal-body">
+                                            <div id="link_params"></div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-light" data-bs-dismiss="modal" data-dismiss="modal">{{__('messages.Cancel')}}</button>
+                                            <button type="button" class="btn btn-soft-primary" onclick="submitFormWithParam('add_more')">{{__('messages.Save and Add More')}}</button>
+                                            <button type="submit" class="btn btn-primary">{{__('messages.Save')}}</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
                         </div>
-                    
-                        <x-slot name="buttons">
-                            <button type="button" class="btn btn-gray" data-dismiss="modal">{{__('messages.Close')}}</button>
-                        </x-slot>
-                    
-                    </x-modal>
-  
+
+                    @else
+                        {{-- ====================================================
+                             EDIT MODE: render the chosen link's form on the
+                             page directly (no modal). Type is fixed for an
+                             existing row; the only thing the user does here
+                             is update the fields they care about and save.
+                             ==================================================== --}}
+                        <section class='text-gray-400'>
+                            <h3 class="card-header"><i class="bi bi-journal-plus"></i> {{__('messages.Edit')}} {{__('messages.Block')}}</h3>
+                            <div class='card-body'>
+                                <form action="{{ route('addLink') }}" method="post" id="my-form">
+                                    @method('POST')
+                                    @csrf
+                                    <input type='hidden' name='linkid' value="{{ $LinkID }}" />
+                                    <input type='hidden' name='typename' value='{{ $typename }}' />
+
+                                    <div id='link_params' class='col-lg-8'></div>
+
+                                    <div class="d-flex align-items-center pt-4">
+                                        <a class="btn btn-danger me-3" href="{{ url('studio/links') }}">{{__('messages.Cancel')}}</a>
+                                        <button type="submit" class="btn btn-primary me-3">{{__('messages.Save')}}</button>
+                                        <button type="button" class="btn btn-soft-primary me-3" onclick="submitFormWithParam('add_more')">{{__('messages.Save and Add More')}}</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </section>
+                    @endif
+
                    </div>
                </div>
             </div>
          </div>
         </div>
-        
       </div>
     </div>
+
+<script>
+function submitFormWithParam(paramValue) {
+    var form = document.getElementById("my-form");
+    var paramField = document.createElement("input");
+    paramField.setAttribute("type", "hidden");
+    paramField.setAttribute("name", "param");
+    paramField.setAttribute("value", paramValue);
+    form.appendChild(paramField);
+    form.submit();
+}
+</script>
 
 @endsection
 
 @push("sidebar-scripts")
 <script>
 $(function() {
-    LoadLinkTypeParams($("input[name='typename']").val() , $("input[name=linkid]").val());
+    var linkId      = $("input[name='linkid']").val();
+    var initialType = $("input[name='typename']").val();
 
-    $('.doSelectLinkType').on('click', function() {
-        $("input[name='typename']").val($(this).data('typeid'));
-        $("#btnLinkType").html($(this).data('typename'));
+    // Edit mode: load that block's fields immediately into the on-page form.
+    if (linkId && linkId !== "0" && initialType) {
+        LoadLinkTypeParams(initialType, linkId);
+        return;
+    }
 
-        LoadLinkTypeParams($(this).data('typeid'), $("input[name=linkid]").val());
-
-        $('#SelectLinkType').modal('hide');
+    // Add mode: tile-click loads that block's fields into the modal,
+    // then opens it. LinkStack ships Bootstrap 4.3.1 (assets/js/bootstrap.min.js),
+    // so the modal API is jQuery's `.modal('show')` — not BS5's
+    // bootstrap.Modal.getOrCreateInstance.
+    $('.doSelectLinkType').on('click', function(e) {
+        e.preventDefault();
+        var typeId   = $(this).data('typeid');
+        var typeName = $(this).data('typename');
+        $("input[name='typename']").val(typeId);
+        $("#selectedBlockName").text(typeName);
+        LoadLinkTypeParams(typeId, "0");
+        $('#addBlockModal').modal('show');
     });
 
-
-    function LoadLinkTypeParams($TypeId, $LinkId) {
+    function LoadLinkTypeParams(typeId, currentLinkId) {
         var baseURL = <?php echo "\"" . url('') . "\""; ?>;
-        $("#link_params").html('<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>').load(baseURL + `/studio/linkparamform_part/${$TypeId}/${$LinkId}`);
+        $("#link_params").html('<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>')
+                         .load(baseURL + '/studio/linkparamform_part/' + typeId + '/' + currentLinkId);
         setTimeout(function() { document.dispatchEvent(new Event('contentLoaded')); }, 300);
     }
 });
