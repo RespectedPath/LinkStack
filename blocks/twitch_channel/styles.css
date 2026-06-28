@@ -1,0 +1,45 @@
+/* Twitch channel block — responsive 16:9 player wrapper.
+   Mirrors the YouTube block's aspect-ratio approach so both video
+   embeds size identically in the bio column. */
+
+.twitch-block-wrapper {
+    width: 100%;
+    max-width: 520px;
+    margin: 16px auto;
+    box-sizing: border-box;
+    text-align: center;
+    font-family: inherit;
+    color: inherit;
+}
+
+.twitch-block-wrapper .tw-heading {
+    margin: 0 0 10px 0;
+    font-size: 1.15rem;
+    font-weight: 600;
+}
+
+.twitch-block-wrapper .tw-frame-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: rgba(100, 65, 165, 0.15); /* faint Twitch purple while loading */
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.twitch-block-wrapper .tw-frame {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+@media (max-width: 600px) {
+    .twitch-block-wrapper {
+        margin: 12px auto;
+    }
+    .twitch-block-wrapper .tw-heading {
+        font-size: 1.05rem;
+    }
+}
