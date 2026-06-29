@@ -292,8 +292,30 @@ class UserController extends Controller
             }
         }   
 
-        // Step 4: Handle Custom Parameters
-        // (Same as before)
+        // Step 4: Per-block Appearance fields (Pass 3).
+        //
+        // The unified /studio/edit-link page posts these fields with
+        // the rest of the form. `custom_css` and `custom_icon` map to
+        // real columns on `links`; the `appearance_*` keys describe
+        // the visual-control state (which preset, which colors,
+        // which shape, etc.) and auto-route to the `type_params`
+        // JSON column via array_diff_key further down — but only if
+        // we put them in $linkData here first, since $linkData was
+        // built above with an explicit hardcoded key list.
+        //
+        // We only merge if the field is *present* in the request
+        // (using has() rather than input()) so block types whose
+        // forms don't include these fields won't accidentally wipe
+        // existing values to empty on save.
+        foreach (['custom_css', 'custom_icon',
+                  'appearance_preset', 'appearance_primary',
+                  'appearance_text', 'appearance_secondary',
+                  'appearance_shape', 'appearance_hover',
+                  'appearance_advanced'] as $appKey) {
+            if ($request->has($appKey)) {
+                $linkData[$appKey] = $request->input($appKey);
+            }
+        }
 
         // Step 5: User and Button Information
         $userId = Auth::user()->id;
@@ -605,20 +627,16 @@ class UserController extends Controller
     }
 
     //Show custom CSS + custom icon
+    //
+    // The legacy /studio/button-editor/{id} page has been retired as
+    // part of Pass 3 (UI-PASS-PLAN.md). Per-block CSS + icon editing
+    // now lives inside the Appearance section of /studio/edit-link/{id}.
+    // Redirect any bookmark / muscle-memory traffic to the new home
+    // (the `appearance` URL fragment scrolls the new section into
+    // view on arrival).
     public function showCSS(request $request)
     {
-        $linkId = $request->id;
-
-        $link = Link::where('id', $linkId)->value('link');
-        $title = Link::where('id', $linkId)->value('title');
-        $order = Link::where('id', $linkId)->value('order');
-        $custom_css = Link::where('id', $linkId)->value('custom_css');
-        $custom_icon = Link::where('id', $linkId)->value('custom_icon');
-        $buttonId = Link::where('id', $linkId)->value('button_id');
-
-        $buttons = Button::select('id', 'name')->get();
-
-        return view('studio/button-editor', ['custom_icon' => $custom_icon, 'custom_css' => $custom_css, 'buttonId' => $buttonId, 'buttons' => $buttons, 'link' => $link, 'title' => $title, 'order' => $order, 'id' => $linkId]);
+        return redirect('/studio/edit-link/' . $request->id . '#appearance');
     }
 
     //Save edit link

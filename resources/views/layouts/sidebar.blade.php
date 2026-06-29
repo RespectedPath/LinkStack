@@ -791,7 +791,14 @@ $usrhandl = Auth::user()->littlelink_name;
         document.addEventListener("DOMContentLoaded", function() {
             var downloadButton = document.getElementById("downloadButton");
             var generatedImage = document.getElementById("generatedImage");
-        
+
+            // Bail if this page doesn't have the QR-code download widget
+            // (most pages). Without this guard the missing element
+            // throws "Cannot read properties of null" on every studio
+            // page that ISN'T /studio/qr — which cascades and can
+            // mask other JS that runs later in the load order.
+            if (!downloadButton || !generatedImage) return;
+
             downloadButton.addEventListener("click", function() {
                 var format = generatedImage.getAttribute("data-format") || "png";
                 var downloadLink = document.createElement("a");
