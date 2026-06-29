@@ -247,18 +247,7 @@
               </div> {{-- /#appearance-wrap --}}
 
               {{-- ===== Live preview ===== --}}
-              <aside class="appearance-preview">
-                <div class="appearance-preview-header">
-                  <h6 class="mb-0"><i class="bi bi-phone"></i> Live preview</h6>
-                  <a href="{{ url('/@' . ($user->littlelink_name ?? '')) }}" target="_blank" class="small">Open in new tab &rarr;</a>
-                </div>
-                <div class="appearance-preview-frame">
-                  <iframe id="appearance-preview-iframe"
-                          src="{{ url('/@' . ($user->littlelink_name ?? '')) . '?preview=1' }}"
-                          title="Live preview of your public page"
-                          loading="lazy"></iframe>
-                </div>
-              </aside>
+              @include('studio.partials.live-preview', ['littleLinkName' => $user->littlelink_name ?? null])
 
             </div>
           </section>
