@@ -35,4 +35,11 @@
   src: url("{{ themeAsset('inter-700.woff2') }}") format('woff2');
 }
 
+body {
+  background-image: linear-gradient(180deg, rgba(8,8,10,0.55), rgba(8,8,10,0.78)), url("{{ themeAsset('travel-creator.webp') }}");
+  background-size: cover, cover;
+  background-position: center, center;
+  background-attachment: fixed, fixed;
+  background-repeat: no-repeat, no-repeat;
+}
 </style>
