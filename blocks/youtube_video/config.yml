@@ -4,3 +4,4 @@ title: YouTube video
 description: Embed a YouTube video that plays inline on your bio page.
 icon: "bi bi-youtube"
 custom_html: true
+category: media

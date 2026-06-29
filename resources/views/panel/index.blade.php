@@ -21,7 +21,7 @@
                                     <div class='p-2 h6'><i class="bi bi-eye"></i> {{__('messages.Link Clicks:')}} <span class='text-primary'>{{ $clicks }}</span></div>
                                 </div>
                                 <div class='text-center w-100'>
-                                    <a href="{{ url('/studio/links') }}">{{__('messages.View/Edit Links')}}</a>
+                                    <a href="{{ url('/studio/links') }}">View/Edit Blocks</a>
                     
                                 </div>
                                 <div class='w-100 text-left'>

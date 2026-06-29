@@ -32,31 +32,52 @@
                             <div class='card-body'>
                                 <p class="text-muted mb-3">Choose what kind of block to add to your page. You can add as many of each type as you want &mdash; each one is independent.</p>
 
-                                <div id="blockTypeGrid" class="d-flex flex-row flex-wrap p-0">
-                                    @foreach ($LinkTypes as $lt)
+                                <div id="blockTypeGrid" class="p-0">
+                                    @php
+                                        // Group the LinkTypes by their category, then render
+                                        // groups in the canonical CATEGORY_ORDER. Each group
+                                        // is a section with a small muted header and the
+                                        // tile grid underneath. Within a group the existing
+                                        // sort order from LinkType::get() is preserved.
+                                        $grouped = collect($LinkTypes)->groupBy('category');
+                                    @endphp
+
+                                    @foreach (\App\Models\LinkType::CATEGORY_ORDER as $catKey)
                                         @php
-                                            if (block_text_translation_check($lt['title'])) {
-                                                $title = bt($lt['title']);
-                                            } else {
-                                                $title = __('messages.block.title.' . $lt['typename']);
-                                            }
-                                            $description = bt($lt['description']) ?? __('messages.block.description.' . $lt['typename']);
+                                            $tiles = $grouped->get($catKey, collect());
                                         @endphp
-                                        <a href="#" data-typeid="{{ $lt['typename'] }}" data-typename="{{ $title }}" class="hvr-grow m-2 w-100 d-block doSelectLinkType">
-                                            <div class="rounded mb-3 shadow-lg">
-                                                <div class="row g-0">
-                                                    <div class="col-auto bg-light d-flex align-items-center justify-content-center p-3">
-                                                        <i class="{{ $lt['icon'] }} text-primary h1 mb-0"></i>
-                                                    </div>
-                                                    <div class="col">
-                                                        <div class="card-body">
-                                                            <h5 class="card-title text-dark mb-0">{{ $title }}</h5>
-                                                            <p class="card-text text-muted">{{ $description }}</p>
+                                        @if($tiles->isNotEmpty())
+                                            <h6 class="text-muted text-uppercase mt-3 mb-2 small" style="letter-spacing:0.04em;">
+                                                {{ \App\Models\LinkType::CATEGORY_LABELS[$catKey] ?? ucfirst($catKey) }}
+                                            </h6>
+                                            <div class="d-flex flex-row flex-wrap mb-2">
+                                                @foreach ($tiles as $lt)
+                                                    @php
+                                                        if (block_text_translation_check($lt['title'])) {
+                                                            $title = bt($lt['title']);
+                                                        } else {
+                                                            $title = __('messages.block.title.' . $lt['typename']);
+                                                        }
+                                                        $description = bt($lt['description']) ?? __('messages.block.description.' . $lt['typename']);
+                                                    @endphp
+                                                    <a href="#" data-typeid="{{ $lt['typename'] }}" data-typename="{{ $title }}" class="hvr-grow m-2 w-100 d-block doSelectLinkType">
+                                                        <div class="rounded mb-3 shadow-lg">
+                                                            <div class="row g-0">
+                                                                <div class="col-auto bg-light d-flex align-items-center justify-content-center p-3">
+                                                                    <i class="{{ $lt['icon'] }} text-primary h1 mb-0"></i>
+                                                                </div>
+                                                                <div class="col">
+                                                                    <div class="card-body">
+                                                                        <h5 class="card-title text-dark mb-0">{{ $title }}</h5>
+                                                                        <p class="card-text text-muted">{{ $description }}</p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                </div>
+                                                    </a>
+                                                @endforeach
                                             </div>
-                                        </a>
+                                        @endif
                                     @endforeach
                                 </div>
                             </div>

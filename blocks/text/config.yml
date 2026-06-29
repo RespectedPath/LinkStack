@@ -2,3 +2,4 @@ id: 5
 typename: text
 icon: "bi bi-fonts"
 custom_html: true
+category: essentials

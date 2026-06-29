@@ -57,8 +57,8 @@ if(Auth::user()->id == $userinfo->id){
             <li id="linkstack-admin-bar-defaultsp">
               <a class="ab-item" href="{{url('/studio/add-link')}}">
                 <svg style="top:3px;position:relative;fill:white;" xmlns="http://www.w3.org/2000/svg" height="16" width="14" viewBox="0 0 448 512"><path d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32V224H48c-17.7 0-32 14.3-32 32s14.3 32 32 32H192V432c0 17.7 14.3 32 32 32s32-14.3 32-32V288H400c17.7 0 32-14.3 32-32s-14.3-32-32-32H256V80z"/></svg>
-                <span class="ab-label">{{__('messages.Add Link')}}</span>
-                <span class="screen-reader-text">{{__('messages.Add Link')}}</span></a>
+                <span class="ab-label">Add Block</span>
+                <span class="screen-reader-text">Add Block</span></a>
             </li>
             @endif
             @if(auth()->user()->role == 'admin')

@@ -4,3 +4,4 @@ title: Contact form
 description: Let visitors send you a message from your public page.
 icon: "bi bi-chat-left-text-fill"
 custom_html: true
+category: forms
