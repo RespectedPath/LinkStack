@@ -26,17 +26,22 @@ if (isset($_COOKIE['LinkCount'])) {
 
 @push('sidebar-stylesheets')
 <script src="{{ asset('assets/external-dependencies/fontawesome.js') }}" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="{{ asset('assets/css/appearance.css') }}">
 <style>
-@media only screen and (max-width: 1500px) {
-  .pre-side{display:none!important;}
-  .pre-left{width:100%!important;}
-  .pre-bottom{display:block!important;}
+/* My Blocks-specific tweaks on top of .appearance-layout: keep the
+   block-list column from getting wider than the form column on
+   Appearance (so the two pages feel matched), and align the page-
+   header row with flexbox so the "Add new Block" button doesn't
+   float out of its column. */
+.mm-blocks-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 1rem;
 }
-
-@media only screen and (min-width: 1501px) {
-  .pre-left{width:70%!important;}
-  .pre-right{width:30%!important;}
-  .pre-bottom{display:none!important;}
+.mm-blocks-header > .btn {
+    flex-shrink: 0;
 }
 </style>
 <style>.delete{position:relative; color:transparent; background-color:tomato; border-radius:5px; left:5px; padding:5px 12px; cursor: pointer;}.delete:hover{color:transparent;background-color:#f13d1d;}html,body{max-width:100%;overflow-x:hidden;}</style>
@@ -56,10 +61,11 @@ if (isset($_COOKIE['LinkCount'])) {
                   <div class="row">
                       <div class="col-sm-12">  
     
-                        <div class="row">
-                            <section class='pre-left text-gray-400'>
-                                <h3 class="card-header mb-3"><i class="bi bi-link-45deg">My Blocks</i>
-                                        <a class="btn btn-primary float-end" href="{{ url('/studio/add-link') }}"> Add new Block</a>
+                        <div class="appearance-layout">
+                            <section class='text-gray-400'>
+                                <h3 class="card-header mm-blocks-header">
+                                    <span><i class="bi bi-link-45deg"></i> My Blocks</span>
+                                    <a class="btn btn-primary" href="{{ url('/studio/add-link') }}">Add new Block</a>
                                 </h3>
                             
                                 <div>
@@ -207,21 +213,16 @@ if (isset($_COOKIE['LinkCount'])) {
                                 </div>
                             </section>
                             
-                            <section class='pre-right text-gray-400 pre-side'>
-                                <h3 class="card-header"><i class="bi bi-window-fullscreen" style="font-style:normal!important;"> {{__('messages.Preview')}}</i></h3>
-                                    <div class='card-body p-0 p-md-3'>
-                                            <center><iframe allowtransparency="true" id="frPreview1" style=" border-radius:0.25rem !important; background: #FFFFFF; min-height:600px; height:100%; max-width:500px !important;" class='w-100' src="{{ url('') }}/@<?= Auth::user()->littlelink_name ?>">{{__('messages.No compatible browser')}}</iframe></center>
-                                     </div>
+                            <section class='text-gray-400'>
+                                {{-- Live preview partial — same polished phone-frame
+                                     preview used on the Appearance editor. The
+                                     partial brings its own responsive behavior, and
+                                     the parent .appearance-layout grid (shared with
+                                     /studio/appearance) gives it the same 1fr 1fr
+                                     split between blocks list and preview. --}}
+                                @include('studio.partials.live-preview')
                             </section>
                             </div>
-                            
-                            <br>
-                            <section style="margin-left:-15px;margin-right:-15px;" style="width:100%!important;" class='pre-bottom text-gray-400 pre-side'>
-                                <h3 class="card-header"><i class="bi bi-window-fullscreen" style="font-style:normal!important;">{{__('messages.Preview')}}</i></h3>
-                                    <div class='card-body p-0 p-md-3'>
-                                            <center><iframe allowtransparency="true" id="frPreview2" style=" border-radius:0.25rem !important; background: #FFFFFF; min-height:600px; height:100%; width:100% !important;" class='w-100' src="{{ url('') }}/@<?= Auth::user()->littlelink_name ?>">{{__('messages.No compatible browser')}}</iframe></center>
-                                     </div>
-                            </section><br>
                             
     
                       </div>
