@@ -1,0 +1,23 @@
+/* Hairstylist — share button + toast. Generated. */
+
+.share-icon { padding: 0 5px 3.5px 0; vertical-align: middle; width: 20px; height: 20px; color: var(--svg-color); }
+.sharediv { position: relative; top: 30px; right: 30px; padding-bottom: 40px; }
+.toastdiv { display: flex; align-items: center; justify-content: center; }
+.toastbox {
+  width: 280px; padding: 10px; background-color: rgba(0,0,0,0.78); color: #fff;
+  border-radius: 8px; position: fixed; top: 105%; transition: transform .3s linear;
+  z-index: 2; text-align: center;
+}
+.toastbox.toast-tox--active { transform: translateY(-150px); }
+
+.sharebutton, sharebutton {
+  display: inline-block; text-decoration: none; height: 48px; width: 48px;
+  text-align: center; vertical-align: middle; font-size: 18px; font-weight: 700;
+  line-height: 48px; letter-spacing: 0.1px;
+  border: solid var(--accent-color) 2px; border-radius: 999px;
+  cursor: pointer; color: var(--button-text-color); background-color: var(--button-background-color);
+  transition: transform .18s ease;
+}
+.sharebutton:hover { transform: translateY(-2px); }
+.sharebutton-mb { display: none; }
+.sharebutton-img { position: relative; left: 3px; margin-left: auto; margin-right: auto; }
