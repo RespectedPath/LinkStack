@@ -193,66 +193,82 @@ $(window).on('load', function() {
                 <form action="{{ route('editTheme') }}" enctype="multipart/form-data" method="post">
                 @csrf
                 <select id="theme-select" style="display:none;" name="theme" data-base-url="{{ url('') }}/@<?= Auth::user()->littlelink_name ?>"><option value="default" selected></option></select>
-                <div class="row">
-                    <div class="col-lg-3">
-                        <div class="card shadow-lg @if($page->theme == "" or $page->theme == "default") bg-primary @else bg-soft-primary @endif">
-                           <div class="card-body pb-0">
-                            <a style="cursor:pointer;" onclick="setTheme('default')">
-                              <div class="d-flex justify-content-between">
-                                 <div>
-                                    <img draggable="false" class="bd-placeholder-img bd-placeholder-img-lg img-fluid" src="{{url('assets/linkstack/images/themes/default.png')}}">
-                                 </div>
-                              </div>
-                              <div class="text-center">
-                                 <h2 class="m-3 @if($page->theme == "" or $page->theme == "default") text-white @else text-gray @endif"">Default Theme</h2>
-                                 <div>
-                                 </div>
-                              </div>
-                            </a>
-                           </div>
+                <?php
+                    // Collect themes grouped by category (parsed from each readme.md).
+                    $catOrder = ['Trade','Beauty','Wellness','Food','Creative','Professional','Lifestyle'];
+                    $grouped = [];
+                    if ($handle = opendir(base_path('themes'))) {
+                        while (false !== ($entry = readdir($handle))) {
+                            if ($entry === '.' || $entry === '..') continue;
+                            $readme = base_path('themes') . '/' . $entry . '/readme.md';
+                            if (!file_exists($readme)) continue;
+                            $text = file_get_contents($readme);
+                            $themeName = null; $themeCat = 'Other';
+                            if (preg_match('/Theme Name:\s*(.*)/', $text, $m))  $themeName = trim($m[1]);
+                            if (preg_match('/Theme Category:\s*(.*)/', $text, $mc)) $themeCat = trim($mc[1]);
+                            if (!$themeName) continue;
+                            $grouped[$themeCat][] = ['slug' => $entry, 'name' => $themeName];
+                        }
+                        closedir($handle);
+                    }
+                    $cats = array_keys($grouped);
+                    usort($cats, function($a, $b) use ($catOrder) {
+                        $ia = array_search($a, $catOrder); $ib = array_search($b, $catOrder);
+                        $ia = $ia === false ? 999 : $ia; $ib = $ib === false ? 999 : $ib;
+                        return $ia === $ib ? strcmp($a, $b) : $ia <=> $ib;
+                    });
+                    foreach ($grouped as &$arr) usort($arr, fn($x, $y) => strcmp($x['name'], $y['name']));
+                    unset($arr);
+                ?>
+
+                <div class="mb-4">
+                    <input type="text" id="theme-search" class="form-control form-control-lg" placeholder="Search by profession or category…" autocomplete="off">
+                    <p id="theme-noresults" class="text-muted mt-2" style="display:none;">No themes match your search.</p>
+                </div>
+
+                <div class="theme-cat-section" data-cat="basics">
+                    <h4 class="mb-3 mt-2">Basics</h4>
+                    <div class="row">
+                        <div class="col-lg-3 theme-card-wrap" data-name="default theme" data-cat="basics">
+                            <div class="card shadow-lg @if($page->theme == "" or $page->theme == "default") bg-primary @else bg-soft-primary @endif">
+                               <div class="card-body pb-0">
+                                <a style="cursor:pointer;" onclick="setTheme('default')">
+                                  <div class="d-flex justify-content-between"><div>
+                                     <img draggable="false" class="bd-placeholder-img bd-placeholder-img-lg img-fluid" src="{{url('assets/linkstack/images/themes/default.png')}}">
+                                  </div></div>
+                                  <div class="text-center">
+                                     <h2 class="m-3 @if($page->theme == "" or $page->theme == "default") text-white @else text-gray @endif">Default Theme</h2>
+                                  </div>
+                                </a>
+                               </div>
+                            </div>
                         </div>
                     </div>
-                                    <?php
-                                        if ($handle = opendir('themes')) {
-                                            while (false !== ($entry = readdir($handle))) {
-                                                if ($entry != "." && $entry != "..") {
-                                                    if(file_exists(base_path('themes') . '/' . $entry . '/readme.md')){
-                                                        $text = file_get_contents(base_path('themes') . '/' . $entry . '/readme.md');
-                                                        $pattern = '/Theme Name:.*/';
-                                                        preg_match($pattern, $text, $matches, PREG_OFFSET_CAPTURE);
-                                                        if(sizeof($matches) > 0) {
-                                                            $themeName = substr($matches[0][0],12);
-                                                        }
-                                                    }
-                                                    if(isset($themeName)){
-                                                        ?> 
-                                                        
-                                                        <div class="col-lg-3">
-                                                            <div class="card shadow-lg @if($page->theme == $entry) bg-primary @else bg-soft-primary @endif">
-                                                               <div class="card-body pb-0">
-                                                                <a style="cursor:pointer;" onclick="setTheme('{{$entry}}')">
-                                                                  <div class="d-flex justify-content-between">
-                                                                     <div>
-                                                                        <img draggable="false" class="bd-placeholder-img bd-placeholder-img-lg img-fluid" src="{{url('themes/'.$entry.'/preview.png')}}">
-                                                                     </div>
-                                                                  </div>
-                                                                  <div class="text-center">
-                                                                     <h2 class="m-3 @if($page->theme == $entry) text-white @else text-gray @endif">{{$themeName}}</h2>
-                                                                     <div>
-                                                                     </div>
-                                                                  </div>
-                                                                </a>
-                                                               </div>
-                                                            </div>
-                                                        </div>
+                </div>
 
-                                                        <?php
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    ?>
-                 </div>
+                @foreach($cats as $cat)
+                <div class="theme-cat-section" data-cat="{{ strtolower($cat) }}">
+                    <h4 class="mb-3 mt-4">{{ $cat }}</h4>
+                    <div class="row">
+                        @foreach($grouped[$cat] as $t)
+                        <div class="col-lg-3 theme-card-wrap" data-name="{{ strtolower($t['name']) }}" data-cat="{{ strtolower($cat) }}">
+                            <div class="card shadow-lg @if($page->theme == $t['slug']) bg-primary @else bg-soft-primary @endif">
+                               <div class="card-body pb-0">
+                                <a style="cursor:pointer;" onclick="setTheme('{{ $t['slug'] }}')">
+                                  <div class="d-flex justify-content-between"><div>
+                                     <img draggable="false" class="bd-placeholder-img bd-placeholder-img-lg img-fluid" src="{{url('themes/'.$t['slug'].'/preview.png')}}">
+                                  </div></div>
+                                  <div class="text-center">
+                                     <h2 class="m-3 @if($page->theme == $t['slug']) text-white @else text-gray @endif">{{ $t['name'] }}</h2>
+                                  </div>
+                                </a>
+                               </div>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+                @endforeach
                 </form>
 
             </div>
@@ -268,6 +284,27 @@ $(window).on('load', function() {
         selectElement.querySelector('option').value = themeName;
         selectElement.form.submit();
       }
+      (function () {
+        const input = document.getElementById('theme-search');
+        if (!input) return;
+        const noRes = document.getElementById('theme-noresults');
+        input.addEventListener('input', function () {
+          const q = this.value.trim().toLowerCase();
+          let anyVisible = false;
+          document.querySelectorAll('.theme-cat-section').forEach(function (sec) {
+            let secVisible = false;
+            sec.querySelectorAll('.theme-card-wrap').forEach(function (card) {
+              const hay = card.getAttribute('data-name') + ' ' + card.getAttribute('data-cat');
+              const show = q === '' || hay.indexOf(q) !== -1;
+              card.style.display = show ? '' : 'none';
+              if (show) secVisible = true;
+            });
+            sec.style.display = secVisible ? '' : 'none';
+            if (secVisible) anyVisible = true;
+          });
+          if (noRes) noRes.style.display = anyVisible ? 'none' : '';
+        });
+      })();
   </script>
 @endpush
 
