@@ -290,6 +290,9 @@
         if (!doc || !doc.head) return;
 
         var state = readFormState();
+        if (window.__mmDebugPreview) {
+            console.log('[Appearance preview] social_icons state:', state.social_icons);
+        }
 
         // Disable the server-rendered saved-state override so the
         // preview block is the single source of appearance rules.
