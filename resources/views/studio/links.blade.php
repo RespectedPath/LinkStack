@@ -107,7 +107,12 @@ if (isset($_COOKIE['LinkCount'])) {
                                                             <span class="bg-soft-secondary" style="border: 1px solid #d0d4d7 !important;border-radius:5px;width:25px!important;height:25px!important;"><img style="max-width:15px !important;" alt="button-icon" height="15" class="m-1 " src="{{ asset('\/assets/linkstack/icons\/') . $buttonName }}.svg "></span>
                                                             @endif
                             
-                                                            {{strip_tags($link->title,'')}}</span>
+                                                            @if($button->name == "space")
+                                                                Spacer ({{ (int) $link->title }} px)
+                                                            @else
+                                                                {{strip_tags($link->title,'')}}
+                                                            @endif
+                                                            </span>
                             
                                                         @if(!empty($link->link) and $button->name != "vcard")
                                                         <br>

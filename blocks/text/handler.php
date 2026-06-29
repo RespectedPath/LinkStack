@@ -27,10 +27,19 @@ function handleLinkType($request, $linkType) {
     // and ensuring all protocols in href attributes are safe.
     $sanitizedText = strip_tags_except_allowed_protocols($sanitizedText);
 
+    // Alignment is per-instance — defaults to center; constrained to
+    // the three valid values. Non-column linkData keys auto-route to
+    // the type_params JSON column via UserController::saveLink.
+    $alignment = (string) $request->input('alignment', 'center');
+    if (!in_array($alignment, ['left', 'center', 'right'], true)) {
+        $alignment = 'center';
+    }
+
     // Prepare the link data
     $linkData = [
-        'title' => $sanitizedText,
-        'button_id' => "93", // Assuming '93' is a predefined ID for a "text" button
+        'title'     => $sanitizedText,
+        'button_id' => "93", // predefined ID for a "text" button
+        'alignment' => $alignment,
     ];
 
     return ['rules' => $rules, 'linkData' => $linkData];
