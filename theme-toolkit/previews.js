@@ -52,8 +52,16 @@ function buttonBorder(t) {
   return `border:1px solid ${base};border-bottom:${b.border};`;
 }
 
+const SAMPLE_NAMES = {
+  plumber: 'Rivera Plumbing', hairstylist: 'Shear Studio', lawyer: 'Marsh & Co.',
+  bakery: 'The Corner Bakery', 'tattoo-artist': 'Nyx Tattoo', photographer: 'Aperture Studio',
+  restaurant: 'The Oak Table', 'coffee-shop': 'Daybreak Coffee', florist: 'Wildbloom',
+  'wedding-planner': 'Evergreen Events', 'travel-creator': 'Far & Away', spa: 'Stillwater Spa',
+  'yoga-instructor': 'Lotus Flow', musician: 'Echo & Oak', barber: 'The Cut Room',
+};
+
 function html(t) {
-  const onAccent = t.mode === 'dark' ? '#ffffff' : t.vars['--title-color'];
+  const demoName = SAMPLE_NAMES[t.slug] || t.name;
   const labels = ['Book an appointment', 'Our services', 'Reviews', 'Call or text us'];
   const btns = labels.map(l =>
     `<a class="button">${l}</a>`).join('');
@@ -72,7 +80,7 @@ p.tag{color:${t.vars['--description-color']};font-size:18px;margin-bottom:34px;}
 .soc{width:34px;height:34px;border-radius:50%;background:${t.vars['--description-color']};opacity:.55;}
 </style></head><body>
 <div class="av"></div>
-<h1>${t.name === 'Hairstylist' ? 'Shear Studio' : t.name === 'Plumber' ? 'Rivera Plumbing' : t.name === 'Lawyer' ? 'Marsh & Co.' : t.name === 'Bakery' ? 'The Corner Bakery' : 'Nyx Tattoo'}</h1>
+<h1>${demoName}</h1>
 <p class="tag">${t.category} · book online anytime</p>
 ${btns}
 <div class="socs">${icons}</div>
