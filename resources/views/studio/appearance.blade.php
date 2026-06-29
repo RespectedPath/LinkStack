@@ -341,6 +341,6 @@
 </div>
 
 <link rel="stylesheet" href="{{ asset('assets/css/appearance.css') }}">
-<script src="{{ asset('assets/js/appearance.js') }}"></script>
+<script src="{{ asset('assets/js/appearance.js') }}?v={{ filemtime(public_path('assets/js/appearance.js')) }}"></script>
 
 @endsection
