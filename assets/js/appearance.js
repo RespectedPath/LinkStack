@@ -56,6 +56,20 @@
         });
     });
 
+    // ---------- Social icons: custom color picker visibility ----------
+    // Shows the custom color picker only when the "Custom color"
+    // radio is active. Same pattern as the background-type panels.
+
+    var socialCustomWrap = document.getElementById('social-custom-color-wrap');
+    if (socialCustomWrap) {
+        wrap.querySelectorAll('input[name="social_icons[color]"]').forEach(function (radio) {
+            radio.addEventListener('change', function () {
+                if (!radio.checked) return;
+                socialCustomWrap.style.display = (radio.value === 'custom') ? '' : 'none';
+            });
+        });
+    }
+
     // ---------- Reset button → confirm + submit reset form ----------
 
     var resetBtn = document.getElementById('appearance-reset-btn');

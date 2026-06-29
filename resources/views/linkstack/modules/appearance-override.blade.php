@@ -146,5 +146,103 @@
             border-radius: {{ $avatarRadius }} !important;
         }
         @endif
+
+        {{-- ===== Social icons (Pass 4) ===== --}}
+        @php
+            $si = $ac['social_icons'];
+
+            // Size → glyph font-size + padding around it
+            $sizes = ['small' => 22, 'medium' => 30, 'large' => 38, 'xl' => 46];
+            $siSize = $sizes[$si['size']] ?? 30;
+
+            // Spacing → padding the .social-icon class uses
+            $spacings = ['tight' => 4, 'normal' => 10, 'loose' => 18];
+            $siGap = $spacings[$si['spacing']] ?? 10;
+
+            // Color resolution
+            $siColorMode = $si['color'];
+            $siCustom = $si['color_custom'] ?? '#111111';
+        @endphp
+
+        /* Sizing — applies to every variant of the color/bg modes. */
+        .social-icon {
+            font-size: {{ $siSize }}px !important;
+            padding: {{ max((int) round($siGap / 2), 2) }}px !important;
+            transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease, color 0.18s ease !important;
+        }
+        .social-icon-div {
+            gap: {{ $siGap }}px;
+            padding-bottom: 30px;
+        }
+        .social-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @if($si['background_style'] === 'circle' || $si['background_style'] === 'rounded')
+        /* Container chip — the icon sits in a tinted square / circle. */
+        .social-link {
+            background: rgba(128, 128, 128, 0.12);
+            border-radius: {{ $si['background_style'] === 'circle' ? '50%' : '12px' }};
+            padding: 6px;
+            width: {{ $siSize + 24 }}px;
+            height: {{ $siSize + 24 }}px;
+        }
+        @elseif($si['background_style'] === 'solid')
+        /* Solid filled-color circle — bg color = brand color, glyph
+           becomes white. Per-brand rules below override the background. */
+        .social-link {
+            background: #555;
+            color: #fff !important;
+            border-radius: 50%;
+            padding: 6px;
+            width: {{ $siSize + 24 }}px;
+            height: {{ $siSize + 24 }}px;
+        }
+        .social-link .social-icon {
+            color: #fff !important;
+        }
+        @endif
+
+        {{-- Color mode rules --}}
+        @if($siColorMode === 'custom')
+        .social-icon, .social-link .social-icon {
+            color: {{ $siCustom }} !important;
+        }
+        @endif
+
+        @if($siColorMode === 'brand' || $si['background_style'] === 'solid')
+        /* Per-brand color rules — drive the glyph color in Brand mode,
+           OR the background-color of the chip in Solid Circle mode. */
+        @foreach(\App\Http\Controllers\AppearanceController::BRAND_COLORS as $brand => $hex)
+            @if($siColorMode === 'brand' && $si['background_style'] !== 'solid')
+        .social-icon.fa-{{ $brand }} {
+            color: {{ $hex }} !important;
+        }
+            @endif
+            @if($si['background_style'] === 'solid')
+        .social-link:has(.social-icon.fa-{{ $brand }}) {
+            background: {{ $hex }} !important;
+        }
+            @endif
+        @endforeach
+        @endif
+
+        {{-- Hover effect --}}
+        @switch($si['hover'])
+            @case('lift')
+        .social-link:hover { transform: translateY(-3px); }
+                @break
+            @case('glow')
+        .social-link:hover { box-shadow: 0 0 14px rgba(var(--user-primary-rgb, 59, 130, 246), 0.5); }
+                @break
+            @case('scale')
+        .social-link:hover { transform: scale(1.15); }
+                @break
+            @case('colorshift')
+        .social-link:hover .social-icon { filter: hue-rotate(45deg) saturate(1.3); }
+                @break
+        @endswitch
     </style>
 @endif

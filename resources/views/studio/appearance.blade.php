@@ -42,6 +42,7 @@
                   <li class="nav-item" role="presentation"><button class="nav-link"        type="button" data-bs-toggle="pill" data-bs-target="#t-background" role="tab">Background</button></li>
                   <li class="nav-item" role="presentation"><button class="nav-link"        type="button" data-bs-toggle="pill" data-bs-target="#t-type"       role="tab">Type</button></li>
                   <li class="nav-item" role="presentation"><button class="nav-link"        type="button" data-bs-toggle="pill" data-bs-target="#t-buttons"    role="tab">Buttons</button></li>
+                  <li class="nav-item" role="presentation"><button class="nav-link"        type="button" data-bs-toggle="pill" data-bs-target="#t-social"     role="tab">Social icons</button></li>
                 </ul>
 
                 <div class="tab-content">
@@ -220,6 +221,87 @@
                         @include('studio.partials.appearance-color', ['id' => 'c-primary',  'name' => 'colors[primary]',     'label' => 'Button color',      'help' => 'Fill (filled style) or border/text (outline, soft)', 'value' => $saved['colors']['primary'], 'form' => 'appearance-form'])
                         @include('studio.partials.appearance-color', ['id' => 'c-btn-text', 'name' => 'colors[button_text]', 'label' => 'Button text color', 'help' => 'Text on filled buttons',                              'value' => $saved['colors']['button_text'], 'form' => 'appearance-form'])
                       </div>
+                    </fieldset>
+                  </div>
+
+                  {{-- ===== Social icons tab ===== --}}
+                  <div class="tab-pane fade" id="t-social" role="tabpanel">
+                    <fieldset class="appearance-section">
+                      <legend>Social icons</legend>
+                      <p class="text-muted small mb-3">
+                        Controls how the brand-glyph row near the top of your bio page renders.
+                        Edit which icons appear via <a href="{{ url('/studio/social-icons') }}">Social Icons</a>.
+                      </p>
+
+                      {{-- Color mode --}}
+                      <label class="form-label d-block">Color</label>
+                      <div class="appearance-swatch-group mb-2" role="radiogroup">
+                        @foreach([
+                          'auto'   => ['name' => 'Auto contrast', 'help' => 'Black on light bg, white on dark'],
+                          'brand'  => ['name' => 'Brand colors',  'help' => 'Each icon in its real brand color'],
+                          'custom' => ['name' => 'Custom color',  'help' => 'All icons the same color'],
+                        ] as $val => $meta)
+                          <label class="appearance-swatch" data-swatch="social-color-{{ $val }}" title="{{ $meta['help'] }}">
+                            <input type="radio" name="social_icons[color]" value="{{ $val }}" form="appearance-form" @if($saved['social_icons']['color'] === $val) checked @endif>
+                            <span class="appearance-swatch-name">{{ $meta['name'] }}</span>
+                          </label>
+                        @endforeach
+                      </div>
+                      <div class="mt-2" id="social-custom-color-wrap" @if($saved['social_icons']['color'] !== 'custom') style="display:none" @endif>
+                        @include('studio.partials.appearance-color', ['id' => 'social-color-custom', 'name' => 'social_icons[color_custom]', 'label' => 'Custom color', 'help' => null, 'value' => $saved['social_icons']['color_custom'], 'form' => 'appearance-form'])
+                      </div>
+
+                      {{-- Size --}}
+                      <label class="form-label d-block mt-3">Size</label>
+                      <div class="appearance-swatch-group" role="radiogroup">
+                        @foreach(['small','medium','large','xl'] as $size)
+                          <label class="appearance-swatch" data-swatch="social-size-{{ $size }}">
+                            <input type="radio" name="social_icons[size]" value="{{ $size }}" form="appearance-form" @if($saved['social_icons']['size'] === $size) checked @endif>
+                            <span class="appearance-swatch-name">{{ $size === 'xl' ? 'Extra large' : ucfirst($size) }}</span>
+                          </label>
+                        @endforeach
+                      </div>
+
+                      {{-- Spacing --}}
+                      <label class="form-label d-block mt-3">Spacing</label>
+                      <div class="appearance-swatch-group" role="radiogroup">
+                        @foreach(['tight','normal','loose'] as $spacing)
+                          <label class="appearance-swatch" data-swatch="social-spacing-{{ $spacing }}">
+                            <input type="radio" name="social_icons[spacing]" value="{{ $spacing }}" form="appearance-form" @if($saved['social_icons']['spacing'] === $spacing) checked @endif>
+                            <span class="appearance-swatch-name">{{ ucfirst($spacing) }}</span>
+                          </label>
+                        @endforeach
+                      </div>
+
+                      {{-- Background style --}}
+                      <label class="form-label d-block mt-3">Background style</label>
+                      <div class="appearance-swatch-group" role="radiogroup">
+                        @foreach([
+                          'none'    => 'No background',
+                          'circle'  => 'Circle',
+                          'rounded' => 'Rounded square',
+                          'solid'   => 'Filled brand circle',
+                        ] as $val => $label)
+                          <label class="appearance-swatch" data-swatch="social-bg-{{ $val }}">
+                            <input type="radio" name="social_icons[background_style]" value="{{ $val }}" form="appearance-form" @if($saved['social_icons']['background_style'] === $val) checked @endif>
+                            <span class="appearance-swatch-name">{{ $label }}</span>
+                          </label>
+                        @endforeach
+                      </div>
+
+                      {{-- Hover effect --}}
+                      <label class="form-label d-block mt-3">Hover effect</label>
+                      <select name="social_icons[hover]" form="appearance-form" class="form-select" style="max-width: 260px;">
+                        @foreach([
+                          'none'       => 'None',
+                          'lift'       => 'Lift up',
+                          'glow'       => 'Soft glow',
+                          'scale'      => 'Scale up',
+                          'colorshift' => 'Color shift',
+                        ] as $val => $label)
+                          <option value="{{ $val }}" @if($saved['social_icons']['hover'] === $val) selected @endif>{{ $label }}</option>
+                        @endforeach
+                      </select>
                     </fieldset>
                   </div>
 
