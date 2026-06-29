@@ -116,7 +116,87 @@
             typography: { font: g('typography[font]') },
             buttons:    { shape: g('buttons[shape]'), style: g('buttons[style]') },
             avatar:     { shape: g('avatar[shape]') },
+            social_icons: {
+                color:            g('social_icons[color]'),
+                color_custom:     g('social_icons[color_custom]'),
+                size:             g('social_icons[size]'),
+                spacing:          g('social_icons[spacing]'),
+                background_style: g('social_icons[background_style]'),
+                hover:            g('social_icons[hover]'),
+            },
         };
+    }
+
+    /* Brand colors map — mirrors AppearanceController::BRAND_COLORS.
+       Used by the live preview to render per-brand glyph colors in
+       Brand Colors mode and per-brand chip backgrounds in Solid
+       Filled Circle mode. Keep in sync with the PHP constant. */
+    var BRAND_COLORS = {
+        'instagram': '#E4405F', 'facebook':  '#1877F2', 'x-twitter': '#000000',
+        'github':    '#181717', 'linkedin':  '#0A66C2', 'tiktok':    '#000000',
+        'youtube':   '#FF0000', 'threads':   '#000000', 'twitch':    '#9146FF',
+        'pinterest': '#E60023', 'snapchat':  '#FFFC00', 'reddit':    '#FF4500',
+        'telegram':  '#26A5E4', 'behance':   '#1769FF', 'dribbble':  '#EA4C89',
+        'mastodon':  '#6364FF', 'bluesky':   '#0085FF', 'whatsapp':  '#25D366',
+        'discord':   '#5865F2'
+    };
+
+    function buildSocialIconCss(si) {
+        var sizes    = { small: 22, medium: 30, large: 38, xl: 46 };
+        var spacings = { tight: 4,  normal: 10, loose: 18 };
+        var siSize   = sizes[si.size]    || 30;
+        var siGap    = spacings[si.spacing] || 10;
+        var pad      = Math.max(Math.round(siGap / 2), 2);
+        var custom   = /^#[0-9a-fA-F]{6}$/.test(si.color_custom) ? si.color_custom : '#111111';
+
+        var rules = [
+            '.social-icon { font-size: ' + siSize + 'px !important; padding: ' + pad + 'px !important; transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease, color 0.18s ease !important; }',
+            '.social-icon-div { gap: ' + siGap + 'px; padding-bottom: 30px; }',
+            '.social-link { display: inline-flex; align-items: center; justify-content: center; }'
+        ];
+
+        if (si.background_style === 'circle' || si.background_style === 'rounded') {
+            rules.push('.social-link { background: rgba(128, 128, 128, 0.12); border-radius: ' +
+                (si.background_style === 'circle' ? '50%' : '12px') +
+                '; padding: 6px; width: ' + (siSize + 24) + 'px; height: ' + (siSize + 24) + 'px; }');
+        } else if (si.background_style === 'solid') {
+            rules.push('.social-link { background: #555; color: #fff !important; border-radius: 50%; padding: 6px; width: ' + (siSize + 24) + 'px; height: ' + (siSize + 24) + 'px; }');
+            rules.push('.social-link .social-icon { color: #fff !important; }');
+        }
+
+        if (si.color === 'custom') {
+            rules.push('.social-icon, .social-link .social-icon { color: ' + custom + ' !important; }');
+        }
+
+        if (si.color === 'brand' || si.background_style === 'solid') {
+            for (var brand in BRAND_COLORS) {
+                if (!BRAND_COLORS.hasOwnProperty(brand)) continue;
+                var hex = BRAND_COLORS[brand];
+                if (si.color === 'brand' && si.background_style !== 'solid') {
+                    rules.push('.social-icon.fa-' + brand + ' { color: ' + hex + ' !important; }');
+                }
+                if (si.background_style === 'solid') {
+                    rules.push('.social-link:has(.social-icon.fa-' + brand + ') { background: ' + hex + ' !important; }');
+                }
+            }
+        }
+
+        switch (si.hover) {
+            case 'lift':
+                rules.push('.social-link:hover { transform: translateY(-3px); }');
+                break;
+            case 'glow':
+                rules.push('.social-link:hover { box-shadow: 0 0 14px rgba(59, 130, 246, 0.5); }');
+                break;
+            case 'scale':
+                rules.push('.social-link:hover { transform: scale(1.15); }');
+                break;
+            case 'colorshift':
+                rules.push('.social-link:hover .social-icon { filter: hue-rotate(45deg) saturate(1.3); }');
+                break;
+        }
+
+        return rules.join('\n');
     }
 
     function hexToRgba(hex, alpha) {
@@ -198,7 +278,8 @@
             '.header-name, .header-description, h1, h2, h3, h4, h5, h6, p { color: ' + textColor + ' !important; }',
             '.button, .button-custom, .button-custom_website, a.button, .button-default { ' + btnCss + ' border-radius: ' + shapeRadius + ' !important; }',
             avatarCss,
-            fontCss
+            fontCss,
+            buildSocialIconCss(s.social_icons || {})
         ].join('\n');
     }
 
