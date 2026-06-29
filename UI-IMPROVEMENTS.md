@@ -212,7 +212,8 @@ plan a single design-aligned implementation so everything flows together.
 
 ## In progress
 
-_(none)_
+- **Item 9 — Theme library** — split into its own focused chat session
+  per `THEME-LIBRARY-PROMPT.md`. Started 2026-06-29.
 
 ---
 
