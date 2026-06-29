@@ -1,5 +1,73 @@
 <?php use App\Models\UserData; ?>
 
+        {{-- Block layout — unified width for every block type so the
+             bio page renders as a clean vertical column regardless of
+             which mix of block types the operator added. Width scales
+             fluidly between mobile (90 vw) and desktop (480 px max).
+             Iframe blocks get aspect-ratio handling so they scale
+             proportionally instead of locking to fixed pixel heights.
+             See UI-PASS-PLAN.md Pass 1, item 5 for context. --}}
+        <style>
+            :root {
+                --block-max-width: clamp(280px, 90vw, 480px);
+            }
+            /* Every block wrapper LinkStack uses (standard buttons via
+               .button-entrance, custom_html blocks via their per-type
+               wrapper classes, text/heading via .fadein, the accordion
+               wrapper for collapsed blocks) gets the same width
+               envelope. */
+            .button-entrance,
+            .button-spacer,
+            .block-accordion,
+            .mm-text-block,
+            .mm-heading-block,
+            .youtube-block-wrapper,
+            .twitch-block-wrapper,
+            .spotify-block-wrapper,
+            .bmc-block-wrapper,
+            .stripe-block-wrapper,
+            .cf-wrapper,
+            .ns-wrapper {
+                width: 100%;
+                max-width: var(--block-max-width);
+                margin-left: auto;
+                margin-right: auto;
+            }
+            /* LinkStack's stock .button class hardcodes width: 300px
+               in brands.css — override so buttons fill the new
+               container envelope. */
+            .button-entrance .button,
+            .button-entrance .button-custom,
+            .button-entrance .button-custom_website {
+                width: 100% !important;
+                max-width: 100% !important;
+                box-sizing: border-box;
+            }
+            /* IFrame blocks — fluid width with proportional height.
+               YouTube and Twitch are both 16:9; Spotify uses fixed
+               px heights by content type (set inline on each iframe)
+               so it just needs width:100% to fill the container. */
+            .yt-frame-wrap,
+            .tw-frame-wrap {
+                position: relative;
+                width: 100%;
+                aspect-ratio: 16 / 9;
+            }
+            .yt-frame-wrap .yt-frame,
+            .tw-frame-wrap .tw-frame {
+                position: absolute;
+                inset: 0;
+                width: 100%;
+                height: 100%;
+                border: 0;
+            }
+            .sp-frame {
+                width: 100%;
+                max-width: 100%;
+                border: 0;
+            }
+        </style>
+
         @php
         $initial = 1;
         // Only emit the accordion CSS when at least one link on this

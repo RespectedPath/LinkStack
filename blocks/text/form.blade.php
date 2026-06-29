@@ -1,5 +1,16 @@
 <label for='text' class='form-label'>{{__('messages.Text to display')}}</label>
 <textarea class="form-control @if(env('ALLOW_USER_HTML') === true) ckeditor @endif" name="text" rows="6">{{ $title ?? '' }}</textarea>
+
+{{-- Per-instance text alignment. Stored in type_params (non-column
+     keys auto-route to JSON via UserController::saveLink). Default
+     "center" matches the surrounding bio-page layout. --}}
+<label for='alignment' class='form-label mt-3'>Alignment</label>
+<select name='alignment' id='alignment' class='form-control' style='max-width: 220px;'>
+    @php $savedAlign = $alignment ?? 'center'; @endphp
+    <option value='left'   @if($savedAlign === 'left')   selected @endif>Left</option>
+    <option value='center' @if($savedAlign === 'center') selected @endif>Center</option>
+    <option value='right'  @if($savedAlign === 'right')  selected @endif>Right</option>
+</select>
 @if(env('ALLOW_USER_HTML') === true)
 <script src="{{ asset('assets/external-dependencies/ckeditor.js') }}"></script>
 <script>
