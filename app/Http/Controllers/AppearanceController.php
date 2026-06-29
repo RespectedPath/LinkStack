@@ -24,6 +24,34 @@ class AppearanceController extends Controller
         'Roboto Mono', 'DM Sans', 'Lora', 'Nunito', 'Raleway',
     ];
 
+    /**
+     * Real brand hexes for the "Brand colors" mode of the social
+     * icons panel. Render emits per-brand CSS rules from this map.
+     * Names match the Font Awesome class suffixes used in the icons
+     * (e.g. fa-instagram → 'instagram').
+     */
+    public const BRAND_COLORS = [
+        'instagram' => '#E4405F',
+        'facebook'  => '#1877F2',
+        'x-twitter' => '#000000',
+        'github'    => '#181717',
+        'linkedin'  => '#0A66C2',
+        'tiktok'    => '#000000',
+        'youtube'   => '#FF0000',
+        'threads'   => '#000000',
+        'twitch'    => '#9146FF',
+        'pinterest' => '#E60023',
+        'snapchat'  => '#FFFC00',
+        'reddit'    => '#FF4500',
+        'telegram'  => '#26A5E4',
+        'behance'   => '#1769FF',
+        'dribbble'  => '#EA4C89',
+        'mastodon'  => '#6364FF',
+        'bluesky'   => '#0085FF',
+        'whatsapp'  => '#25D366',
+        'discord'   => '#5865F2',
+    ];
+
     /** Defaults — the shape every saved blob must conform to. */
     public static function defaults(): array
     {
@@ -51,6 +79,14 @@ class AppearanceController extends Controller
             ],
             'avatar' => [
                 'shape' => 'circle',   // circle | rounded_square
+            ],
+            'social_icons' => [
+                'color'            => 'auto',    // auto | brand | custom
+                'color_custom'     => '#111111', // hex (only used when color === 'custom')
+                'size'             => 'medium',  // small | medium | large | xl
+                'spacing'          => 'normal',  // tight | normal | loose
+                'background_style' => 'none',    // none | circle | rounded | solid
+                'hover'            => 'lift',    // none | lift | glow | scale | colorshift
             ],
         ];
     }
@@ -239,6 +275,13 @@ class AppearanceController extends Controller
             'buttons.style' => ['required', 'in:filled,outline,soft'],
 
             'avatar.shape' => ['required', 'in:circle,rounded_square,off'],
+
+            'social_icons.color'            => ['required', 'in:auto,brand,custom'],
+            'social_icons.color_custom'     => ['nullable', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'social_icons.size'             => ['required', 'in:small,medium,large,xl'],
+            'social_icons.spacing'          => ['required', 'in:tight,normal,loose'],
+            'social_icons.background_style' => ['required', 'in:none,circle,rounded,solid'],
+            'social_icons.hover'            => ['required', 'in:none,lift,glow,scale,colorshift'],
         ];
 
         $validated = $request->validate($rules);
