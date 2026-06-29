@@ -8,7 +8,32 @@ use Illuminate\Filesystem\Filesystem;
 
 class LinkType extends Model
 {
-    protected $fillable = ['id', 'typename', 'title', 'description', 'icon', 'custom_html', 'ignore_container', 'include_libraries'];
+    protected $fillable = ['id', 'typename', 'title', 'description', 'icon', 'custom_html', 'ignore_container', 'include_libraries', 'category'];
+
+    /**
+     * Categories the Add-Block picker groups tiles by, in display order.
+     * Each block declares its category via its config.yml `category:`
+     * field. Anything that resolves to an unknown category falls into
+     * `_other` and renders at the bottom (defensive — should never
+     * happen in practice).
+     */
+    public const CATEGORY_ORDER = [
+        'essentials',
+        'social',
+        'media',
+        'forms',
+        'monetization',
+        '_other',
+    ];
+
+    public const CATEGORY_LABELS = [
+        'essentials'   => 'Page essentials',
+        'social'       => 'Links & socials',
+        'media'        => 'Audio & video',
+        'forms'        => 'Forms & lists',
+        'monetization' => 'Monetization',
+        '_other'       => 'Other',
+    ];
 
     // Assuming no database interaction, we can disable timestamps
     public $timestamps = false;
@@ -24,7 +49,10 @@ class LinkType extends Model
         $directories = (new Filesystem)->directories($blocksPath);
         $linkTypes = collect();
     
-    // Prepend "predefined" entry to the $linkTypes list
+    // Prepend "predefined" entry to the $linkTypes list — it has no
+    // blocks/ dir of its own; the brand-grid form is hardcoded in
+    // LinkTypeViewController. Categorized into `social` so it sits
+    // with the link / vcard / email / telephone tiles.
     $predefinedLinkType = new self([
         'id' => 1,
         'typename' => 'predefined',
@@ -34,6 +62,7 @@ class LinkType extends Model
         'custom_html' => false,
         'ignore_container' => false,
         'include_libraries' => [],
+        'category' => 'social',
     ]);
 
     $linkTypes->prepend($predefinedLinkType);
@@ -53,6 +82,9 @@ class LinkType extends Model
                 'custom_html' => $configData['custom_html'] ?? false,
                 'ignore_container' => $configData['ignore_container'] ?? false,
                 'include_libraries' => $configData['include_libraries'] ?? [],
+                'category' => in_array(($configData['category'] ?? null), self::CATEGORY_ORDER, true)
+                    ? $configData['category']
+                    : '_other',
             ]);
             $linkTypes->push($linkType);
         }

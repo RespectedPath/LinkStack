@@ -66,13 +66,18 @@ $usrhandl = Auth::user()->littlelink_name;
 	  <link rel="stylesheet" href="{{ asset('assets/linkstack/css/animate.css') }}">
 	  <link rel="stylesheet" href="{{ asset('assets/external-dependencies/bootstrap-icons.css') }}">
 
-	  {{-- Dark-mode modal contrast fix. Bootstrap 4.3 doesn't ship
-	       any dark-mode awareness for its modal chrome (default
-	       background: #fff, default border/text: light-grey). The
-	       dashboard's dark theme makes the body text light-grey,
-	       which on a white modal becomes a ~3:1 contrast failure.
-	       Inverting the modal surface, header/footer borders, and
-	       close-button colour brings it to WCAG AAA at ~13:1. --}}
+	  {{-- Modal accessibility + dark mode sync.
+
+	       Bootstrap 4.3 ships no dark-mode awareness for its modal
+	       chrome (default background: #fff). The Mail Minted
+	       dashboard.css scopes its dark theme with a `.dark` class
+	       on <body> (toggled by LinkStack's in-app Color Mode
+	       picker in the sidebar settings). We follow the same
+	       trigger so modals flip in sync with the rest of the
+	       dashboard — toggling Light/Dark in-app switches both.
+	       Previously these rules keyed off prefers-color-scheme,
+	       which is OS-level and didn't track LinkStack's own
+	       toggle, leaving modals stuck on the wrong theme. --}}
 	  <style>
 	    /* Force tall modals to scroll their body instead of growing
 	       past the viewport. BS4's .modal-dialog-scrollable alone is
@@ -83,44 +88,42 @@ $usrhandl = Auth::user()->littlelink_name;
 	      max-height: calc(100vh - 220px);
 	      overflow-y: auto;
 	    }
-	    @media (prefers-color-scheme: dark) {
-	      .modal-content {
-	        background-color: #1f2329 !important;
-	        color: #e9ecef !important;
-	        border: 1px solid #2a2e33 !important;
-	      }
-	      .modal-header,
-	      .modal-footer {
-	        border-color: #2a2e33 !important;
-	      }
-	      .modal-title {
-	        color: #e9ecef !important;
-	      }
-	      .modal-body,
-	      .modal-body label,
-	      .modal-body .form-label,
-	      .modal-body .text-muted,
-	      .modal-body small {
-	        color: #cfd3d8 !important;
-	      }
-	      .modal-body .form-control,
-	      .modal-body .form-select {
-	        background-color: #2a2e33;
-	        color: #e9ecef;
-	        border-color: #3a3f45;
-	      }
-	      .modal-body .form-control::placeholder {
-	        color: #7a8089;
-	      }
-	      .modal-body .input-group-text {
-	        background-color: #2a2e33;
-	        color: #cfd3d8;
-	        border-color: #3a3f45;
-	      }
-	      .modal-header .btn-close,
-	      .modal-header .close {
-	        filter: invert(1) grayscale(100%) brightness(2);
-	      }
+	    body.dark .modal-content {
+	      background-color: #1f2329 !important;
+	      color: #e9ecef !important;
+	      border: 1px solid #2a2e33 !important;
+	    }
+	    body.dark .modal-header,
+	    body.dark .modal-footer {
+	      border-color: #2a2e33 !important;
+	    }
+	    body.dark .modal-title {
+	      color: #e9ecef !important;
+	    }
+	    body.dark .modal-body,
+	    body.dark .modal-body label,
+	    body.dark .modal-body .form-label,
+	    body.dark .modal-body .text-muted,
+	    body.dark .modal-body small {
+	      color: #cfd3d8 !important;
+	    }
+	    body.dark .modal-body .form-control,
+	    body.dark .modal-body .form-select {
+	      background-color: #2a2e33;
+	      color: #e9ecef;
+	      border-color: #3a3f45;
+	    }
+	    body.dark .modal-body .form-control::placeholder {
+	      color: #7a8089;
+	    }
+	    body.dark .modal-body .input-group-text {
+	      background-color: #2a2e33;
+	      color: #cfd3d8;
+	      border-color: #3a3f45;
+	    }
+	    body.dark .modal-header .btn-close,
+	    body.dark .modal-header .close {
+	      filter: invert(1) grayscale(100%) brightness(2);
 	    }
 	  </style>
 
@@ -249,7 +252,7 @@ $usrhandl = Auth::user()->littlelink_name;
                                  <svg class="icon-20" width="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">                                
 									<path fill-rule="evenodd" clip-rule="evenodd" d="M4.54 2H7.92C9.33 2 10.46 3.15 10.46 4.561V7.97C10.46 9.39 9.33 10.53 7.92 10.53H4.54C3.14 10.53 2 9.39 2 7.97V4.561C2 3.15 3.14 2 4.54 2ZM4.54 13.4697H7.92C9.33 13.4697 10.46 14.6107 10.46 16.0307V19.4397C10.46 20.8497 9.33 21.9997 7.92 21.9997H4.54C3.14 21.9997 2 20.8497 2 19.4397V16.0307C2 14.6107 3.14 13.4697 4.54 13.4697ZM19.4601 2H16.0801C14.6701 2 13.5401 3.15 13.5401 4.561V7.97C13.5401 9.39 14.6701 10.53 16.0801 10.53H19.4601C20.8601 10.53 22.0001 9.39 22.0001 7.97V4.561C22.0001 3.15 20.8601 2 19.4601 2ZM16.0801 13.4697H19.4601C20.8601 13.4697 22.0001 14.6107 22.0001 16.0307V19.4397C22.0001 20.8497 20.8601 21.9997 19.4601 21.9997H16.0801C14.6701 21.9997 13.5401 20.8497 13.5401 19.4397V16.0307C13.5401 14.6107 14.6701 13.4697 16.0801 13.4697Z" fill="currentColor"></path></svg> 
                             </i>
-                            <span class="item-name">{{__('messages.Links')}}</span>
+                            <span class="item-name">Blocks</span>
                         </a>
                     </li>
                     <li class="nav-item">

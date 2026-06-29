@@ -1,6 +1,60 @@
 @extends('layouts.sidebar')
 
+{{-- The studio sidebar layout ships Bootstrap Icons but not
+     Font Awesome. The chip row and the URL-input icons below
+     use FA brand glyphs (fa-brands fa-instagram etc.) so we
+     have to pull FA in for just this page.
+
+     We use fontawesome.js (not the CSS) because the bundled
+     fontawesome.css uses relative url(assets/webfonts/...)
+     paths that 404 when the CSS is served from /assets/
+     external-dependencies/. The JS variant inlines glyphs as
+     SVG, so there are no font paths to resolve. Same approach
+     updater.blade.php uses. --}}
+@push('sidebar-scripts')
+<script defer src="{{ asset('assets/external-dependencies/fontawesome.js') }}" crossorigin="anonymous"></script>
+@endpush
+
 @section('content')
+
+@php
+    /**
+     * Brand catalog — single source of truth for the Social Icons
+     * page. Each entry is [name, label, prefix-or-null, placeholder].
+     *
+     * `prefix` is the visible URL prefix the input renders (also
+     * what UserController::editIcons' normaliser uses to prepend the
+     * base URL on save). Brands with non-standard URL shapes
+     * (Mastodon, Bluesky, WhatsApp, Discord) have prefix null —
+     * those stay as full-URL paste inputs.
+     */
+    $brands = [
+        ['instagram',  'Instagram', 'instagram.com/',     'yourhandle'],
+        ['x-twitter',  'X',         'x.com/',             'yourhandle'],
+        ['facebook',   'Facebook',  'facebook.com/',      'your.profile'],
+        ['github',     'GitHub',    'github.com/',        'yourhandle'],
+        ['linkedin',   'LinkedIn',  'linkedin.com/in/',   'yourhandle'],
+        ['tiktok',     'TikTok',    'tiktok.com/@',       'yourhandle'],
+        ['youtube',    'YouTube',   'youtube.com/@',      'yourchannel'],
+        ['threads',    'Threads',   'threads.net/@',      'yourhandle'],
+        ['twitch',     'Twitch',    'twitch.tv/',         'yourhandle'],
+        ['pinterest',  'Pinterest', 'pinterest.com/',     'yourhandle'],
+        ['snapchat',   'Snapchat',  'snapchat.com/add/',  'yourhandle'],
+        ['reddit',     'Reddit',    'reddit.com/user/',   'yourhandle'],
+        ['telegram',   'Telegram',  't.me/',              'yourhandle'],
+        ['behance',    'Behance',   'behance.net/',       'yourhandle'],
+        ['dribbble',   'Dribble',   'dribbble.com/',      'yourhandle'],
+        ['mastodon',   'Mastodon',  null, 'https://mastodon.social/@you'],
+        ['bluesky',    'Bluesky',   null, 'https://bsky.app/profile/you.bsky.social'],
+        ['whatsapp',   'WhatsApp',  null, 'https://wa.me/15551234567'],
+        ['discord',    'Discord',   null, 'https://discord.gg/invitecode'],
+    ];
+
+    $brandByName = [];
+    foreach ($brands as [$name, $label, $prefix, $placeholder]) {
+        $brandByName[$name] = compact('label', 'prefix', 'placeholder');
+    }
+@endphp
 
 <div class="container-fluid content-inner mt-n5 py-0">
   <div class="row">
@@ -15,140 +69,92 @@
             <div class="alert alert-danger">
               <strong>Couldn't save:</strong>
               <ul class="mb-0 mt-1">
-                @foreach($errors->all() as $err)
-                  <li>{{ $err }}</li>
-                @endforeach
+                @foreach($errors->all() as $err)<li>{{ $err }}</li>@endforeach
               </ul>
             </div>
           @endif
 
           <section class='text-gray-400'>
-            <h3 class="mb-4 card-header"><i class="fa-solid fa-icons"></i> {{__('messages.Page Icons')}}</h3>
-            <p class="text-muted">
+            <h3 class="mb-3 card-header"><i class="fa-solid fa-icons"></i> {{__('messages.Page Icons')}}</h3>
+            <p class="text-muted small">
               Small brand icons rendered as a row near the top of your public page.
-              For brands not listed below, use <a href="{{ url('/studio/add-link') }}">Add link &rarr; Predefined Site</a>.
+              For brands not listed below, use <a href="{{ url('/studio/add-link') }}">Add Block &rarr; Predefined Site</a>.
             </p>
-            <div class="card-body p-0 p-md-3">
 
-              <form action="{{ route('editIcons') }}" enctype="multipart/form-data" method="post">
-                @csrf
-                <div class="form-group col-lg-8">
-
+            {{-- ============================================
+                 TOP — Drag-to-reorder chip row
+                 Mirrors how icons display on the public page:
+                 a horizontal flex-wrap row of brand glyphs.
+                 ============================================ --}}
+            <h5 class="mt-4 mb-2"><i class="bi bi-arrows-move"></i> Order</h5>
+            @if($configuredIcons->isEmpty())
+              <p class="text-muted small">No icons yet. Add a URL below to create your first.</p>
+            @else
+              <p class="text-muted small mb-2">Drag any chip to reorder. Click the &times; to remove.</p>
+              <div id="sortable-icons" class="icon-chip-row mb-4">
+                @foreach($configuredIcons as $icon)
                   @php
-                    // Helpers: read existing url / find link row id / count clicks
-                    // for each brand by querying the `links` table for rows owned
-                    // by the current user with button_id=94 (the "icon" Button
-                    // type) and a matching brand `title`. These functions used to
-                    // live inside the Links page; moved here verbatim so /studio/links
-                    // can be cleaned up to just show the main link cards.
-                    if (!function_exists('iconLink')) {
-                        function iconLink($icon) {
-                            $iconLink = DB::table('links')
-                                ->where('user_id', Auth::id())
-                                ->where('title', $icon)
-                                ->where('button_id', 94)
-                                ->value('link');
-                            return is_null($iconLink) ? false : $iconLink;
-                        }
-                    }
+                    $label = $brandByName[$icon->title]['label'] ?? ucfirst($icon->title);
+                  @endphp
+                  <div class="icon-chip"
+                       data-link-id="{{ $icon->id }}"
+                       title="{{ $label }}: {{ $icon->link }}">
+                    <i class="fa-brands fa-{{ $icon->title }} chip-glyph"></i>
+                    <a href="{{ route('deleteLink', $icon->id) }}"
+                       class="chip-remove"
+                       title="Remove"
+                       onclick="return confirm('Remove this social icon?');">&times;</a>
+                  </div>
+                @endforeach
+              </div>
+            @endif
 
-                    if (!function_exists('searchIcon')) {
-                        function searchIcon($icon) {
-                            $iconId = DB::table('links')
-                                ->where('user_id', Auth::id())
-                                ->where('title', $icon)
-                                ->where('button_id', 94)
-                                ->value('id');
-                            return is_null($iconId) ? false : $iconId;
-                        }
-                    }
+            {{-- ============================================
+                 BOTTOM — URL editor for every brand
+                 ============================================ --}}
+            <h5 class="mt-4 mb-2"><i class="bi bi-pencil"></i> URLs</h5>
+            <p class="text-muted small">Type a URL or handle for any brand. Empty fields stay hidden.</p>
 
-                    if (!function_exists('iconclicks')) {
-                        function iconclicks($icon) {
-                            $iconClicks = searchIcon($icon);
-                            $iconClicks = DB::table('links')->where('id', $iconClicks)->value('click_number');
-                            return is_null($iconClicks) ? 0 : $iconClicks;
-                        }
-                    }
-
-                    if (!function_exists('icon')) {
-                        /**
-                         * Render one Social Icons input row.
-                         *
-                         * $prefix (optional): visible URL prefix label, e.g.
-                         *   'facebook.com/'. When provided, the input field
-                         *   strips the matching base URL from any saved
-                         *   value so the user sees just their handle, and
-                         *   the placeholder hints at handle-only entry.
-                         *   Server-side normalisation in editIcons does the
-                         *   reverse (prepends the base on save).
-                         *
-                         * Omit $prefix for brands with non-standard URL
-                         * shapes (Mastodon, Bluesky, WhatsApp, Discord) —
-                         * the input stays as a full-URL paste.
-                         */
-                        function icon($name, $label, $prefix = null, $placeholder = '') {
-                            $saved = iconLink($name);
-                            $display = $saved ?: '';
-                            if ($prefix && $display !== '') {
-                                $pattern = '#^https?://' . preg_quote($prefix, '#') . '#i';
-                                if (preg_match($pattern, $display)) {
-                                    $display = preg_replace($pattern, '', $display);
-                                }
-                            }
-                            $deleteBtn = searchIcon($name) != NULL
-                                ? '<a href="'.route("deleteLink", searchIcon($name)).'" class="btn btn-danger" title="Remove"><i class="bi bi-trash-fill"></i></a>'
-                                : '';
-                            $prefixSpan = $prefix
-                                ? '<span class="input-group-text text-muted small">'.e($prefix).'</span>'
-                                : '';
-                            $inputType = $prefix ? 'text' : 'url';
-                            $placeholderAttr = $placeholder ? ' placeholder="'.e($placeholder).'"' : '';
-                            echo '<div class="mb-3">
-                                    <label class="form-label">'.$label.'</label>
-                                    <span class="form-text" style="font-size: 90%; font-style: italic;">'.__('messages.Clicks').': '.iconclicks($name).'</span>
-                                    <div class="input-group">
-                                      <span class="input-group-text"><i class="fab fa-'.$name.'"></i></span>
-                                      '.$prefixSpan.'
-                                      <input type="'.$inputType.'" class="form-control" name="'.$name.'" value="'.e($display).'"'.$placeholderAttr.' />
-                                      '.$deleteBtn.'
-                                    </div>
-                                  </div>';
+            <form action="{{ route('editIcons') }}" enctype="multipart/form-data" method="post">
+              @csrf
+              <div class="form-group col-lg-8">
+                @foreach($brands as [$name, $label, $prefix, $placeholder])
+                  @php
+                    $saved = DB::table('links')
+                        ->where('user_id', Auth::id())
+                        ->where('title', $name)
+                        ->where('button_id', 94)
+                        ->value('link');
+                    $display = $saved ?: '';
+                    if ($prefix && $display !== '') {
+                        $pattern = '#^https?://' . preg_quote($prefix, '#') . '#i';
+                        if (preg_match($pattern, $display)) {
+                            $display = preg_replace($pattern, '', $display);
                         }
                     }
                   @endphp
-                  <style>input{border-top-right-radius: 0.25rem!important; border-bottom-right-radius: 0.25rem!important;}</style>
+                  <div class="mb-3">
+                    <label class="form-label">{{ $label }}</label>
+                    <div class="input-group">
+                      <span class="input-group-text"><i class="fab fa-{{ $name }}"></i></span>
+                      @if($prefix)
+                        <span class="input-group-text text-muted small">{{ $prefix }}</span>
+                      @endif
+                      <input type="{{ $prefix ? 'text' : 'url' }}"
+                             class="form-control"
+                             name="{{ $name }}"
+                             value="{{ $display }}"
+                             placeholder="{{ $placeholder }}">
+                    </div>
+                  </div>
+                @endforeach
 
-                  {{-- Handle-only brands (server prepends URL on save) --}}
-                  {!! icon('instagram', 'Instagram', 'instagram.com/',     'yourhandle') !!}
-                  {!! icon('x-twitter', 'X',         'x.com/',             'yourhandle') !!}
-                  {!! icon('facebook',  'Facebook',  'facebook.com/',      'your.profile') !!}
-                  {!! icon('github',    'GitHub',    'github.com/',        'yourhandle') !!}
-                  {!! icon('linkedin',  'LinkedIn',  'linkedin.com/in/',   'yourhandle') !!}
-                  {!! icon('tiktok',    'TikTok',    'tiktok.com/@',       'yourhandle') !!}
-                  {!! icon('youtube',   'YouTube',   'youtube.com/@',      'yourchannel') !!}
-                  {!! icon('threads',   'Threads',   'threads.net/@',      'yourhandle') !!}
-                  {!! icon('twitch',    'Twitch',    'twitch.tv/',         'yourhandle') !!}
-                  {!! icon('pinterest', 'Pinterest', 'pinterest.com/',     'yourhandle') !!}
-                  {!! icon('snapchat',  'Snapchat',  'snapchat.com/add/',  'yourhandle') !!}
-                  {!! icon('reddit',    'Reddit',    'reddit.com/user/',   'yourhandle') !!}
-                  {!! icon('telegram',  'Telegram',  't.me/',              'yourhandle') !!}
-                  {!! icon('behance',   'Behance',   'behance.net/',       'yourhandle') !!}
-                  {!! icon('dribbble',  'Dribble',   'dribbble.com/',      'yourhandle') !!}
+                <button type="submit" class="mt-2 btn btn-primary">
+                  <i class="bi bi-save"></i> {{__('messages.Save links')}}
+                </button>
+              </div>
+            </form>
 
-                  {{-- Full-URL brands (non-standard formats — paste the URL) --}}
-                  {!! icon('mastodon',  'Mastodon',  null, 'https://mastodon.social/@you') !!}
-                  {!! icon('bluesky',   'Bluesky',   null, 'https://bsky.app/profile/you.bsky.social') !!}
-                  {!! icon('whatsapp',  'WhatsApp',  null, 'https://wa.me/15551234567') !!}
-                  {!! icon('discord',   'Discord',   null, 'https://discord.gg/invitecode') !!}
-
-                  <button type="submit" class="mt-3 ml-3 btn btn-primary">
-                    <i class="bi bi-save"></i> {{__('messages.Save links')}}
-                  </button>
-                </div>
-              </form>
-
-            </div>
           </section>
 
         </div>
@@ -157,4 +163,120 @@
   </div>
 </div>
 
+<style>
+    /* Compact chip row — mirrors the public-page horizontal icon
+       layout. Each chip is just the brand glyph, draggable as a
+       whole; a tiny × in the corner removes the link. */
+    .icon-chip-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 10px 12px;
+        background: rgba(128, 128, 128, 0.06);
+        border: 1px dashed rgba(128, 128, 128, 0.25);
+        border-radius: 10px;
+        min-height: 64px;
+    }
+    /* Match the public bio page's icon scale (32px glyph with
+       padding) so the editor preview looks like what visitors see. */
+    .icon-chip {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 52px;
+        height: 52px;
+        background: rgba(128, 128, 128, 0.08);
+        border: 1px solid rgba(128, 128, 128, 0.25);
+        border-radius: 10px;
+        cursor: grab;
+        transition: transform 0.12s ease, box-shadow 0.12s ease;
+        user-select: none;
+    }
+    .icon-chip:hover {
+        background: rgba(128, 128, 128, 0.18);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    }
+    .icon-chip:active { cursor: grabbing; }
+    .chip-glyph {
+        font-size: 28px;
+        line-height: 1;
+    }
+    .chip-remove {
+        position: absolute;
+        top: -6px;
+        right: -6px;
+        width: 18px;
+        height: 18px;
+        line-height: 16px;
+        text-align: center;
+        background: #dc3545;
+        color: #fff !important;
+        border-radius: 50%;
+        font-size: 14px;
+        font-weight: bold;
+        text-decoration: none !important;
+        opacity: 0;
+        transition: opacity 0.12s ease;
+    }
+    .icon-chip:hover .chip-remove { opacity: 1; }
+    .chip-remove:hover { background: #b02a37; }
+
+    .sortable-ghost {
+        opacity: 0.35;
+        background: rgba(59, 130, 246, 0.2) !important;
+    }
+    .sortable-drag {
+        opacity: 0.85 !important;
+        cursor: grabbing !important;
+    }
+</style>
+
 @endsection
+
+@push('sidebar-scripts')
+<script>
+    (function () {
+        var list = document.getElementById('sortable-icons');
+        if (!list) return;
+        if (typeof Sortable === 'undefined') {
+            console.warn('Social icons: SortableJS not loaded; drag-to-reorder disabled.');
+            return;
+        }
+
+        var csrf = document.querySelector('meta[name="csrf-token"]')?.content
+                || document.querySelector('input[name="_token"]')?.value;
+
+        Sortable.create(list, {
+            animation: 150,
+            ghostClass: 'sortable-ghost',
+            dragClass: 'sortable-drag',
+            // Don't initiate drag when the user clicks the × button.
+            filter: '.chip-remove',
+            preventOnFilter: false,
+            onEnd: function () {
+                var orderedIds = Array.prototype.map.call(
+                    list.querySelectorAll('[data-link-id]'),
+                    function (el) { return Number(el.getAttribute('data-link-id')); }
+                );
+                fetch('{{ route("reorderSocialIcons") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrf,
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ order: orderedIds }),
+                }).then(function (r) {
+                    if (!r.ok) console.warn('Social icons reorder save failed:', r.status);
+                }).catch(function (e) {
+                    console.warn('Social icons reorder request errored:', e);
+                });
+            },
+        });
+    })();
+</script>
+@endpush

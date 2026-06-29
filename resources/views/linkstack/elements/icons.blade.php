@@ -1,6 +1,15 @@
 <?php use App\Models\UserData; ?>
 
-        @php $icons = DB::table('links')->where('user_id', $userinfo->id)->where('button_id', 94)->get(); @endphp
+        @php
+            // Order by the `order` column (drag-to-reorder writes here)
+            // then by id as a tiebreaker for any rows that share an order.
+            $icons = DB::table('links')
+                ->where('user_id', $userinfo->id)
+                ->where('button_id', 94)
+                ->orderBy('order', 'asc')
+                ->orderBy('id', 'asc')
+                ->get();
+        @endphp
         @if(count($icons) > 0)
         <div class="row fadein social-icon-div">
         @foreach($icons as $icon)

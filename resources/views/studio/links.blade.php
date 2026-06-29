@@ -58,8 +58,8 @@ if (isset($_COOKIE['LinkCount'])) {
     
                         <div class="row">
                             <section class='pre-left text-gray-400'>
-                                <h3 class="card-header mb-3"><i class="bi bi-link-45deg">{{__('messages.My Links')}}</i>
-                                        <a class="btn btn-primary float-end" href="{{ url('/studio/add-link') }}"> {{__('messages.Add new Link')}}</a>
+                                <h3 class="card-header mb-3"><i class="bi bi-link-45deg">My Blocks</i>
+                                        <a class="btn btn-primary float-end" href="{{ url('/studio/add-link') }}"> Add new Block</a>
                                 </h3>
                             
                                 <div>
@@ -198,7 +198,7 @@ if (isset($_COOKIE['LinkCount'])) {
                                     {!! $links ?? ''->links() !!}
                                 </ul>
                             
-                                @if(count($links) > 3)<a class="btn btn-primary" href="{{ url('/studio/add-link') }}">{{__('messages.Add new Link')}}</a>@endif
+                                @if(count($links) > 3)<a class="btn btn-primary" href="{{ url('/studio/add-link') }}">Add new Block</a>@endif
                                 </div>
                             </section>
                             

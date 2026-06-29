@@ -489,7 +489,49 @@ class UserController extends Controller
      */
     public function showSocialIcons()
     {
-        return view('studio/social-icons');
+        // Configured icons: anything in the links table with the
+        // special "icon" button (id 94) belonging to this user.
+        // Ordered by the `order` column (set via drag-reorder POST
+        // to reorderSocialIcons below) with id as a tiebreaker.
+        $configuredIcons = DB::table('links')
+            ->where('user_id', Auth::id())
+            ->where('button_id', 94)
+            ->orderBy('order', 'asc')
+            ->orderBy('id', 'asc')
+            ->get();
+
+        return view('studio/social-icons', [
+            'configuredIcons' => $configuredIcons,
+        ]);
+    }
+
+    /**
+     * Receives a new ordering of the user's social icons from the
+     * drag-and-drop UI on /studio/social-icons. POST body must have
+     * `order` as an array of link IDs in their new visible order.
+     * Each row's `order` column is rewritten to its index in that
+     * array, scoped to the current user and the icon button type so
+     * a malicious caller can't shuffle anyone else's rows.
+     */
+    public function reorderSocialIcons(Request $request)
+    {
+        $request->validate([
+            'order'   => ['required', 'array'],
+            'order.*' => ['integer'],
+        ]);
+
+        $userId = Auth::id();
+        $position = 0;
+        foreach ($request->input('order', []) as $linkId) {
+            DB::table('links')
+                ->where('user_id', $userId)
+                ->where('button_id', 94)
+                ->where('id', (int) $linkId)
+                ->update(['order' => $position]);
+            $position++;
+        }
+
+        return response()->json(['ok' => true]);
     }
 
     //Delete link
