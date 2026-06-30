@@ -6,6 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const { chromium } = require('playwright');
 const { resolve, FONT_FACES } = require('./design-system');
+const { iconDataUri } = require('./icons');
 const SPECS = require('./themes');
 
 const ROOT = path.resolve(__dirname, '..');
@@ -60,6 +61,13 @@ const SAMPLE_NAMES = {
   'yoga-instructor': 'Lotus Flow', musician: 'Echo & Oak', barber: 'The Cut Room',
 };
 
+function motifCss(t) {
+  if (!t.icon) return '';
+  const uri = iconDataUri(t.icon, t.vars['--title-color']);
+  const opacity = t.mode === 'dark' ? 0.05 : 0.06;
+  return `body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background-image:url("${uri}");background-repeat:repeat;background-position:center;background-size:78px;opacity:${opacity};}`;
+}
+
 function html(t) {
   const demoName = SAMPLE_NAMES[t.slug] || t.name;
   const labels = ['Book an appointment', 'Our services', 'Reviews', 'Call or text us'];
@@ -78,6 +86,7 @@ p.tag{color:${t.vars['--description-color']};font-size:18px;margin-bottom:34px;}
 .button{display:flex;align-items:center;justify-content:center;min-height:58px;width:100%;max-width:600px;margin:0 auto 16px;border-radius:${t.shape};background:${t.button.bg};color:${t.button.text};font-weight:500;font-size:17px;${buttonBorder(t)}}
 .socs{margin-top:30px;display:flex;gap:18px;justify-content:center;}
 .soc{width:34px;height:34px;border-radius:50%;background:${t.vars['--description-color']};opacity:.55;}
+${motifCss(t)}
 </style></head><body>
 <div class="av"></div>
 <h1>${demoName}</h1>

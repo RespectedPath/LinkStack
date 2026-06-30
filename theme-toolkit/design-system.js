@@ -84,6 +84,7 @@ function resolve(spec) {
   return {
     slug: spec.slug, name: spec.name, category: spec.category, blurb: spec.blurb,
     archetype: spec.archetype, mode: a.mode, accent: spec.accent,
+    icon: spec.icon || null,
     treatment: spec.treatment || 'solid', background: spec.background || null,
     scrim: spec.scrim || (dark ? 'dark' : 'light'),
     font, shape, button: btn,
