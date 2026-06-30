@@ -695,6 +695,54 @@ class UserController extends Controller
         return view('/studio/page', $data);
     }
 
+    /**
+     * Unified studio editor — /studio/edit. Consolidates what used to be
+     * four separate pages (page / appearance / social-icons / links)
+     * into one tabbed page with a shared live preview. This method just
+     * assembles the union of view-data the four ported tab partials
+     * need; the forms inside them still post to their original
+     * controller endpoints unchanged (per-tab save, no rewrite).
+     *
+     *   Basics tab     -> $pages                       (was showPage)
+     *   Appearance tab -> $user, $saved, $fonts        (was AppearanceController::show)
+     *   Social tab     -> $configuredIcons             (was showSocialIcons)
+     *   Blocks tab     -> $links, $pagePage            (was showLinks)
+     */
+    public function showEditor()
+    {
+        $userId = Auth::id();
+        $user   = User::find($userId);
+
+        // Basics
+        $pages = User::where('id', $userId)
+            ->select('littlelink_name', 'littlelink_description', 'image', 'name')
+            ->get();
+
+        // Appearance (same source AppearanceController::show uses)
+        $saved = AppearanceController::loadForUser($user);
+        $fonts = AppearanceController::GOOGLE_FONTS;
+
+        // Social icons — links rows using the special "icon" button (94)
+        $configuredIcons = DB::table('links')
+            ->where('user_id', $userId)
+            ->where('button_id', 94)
+            ->orderBy('order', 'asc')
+            ->orderBy('id', 'asc')
+            ->get();
+
+        // Blocks list (mirrors showLinks)
+        $pagePage = 10;
+        $links = Link::select()
+            ->where('user_id', $userId)
+            ->orderBy('up_link', 'asc')
+            ->orderBy('order', 'asc')
+            ->paginate(99999);
+
+        return view('studio.edit', compact(
+            'user', 'pages', 'saved', 'fonts', 'configuredIcons', 'pagePage', 'links'
+        ));
+    }
+
     //Save littlelink page (name, description, logo)
     public function editPage(Request $request)
     {
