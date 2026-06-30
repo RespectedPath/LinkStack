@@ -157,54 +157,9 @@ plan a single design-aligned implementation so everything flows together.
 
    _Added 2026-06-29._
 
-9. **Theme library — build profession-targeted starter themes.**
-   LinkStack ships with a small theme library (`themes/` dir at the
-   repo root — currently has just PolySleek + galaxy). Operators can
-   download more from the LinkStack site but the catalog is thin and
-   generic. Mail Minted's target users will likely want a near-zero-
-   config starting point that matches their profession or vibe.
-
-   Goal: ship ~15–24 in-house themes named for common use cases so a
-   new customer can pick one in a single click and be visually
-   "done" without touching the appearance editor at all.
-
-   Profession / style buckets to cover:
-   - Service trades: plumber, mechanic, electrician, contractor
-   - Beauty & wellness: hairstylist, esthetician, nail tech, makeup
-     artist, yoga instructor, massage therapist, personal trainer
-   - Food & drink: chef / restaurant, baker, barista, food truck
-   - Creative: photographer, musician, artist, tattoo artist,
-     designer, writer
-   - Professional services: lawyer, realtor, accountant, therapist /
-     coach, consultant
-   - Lifestyle / influencer: lifestyle blogger, fitness influencer,
-     travel creator
-   - Special interest: pet groomer / vet, florist, wedding planner,
-     event planner
-
-   Theme structure (per LinkStack convention — `themes/<name>/`):
-   - `config.php` — metadata (display name, description, tags)
-   - `preview.png` — thumbnail shown in the picker
-   - `readme.md` — short blurb
-   - `skeleton-auto.css`, `brands.css`, `animations.css`,
-     `share.button.css` — the CSS overrides that give the theme its
-     personality (palette, typography, button shape/treatment,
-     subtle background pattern or gradient)
-
-   _Candidate fix:_
-   - Define a small "design system" — palette + font + button shape
-     + background style — so every theme is built from the same
-     variable schema. Keeps the catalog cohesive instead of looking
-     like 24 random hand-drawn designs.
-   - Maybe generate preview PNGs programmatically from the theme's
-     palette/font (small Node or headless-browser script) rather
-     than hand-mocking each one — keeps the work tractable.
-   - Update `/studio/theme` picker UI to group themes by category
-     (Trade / Beauty / Food / Creative / Professional / Lifestyle)
-     and make profession-named themes searchable.
-   - Bigger scope than other items — likely a multi-day project of
-     its own. Worth carving out as a dedicated sprint rather than
-     bundling into the broader UX pass.
+9. **Theme library — build profession-targeted starter themes.** ✅
+   Shipped 2026-06-29 — see **Done** below for what landed. Original
+   spec lives in `THEME-LIBRARY-PROMPT.md`.
 
    _Added 2026-06-29._
 
@@ -212,11 +167,23 @@ plan a single design-aligned implementation so everything flows together.
 
 ## In progress
 
-- **Item 9 — Theme library** — split into its own focused chat session
-  per `THEME-LIBRARY-PROMPT.md`. Started 2026-06-29.
+_(nothing in progress)_
 
 ---
 
 ## Done
 
-_(items move here once shipped)_
+- **Item 9 — Theme library** — shipped 2026-06-29. A spec-driven generator
+  (`theme-toolkit/`) produces **47 profession-targeted themes** from a small
+  design system: 5 palette archetypes (Trade / Bloom / Hearth / Studio /
+  Gallery) × accents × 3 button shapes × 3 background treatments, with
+  self-hosted fonts and Playwright-rendered previews. Every theme signals
+  its trade — **12 photo themes** (real Unsplash backgrounds behind a
+  legibility scrim) and **35 tiled profession-icon motifs** (wrench, scissors,
+  gavel, paw, …), each glyph unique. The `/studio/theme` picker now groups
+  themes by category with live search (`Theme Category:` parsed from each
+  readme). Verified on the live bio page. Note: Mail Minted's own
+  `/studio/appearance` override layer wins over a theme once a customer
+  configures it — themes render fully for fresh customers (null
+  customization); wiring "pick a theme → seed the editor" is left to the
+  appearance-editor project. LinkStack commits c9699a4 → 5260f0d.
