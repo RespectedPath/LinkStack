@@ -1,0 +1,157 @@
+@extends('layouts.sidebar')
+
+@section('content')
+
+{{-- Shared front-end deps for the unified editor, loaded once:
+     - Font Awesome (brand glyphs) for the Social + Blocks tabs. JS
+       variant, not CSS, to avoid the 404-ing relative webfont paths
+       (same reason social-icons.blade used it).
+     - appearance.css for the Appearance tab's controls + the shared
+       .appearance-layout grid that splits tab content from preview. --}}
+@push('sidebar-stylesheets')
+<script defer src="{{ asset('assets/external-dependencies/fontawesome.js') }}" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="{{ asset('assets/css/appearance.css') }}">
+@endpush
+
+<style>
+    /* ===== Unified studio editor — top-level tab chrome ===== */
+    .mm-edit-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        border-bottom: 1px solid rgba(128, 128, 128, 0.2);
+        margin-bottom: 18px;
+        padding-bottom: 0;
+    }
+    .mm-edit-tab {
+        appearance: none;
+        background: transparent;
+        border: none;
+        border-bottom: 2px solid transparent;
+        padding: 10px 18px;
+        font-size: 0.98rem;
+        font-weight: 600;
+        color: inherit;
+        opacity: 0.6;
+        cursor: pointer;
+        transition: opacity 0.12s ease, border-color 0.12s ease;
+    }
+    .mm-edit-tab:hover { opacity: 0.9; }
+    .mm-edit-tab.active {
+        opacity: 1;
+        border-bottom-color: var(--bs-primary, #3b82f6);
+    }
+    .mm-edit-tab .bi { margin-right: 6px; }
+
+    .mm-pane { display: none; }
+    .mm-pane.active { display: block; }
+
+    /* Tab content sits in the left grid cell; the live preview the
+       shell includes fills the right cell. Reuses .appearance-layout
+       (1fr 1fr, stacks <=992px) so the split matches the old pages. */
+    .mm-edit-content { min-width: 0; }
+</style>
+
+<div class="container-fluid content-inner mt-n5 py-0">
+  <div class="row">
+    <div class="col-12">
+      <div class="card rounded">
+        <div class="card-body">
+
+          {{-- Shared flash + validation surface. Every tab's form
+               redirects back here (old GET routes now point at this
+               page), so a single alert block serves them all. --}}
+          @if(session()->has('success'))
+            <div class="alert alert-success">{{ session('success') }}</div>
+          @endif
+          @if($errors->any())
+            <div class="alert alert-danger">
+              <strong>Couldn't save:</strong>
+              <ul class="mb-0 mt-1">
+                @foreach($errors->all() as $err)<li>{{ $err }}</li>@endforeach
+              </ul>
+            </div>
+          @endif
+
+          {{-- ===== Top-level tabs ===== --}}
+          <nav class="mm-edit-tabs" role="tablist" aria-label="Page editor sections">
+            <button type="button" class="mm-edit-tab" data-mm-tab="basics"     role="tab"><i class="bi bi-person-vcard"></i> Basics</button>
+            <button type="button" class="mm-edit-tab" data-mm-tab="appearance" role="tab"><i class="bi bi-palette-fill"></i> Appearance</button>
+            <button type="button" class="mm-edit-tab" data-mm-tab="social"     role="tab"><i class="bi bi-share-fill"></i> Social</button>
+            <button type="button" class="mm-edit-tab" data-mm-tab="blocks"     role="tab"><i class="bi bi-link-45deg"></i> Blocks</button>
+          </nav>
+
+          {{-- ===== Grid: tab content | shared live preview ===== --}}
+          <div class="appearance-layout">
+            <div class="mm-edit-content">
+              <div class="mm-pane" id="pane-basics"     role="tabpanel">@include('studio.partials.edit.basics')</div>
+              <div class="mm-pane" id="pane-appearance" role="tabpanel">@include('studio.partials.edit.appearance')</div>
+              <div class="mm-pane" id="pane-social"     role="tabpanel">@include('studio.partials.edit.social')</div>
+              <div class="mm-pane" id="pane-blocks"     role="tabpanel">@include('studio.partials.edit.blocks')</div>
+            </div>
+
+            @include('studio.partials.live-preview', ['littleLinkName' => $user->littlelink_name ?? null])
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{-- appearance.js drives the Appearance tab (photo cropper, bg upload,
+     swatch state, reset). Loaded once at body end. --}}
+@push('sidebar-scripts')
+<script src="{{ asset('assets/js/appearance.js') }}?v={{ filemtime(public_path('assets/js/appearance.js')) }}"></script>
+<script>
+(function () {
+    var VALID = ['basics', 'appearance', 'social', 'blocks'];
+    var tabs  = Array.prototype.slice.call(document.querySelectorAll('.mm-edit-tab'));
+    var panes = {};
+    VALID.forEach(function (t) { panes[t] = document.getElementById('pane-' + t); });
+
+    function activate(name, push) {
+        if (VALID.indexOf(name) === -1) name = 'basics';
+        tabs.forEach(function (btn) {
+            var on = btn.getAttribute('data-mm-tab') === name;
+            btn.classList.toggle('active', on);
+            btn.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+        VALID.forEach(function (t) {
+            if (panes[t]) panes[t].classList.toggle('active', t === name);
+        });
+        if (push && location.hash.replace('#', '') !== name) {
+            history.replaceState(null, '', '#' + name);
+        }
+    }
+
+    // Tab button clicks.
+    tabs.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            activate(btn.getAttribute('data-mm-tab'), true);
+        });
+    });
+
+    // In-page cross-links (e.g. "Profile photo lives on the Appearance
+    // tab") carry data-mm-tab and switch tabs instead of navigating.
+    document.addEventListener('click', function (e) {
+        var link = e.target.closest('a[data-mm-tab]');
+        if (!link) return;
+        e.preventDefault();
+        activate(link.getAttribute('data-mm-tab'), true);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // Respond to hash changes (back/forward, or a redirect landing on
+    // /studio/edit#appearance from an old bookmarked URL).
+    window.addEventListener('hashchange', function () {
+        activate(location.hash.replace('#', ''), false);
+    });
+
+    // Initial tab from the URL hash, default Basics.
+    activate(location.hash.replace('#', '') || 'basics', false);
+})();
+</script>
+@endpush
+
+@endsection
