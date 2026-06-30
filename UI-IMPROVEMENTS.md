@@ -163,6 +163,34 @@ plan a single design-aligned implementation so everything flows together.
 
    _Added 2026-06-29._
 
+10. **Studio editor is fragmented across 4 pages.**
+    Editing what visitors see as ONE bio page currently requires
+    navigating between four destinations:
+    - `/studio/page` — display name, description, profile photo
+    - `/studio/appearance` — colors, fonts, background, button shape,
+      avatar shape, social icon styling
+    - `/studio/social-icons` — the brand icon row
+    - `/studio/links` — blocks list + per-block edit page
+
+    Operator has to hold a mental map of "for X I go here, for Y I go
+    there." Self-test confusion: tried to add the page title as a
+    Block when it actually lives in Page Info. Block creation is also
+    a two-step (add type → edit form) which compounds the friction.
+
+    _Candidate fix (Option A — recommended):_ a single `/studio/edit`
+    page with tabs (Basics / Appearance / Social / Blocks), live
+    preview always visible on the right. Old pages redirect into the
+    corresponding tab. Each tab ports the existing content; no
+    underlying form/controller rewrite. Inside the Blocks tab,
+    picking a type from the Add picker opens that block's form
+    INLINE (no separate edit-link page navigation).
+
+    _Option B (bigger):_ Wix-style page builder — visual sections in
+    public-page order, click any to expand and edit inline. ~2-3 days,
+    probably its own focused chat session.
+
+    _Added 2026-06-29._
+
 ---
 
 ## In progress
