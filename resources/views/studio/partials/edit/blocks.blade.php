@@ -55,7 +55,7 @@ if(!function_exists('strp')){function strp($urlStrp){return str_replace(array('h
 <section class='text-gray-400'>
     <h3 class="card-header mm-blocks-header">
         <span><i class="bi bi-link-45deg"></i> My Blocks</span>
-        <a class="btn btn-primary" href="{{ url('/studio/add-link') }}">Add new Block</a>
+        <a class="btn btn-primary" href="{{ url('/studio/add-link') }}" data-mm-add>Add new Block</a>
     </h3>
 
     <div>
@@ -145,7 +145,7 @@ if(!function_exists('strp')){function strp($urlStrp){return str_replace(array('h
                                     </span>
                                  </a>
 
-                                    <a style="float: right;" href="{{ route('editLink', $link->id ) }}" class="btn btn-sm me-1 btn-icon btn-warning" data-bs-toggle="tooltip" data-bs-placement="top" data-original-title="{{__('messages.Edit')}}" aria-label="Edit" data-bs-original-title="{{__('messages.Edit')}}">
+                                    <a style="float: right;" href="{{ route('editLink', $link->id ) }}" data-mm-edit class="btn btn-sm me-1 btn-icon btn-warning" data-bs-toggle="tooltip" data-bs-placement="top" data-original-title="{{__('messages.Edit')}}" aria-label="Edit" data-bs-original-title="{{__('messages.Edit')}}">
                                        <span class="btn-inner">
                                           <svg class="icon-20" width="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                              <path d="M11.4925 2.78906H7.75349C4.67849 2.78906 2.75049 4.96606 2.75049 8.04806V16.3621C2.75049 19.4441 4.66949 21.6211 7.75349 21.6211H16.5775C19.6625 21.6211 21.5815 19.4441 21.5815 16.3621V12.3341" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
@@ -179,6 +179,119 @@ if(!function_exists('strp')){function strp($urlStrp){return str_replace(array('h
         @if(count($links) > 3)<a class="btn btn-primary" href="{{ url('/studio/add-link') }}">Add new Block</a>@endif
     </div>
 
-    {{-- STEP 3 inline-editor slot — intentionally empty for now. --}}
-    <div id="mm-block-editor"></div>
+    {{-- Inline editor panel. Add / Edit open the existing block editor
+         in an embedded iframe right here (no page jump). The editor runs
+         in its native document context inside the frame, so every block
+         type's own scripts/styles keep working untouched. --}}
+    <div id="mm-block-editor" class="mm-block-editor" hidden>
+        <div class="mm-block-editor-head">
+            <h5 class="mb-0" id="mm-block-editor-title"><i class="bi bi-pencil-square"></i> Edit block</h5>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="mm-block-editor-close">
+                <i class="bi bi-x-lg"></i> Close
+            </button>
+        </div>
+        <iframe id="mm-block-frame" title="Block editor" src="about:blank"></iframe>
+    </div>
 </section>
+
+<style>
+    .mm-block-editor {
+        margin-top: 18px;
+        border: 1px solid rgba(128, 128, 128, 0.25);
+        border-radius: 12px;
+        overflow: hidden;
+        background: rgba(128, 128, 128, 0.04);
+    }
+    .mm-block-editor-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 14px;
+        border-bottom: 1px solid rgba(128, 128, 128, 0.2);
+        background: rgba(128, 128, 128, 0.08);
+    }
+    #mm-block-frame {
+        width: 100%;
+        height: 75vh;
+        min-height: 520px;
+        border: 0;
+        display: block;
+        background: transparent;
+    }
+</style>
+
+@push('sidebar-scripts')
+<script>
+(function () {
+    var panel = document.getElementById('mm-block-editor');
+    var frame = document.getElementById('mm-block-frame');
+    var title = document.getElementById('mm-block-editor-title');
+    var closeBtn = document.getElementById('mm-block-editor-close');
+    if (!panel || !frame) return;
+
+    // The frame starts on an editor URL (/studio/add-link or
+    // /studio/edit-link/{id}). After a save the editor redirects to
+    // /studio/edit#blocks — i.e. it leaves the editor path. We watch the
+    // frame's load events and, once it navigates away from an editor
+    // path, treat that as "saved/closed" and reload the parent so the
+    // block list and live preview refresh. ('Save and add more' redirects
+    // back to /studio/add-link, which is still an editor path, so the
+    // panel stays open for the next block.)
+    var EDITOR_RE = /\/studio\/(add-link|edit-link)/;
+    var opened = false;
+
+    function openEditor(url, label) {
+        title.innerHTML = '<i class="bi bi-pencil-square"></i> ' + label;
+        panel.hidden = false;
+        opened = true;
+        // Cache-bust so re-opening the same block reloads fresh state.
+        var sep = url.indexOf('?') === -1 ? '?' : '&';
+        frame.src = url + sep + 'embed=1';
+        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function closeEditor() {
+        panel.hidden = true;
+        frame.src = 'about:blank';
+        opened = false;
+    }
+
+    // Intercept Add / Edit clicks inside the Blocks pane.
+    document.addEventListener('click', function (e) {
+        var add = e.target.closest('a[data-mm-add]');
+        if (add) {
+            e.preventDefault();
+            openEditor(add.getAttribute('href'), 'Add block');
+            return;
+        }
+        var edit = e.target.closest('a[data-mm-edit]');
+        if (edit) {
+            e.preventDefault();
+            openEditor(edit.getAttribute('href'), 'Edit block');
+            return;
+        }
+    });
+
+    closeBtn.addEventListener('click', closeEditor);
+
+    frame.addEventListener('load', function () {
+        if (!opened) return; // ignore the initial about:blank
+        var path;
+        try {
+            path = frame.contentWindow.location.pathname;
+        } catch (err) {
+            return; // cross-origin shouldn't happen (same app); bail safely
+        }
+        // Still inside the editor (initial load, or 'save and add more'):
+        // leave the panel open.
+        if (EDITOR_RE.test(path)) return;
+        // Left the editor path => the block was saved (or cancelled).
+        // Refresh the unified editor on the Blocks tab (reload preserves
+        // the hash, so we land back on Blocks with a fresh list +
+        // preview and the saved-success flash).
+        window.location.hash = 'blocks';
+        window.location.reload();
+    });
+})();
+</script>
+@endpush
