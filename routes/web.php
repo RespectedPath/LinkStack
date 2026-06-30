@@ -156,8 +156,11 @@ Route::get('/studio/add-link', [UserController::class, 'AddUpdateLink'])->name('
 Route::post('/studio/edit-link', [UserController::class, 'saveLink'])->name('addLink');
 Route::get('/studio/edit-link/{id}', [UserController::class, 'AddUpdateLink'])->name('showLink')->middleware('link-id');
 Route::post('/studio/sort-link', [UserController::class, 'sortLinks'])->name('sortLinks');
-Route::get('/studio/links', [UserController::class, $LinkPage])->name($LinkPage);
-Route::get('/studio/social-icons', [UserController::class, 'showSocialIcons'])->name('showSocialIcons');
+// Old studio pages now redirect into the matching tab of the unified
+// /studio/edit editor. Route names are preserved so route('showLinks'),
+// route('showSocialIcons'), etc. still resolve everywhere they're used.
+Route::get('/studio/links', fn() => redirect('/studio/edit#blocks'))->name($LinkPage);
+Route::get('/studio/social-icons', fn() => redirect('/studio/edit#social'))->name('showSocialIcons');
 Route::post('/studio/social-icons/reorder', [UserController::class, 'reorderSocialIcons'])->name('reorderSocialIcons');
 Route::get('/studio/theme', [UserController::class, 'showTheme'])->name('showTheme');
 Route::post('/studio/theme', [UserController::class, 'editTheme'])->name('editTheme');
@@ -166,8 +169,8 @@ Route::get('/upLink/{up}/{id}', [UserController::class, 'upLink'])->name('upLink
 Route::post('/studio/edit-link/{id}', [UserController::class, 'editLink'])->name('editLink')->middleware('link-id');
 Route::get('/studio/button-editor/{id}', [UserController::class, 'showCSS'])->name('showCSS')->middleware('link-id');
 Route::post('/studio/button-editor/{id}', [UserController::class, 'editCSS'])->name('editCSS')->middleware('link-id');
-Route::get('/studio/page', [UserController::class, 'showPage'])->name('showPage');
-Route::get('/studio/no_page_name', [UserController::class, 'showPage'])->name('showPage');
+Route::get('/studio/page', fn() => redirect('/studio/edit#basics'))->name('showPage');
+Route::get('/studio/no_page_name', fn() => redirect('/studio/edit#basics'));
 Route::post('/studio/page', [UserController::class, 'editPage'])->name('editPage');
 Route::post('/studio/background', [UserController::class, 'themeBackground'])->name('themeBackground');
 Route::get('/studio/rem-background', [UserController::class, 'removeBackground'])->name('removeBackground');
@@ -177,7 +180,7 @@ Route::post('/studio/profile/analytics', [UserController::class, 'editAnalytics'
 Route::post('/studio/profile/redirect',  [UserController::class, 'editRedirect'])->name('editRedirect');
 
 // Live-preview Appearance editor (colors, background, typography, button + avatar shape).
-Route::get('/studio/appearance',        [AppearanceController::class, 'show'])->name('showAppearance');
+Route::get('/studio/appearance',        fn() => redirect('/studio/edit#appearance'))->name('showAppearance');
 Route::post('/studio/appearance',       [AppearanceController::class, 'save'])->name('saveAppearance');
 Route::post('/studio/appearance/reset', [AppearanceController::class, 'reset'])->name('resetAppearance');
 Route::post('/studio/appearance/background-image',        [AppearanceController::class, 'uploadBackgroundImage'])->name('uploadBackgroundImage');

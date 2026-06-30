@@ -110,7 +110,7 @@ class AppearanceController extends Controller
         $user->theme_customization = json_encode($data, JSON_UNESCAPED_SLASHES);
         $user->save();
 
-        return redirect()->route('showAppearance')->with('success', 'Appearance saved.');
+        return redirect('/studio/edit#appearance')->with('success', 'Appearance saved.');
     }
 
     public function reset(Request $request)
@@ -118,7 +118,7 @@ class AppearanceController extends Controller
         $user = User::find(Auth::id());
         $user->theme_customization = null;
         $user->save();
-        return redirect()->route('showAppearance')->with('success', 'Appearance reset to defaults.');
+        return redirect('/studio/edit#appearance')->with('success', 'Appearance reset to defaults.');
     }
 
     /**
