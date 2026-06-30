@@ -22,7 +22,7 @@ module.exports = [
     blurb: 'Rust-orange accents with a grounded, weatherproof feel.' },
   { slug: 'landscaper',   name: 'Landscaper',   category: 'Trade', archetype: 'trade', accent: '#36B37E', treatment: 'solid', icon: 'plant-2',
     blurb: 'Green accents over a subtle leaf motif — for landscaping and lawn care.' },
-  { slug: 'handyman',     name: 'Handyman',     category: 'Trade', archetype: 'trade', accent: '#E58A2C', treatment: 'solid', icon: 'tool',
+  { slug: 'handyman',     name: 'Handyman',     category: 'Trade', archetype: 'trade', accent: '#E58A2C', treatment: 'solid', icon: 'ladder',
     blurb: 'Warm amber on dark — approachable and reliable for handyman services.' },
   { slug: 'mover',        name: 'Moving Co.',   category: 'Trade', archetype: 'trade', accent: '#5B8DEF', treatment: 'solid', icon: 'truck',
     blurb: 'Clean blue accents for movers and delivery crews.' },
@@ -66,7 +66,7 @@ module.exports = [
     blurb: 'Classic deep red on warm cream for pizzerias.' },
   { slug: 'brewery',      name: 'Brewery',      category: 'Food', archetype: 'hearth', accent: '#C9852B', treatment: 'solid', icon: 'beer',
     blurb: 'Amber-malt accents for breweries and taprooms.' },
-  { slug: 'bartender',    name: 'Bartender',    category: 'Food', archetype: 'gallery', accent: '#E0A422', treatment: 'solid', icon: 'beer',
+  { slug: 'bartender',    name: 'Bartender',    category: 'Food', archetype: 'gallery', accent: '#E0A422', treatment: 'solid', icon: 'glass-cocktail',
     blurb: 'Moody, dark cocktail-bar theme with warm amber lighting.' },
 
   // ===================== CREATIVE (Gallery unless noted) ===================
@@ -88,7 +88,7 @@ module.exports = [
   // ===================== PROFESSIONAL (Studio) =============================
   { slug: 'lawyer',       name: 'Lawyer',       category: 'Professional', archetype: 'studio', accent: '#7B2D3A', treatment: 'solid', icon: 'gavel',
     blurb: 'Refined editorial theme that reads credible and established for legal and advisory work.' },
-  { slug: 'realtor',      name: 'Realtor',      category: 'Professional', archetype: 'studio', accent: '#1F3A5F', treatment: 'solid', icon: 'home',
+  { slug: 'realtor',      name: 'Realtor',      category: 'Professional', archetype: 'studio', accent: '#1F3A5F', treatment: 'solid', icon: 'key',
     blurb: 'Navy-and-ivory theme that signals trust for real estate.' },
   { slug: 'accountant',   name: 'Accountant',   category: 'Professional', archetype: 'studio', accent: '#2F5D50', treatment: 'solid', icon: 'calculator',
     blurb: 'Forest-green accents — composed and precise for accountants.' },
