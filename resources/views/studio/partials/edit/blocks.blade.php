@@ -8,6 +8,13 @@ if (isset($_COOKIE['LinkCount'])) {
 
 if(!function_exists('strp')){function strp($urlStrp){return str_replace(array('http://', 'https://'), '', $urlStrp);}}
 ?>
+{{-- Defines getFavIcon() / localIcon() used by the block rows below.
+     The old /studio/links page included these at its top; they were
+     dropped in the port, which broke the page with an undefined-
+     function error. Both guard with function_exists, so re-including
+     them elsewhere on the page is safe. --}}
+@include('components.favicon')
+@include('components.favicon-extension')
 {{--
     Blocks tab — ported from /studio/links.blade.php.
     The blocks list (drag-to-reorder via #links-table-body, wired by the
