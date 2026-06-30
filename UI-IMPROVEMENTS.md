@@ -163,8 +163,11 @@ plan a single design-aligned implementation so everything flows together.
 
    _Added 2026-06-29._
 
-10. **Studio editor is fragmented across 4 pages.**
-    Editing what visitors see as ONE bio page currently requires
+10. **Studio editor is fragmented across 4 pages.** ✅
+    Shipped 2026-06-29 — see **Done** below for what landed. The four
+    pages now live as tabs of one `/studio/edit` page.
+
+    Editing what visitors see as ONE bio page used to require
     navigating between four destinations:
     - `/studio/page` — display name, description, profile photo
     - `/studio/appearance` — colors, fonts, background, button shape,
@@ -200,6 +203,23 @@ _(nothing in progress)_
 ---
 
 ## Done
+
+- **Item 10 — Unified studio editor** — shipped 2026-06-29. The four
+  separate pages (page / appearance / social-icons / links) are now tabs
+  of one `/studio/edit` page (Basics / Appearance / Social / Blocks) with
+  a single live preview pinned alongside. Each tab is a faithful port of
+  the old page's form — same fields, ids, validation, and controller
+  endpoints (per-tab save; no form/controller rewrite). The Appearance
+  tab keeps its 5 nested sub-tabs; its styling sub-tab was renamed
+  "Social icon style" to avoid colliding with the Social tab. The sidebar
+  collapses the four items into one "Edit page" entry, and the old GET
+  URLs redirect into the matching tab (`/studio/page` → `#basics`, etc.)
+  so bookmarks/muscle memory survive. In the Blocks tab, Add/Edit open
+  the existing block editor inline in an iframe panel (?embed=1, dashboard
+  chrome hidden) — no page jump to `/studio/edit-link/{id}` — and the
+  panel reuses the proven editor verbatim so every block type's own JS
+  keeps working. Standalone add-link/edit-link pages remain as a fallback.
+  Verified by the operator. LinkStack branch `unified-studio-editor`.
 
 - **Item 9 — Theme library** — shipped 2026-06-29. A spec-driven generator
   (`theme-toolkit/`) produces **47 profession-targeted themes** from a small
