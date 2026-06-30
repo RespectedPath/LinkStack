@@ -128,7 +128,7 @@ $usrhandl = Auth::user()->littlelink_name;
 	  </style>
 
   </head>
-  <body class="  ">
+  <body class="  {{ request()->boolean('embed') ? 'mm-embed' : '' }}">
     <!-- loader Start -->
     <div id="loading">
       <div class="loader simple-loader">

@@ -237,7 +237,13 @@ class UserController extends Controller
         ];
 
         $data['typename'] = $linkData->type ?? 'predefined';
-    
+
+        // Embed mode: the unified /studio/edit Blocks tab loads this page
+        // in an in-panel iframe (?embed=1). The view hides the dashboard
+        // chrome and the forms carry an embed flag so saveLink knows to
+        // return into the panel rather than the standalone page.
+        $data['embed'] = (bool) request()->boolean('embed');
+
         return view('studio/edit-link', $data);
     }
 
@@ -367,10 +373,19 @@ class UserController extends Controller
         }
 
         // Step 8: Redirect
-        // 'add_more' keeps the operator on the standalone add page (will
-        // become the inline Blocks-tab editor in step 3); a normal save
-        // returns to the Blocks tab of the unified editor.
-        $redirectUrl = $request->input('param') == 'add_more' ? 'studio/add-link' : '/studio/edit#blocks';
+        // Where to go after saving a block:
+        // - 'add_more' keeps the operator in the add flow for another block.
+        //   In embed mode (the Blocks-tab panel) we keep ?embed=1 so the
+        //   reloaded form stays chrome-less inside the panel.
+        // - a normal save returns to the Blocks tab; in embed mode the
+        //   panel's parent watches for this navigation and refreshes the
+        //   list + live preview.
+        $embed = $request->boolean('embed');
+        if ($request->input('param') == 'add_more') {
+            $redirectUrl = $embed ? 'studio/add-link?embed=1' : 'studio/add-link';
+        } else {
+            $redirectUrl = '/studio/edit#blocks';
+        }
         return Redirect($redirectUrl)->with('success', $message);
     }
     

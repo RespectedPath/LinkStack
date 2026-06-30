@@ -4,6 +4,25 @@
 
 @push('sidebar-stylesheets')
 <script src="{{ asset('assets/external-dependencies/fontawesome.js') }}" crossorigin="anonymous"></script>
+@if(!empty($embed))
+{{-- Embed mode: this page is loaded in an iframe panel inside the
+     unified editor's Blocks tab. Strip the dashboard chrome (sidebar,
+     top navbar, banner header, footer) so only the editor body shows,
+     and undo the negative top margin that normally slides content under
+     the banner. The .mm-embed class is set on <body> by the layout when
+     ?embed=1 is present. --}}
+<style>
+  body.mm-embed .sidebar,
+  body.mm-embed .iq-navbar,
+  body.mm-embed .iq-navbar-header,
+  body.mm-embed footer.footer { display: none !important; }
+  body.mm-embed .main-content { margin-left: 0 !important; }
+  body.mm-embed .content-inner.mt-n5 { margin-top: 0 !important; }
+  body.mm-embed { background: transparent !important; }
+  body.mm-embed .card { box-shadow: none !important; border: none !important; }
+  body.mm-embed .card-body { padding-top: 8px !important; }
+</style>
+@endif
 <style>
     /* Pass 3 — unified block-edit page. Three sections (Content,
        Appearance, Settings) live inside one form so the operator
@@ -311,6 +330,7 @@
                                         @csrf
                                         <input type='hidden' name='linkid' value="0" />
                                         <input type='hidden' name='typename' value='' />
+                                        @if(!empty($embed))<input type="hidden" name="embed" value="1">@endif
 
                                         <div class="modal-header">
                                             <h5 class="modal-title">
@@ -377,6 +397,7 @@
                                     @csrf
                                     <input type='hidden' name='linkid' value="{{ $LinkID }}" />
                                     <input type='hidden' name='typename' value='{{ $typename }}' />
+                                    @if(!empty($embed))<input type="hidden" name="embed" value="1">@endif
 
                                     {{-- ===== Content section ===== --}}
                                     <fieldset class="mm-edit-section">
