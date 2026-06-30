@@ -367,7 +367,10 @@ class UserController extends Controller
         }
 
         // Step 8: Redirect
-        $redirectUrl = $request->input('param') == 'add_more' ? 'studio/add-link' : 'studio/links';
+        // 'add_more' keeps the operator on the standalone add page (will
+        // become the inline Blocks-tab editor in step 3); a normal save
+        // returns to the Blocks tab of the unified editor.
+        $redirectUrl = $request->input('param') == 'add_more' ? 'studio/add-link' : '/studio/edit#blocks';
         return Redirect($redirectUrl)->with('success', $message);
     }
     
@@ -771,7 +774,7 @@ class UserController extends Controller
         ]);
     
         if ($validator->fails()) {
-            return redirect('/studio/page')->withErrors($validator)->withInput();
+            return redirect('/studio/edit#basics')->withErrors($validator)->withInput();
         }
     
         $profilePhoto = $request->file('image');
@@ -832,7 +835,7 @@ class UserController extends Controller
             UserData::saveData($userId, 'links-new-tab', false);
         }
     
-        return Redirect('/studio/page');
+        return Redirect('/studio/edit#basics');
     }
 
     //Upload custom theme background image
@@ -1426,7 +1429,7 @@ class UserController extends Controller
             }
         }
 
-        return redirect()->route('showSocialIcons')->with('success', 'Social icons updated.');
+        return redirect('/studio/edit#social')->with('success', 'Social icons updated.');
     }
 
     private function searchIcon($icon)
