@@ -1,4 +1,5 @@
 const { FONT_FACES } = require('../design-system');
+const { iconDataUri } = require('../icons');
 
 // Subtle, asset-free background textures (pure CSS) keyed by spec.texture.
 function textureCss(t) {
@@ -244,9 +245,29 @@ function customHead(t) {
   background-repeat: no-repeat, no-repeat;
 }`;
   }
+  let motif = '';
+  if (t.icon) {
+    // Faint profession glyph behind the content so the theme reads as its
+    // trade. Photo themes already signal, so dial the motif down on them.
+    const uri = iconDataUri(t.icon, t.vars['--title-color']);
+    const opacity = t.mode === 'dark' ? 0.05 : 0.06;
+    motif =
+`\nbody::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: url("${uri}");
+  background-repeat: repeat;
+  background-position: center;
+  background-size: 78px;
+  opacity: ${opacity};
+}`;
+  }
   return `<style>
 ${fontFaceBlocks(t)}
-${bg}
+${bg}${motif}
 </style>
 `;
 }
