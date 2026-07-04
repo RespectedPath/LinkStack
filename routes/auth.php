@@ -29,78 +29,62 @@ if(config('advanced-config.forgot_password_url') != '') {
 }
 
 Route::post('/validate-handle', [RegisteredUserController::class, 'validateHandle']);
-    if(env('ALLOW_REGISTRATION') or $register !== '/register') {
-        Route::get($register, [RegisteredUserController::class, 'create'])
-            ->middleware('guest')
-            ->middleware('max.users')
-            ->name('register');
 
-        Route::post($register, [RegisteredUserController::class, 'store'])
-            ->middleware('guest')
-            ->middleware('max.users');
-    } else {
-        Route::get($register, function () {
-            abort(404);
-        })->name('register');
+/*
+ * Customer-facing auth is fully owned by Mail Minted:
+ *   - Signup happens through /checkout on Mail Minted; the backend
+ *     provisions the matching LinkStack account programmatically.
+ *   - Login goes through Supabase; customers arrive here via the
+ *     SSO handoff in routes/sso-mailminted.php.
+ *   - Password resets, email verification, and password confirmation
+ *     all target the customer's Supabase account, not a local
+ *     LinkStack credential (which is an auto-generated random string
+ *     the customer never sees).
+ *
+ * So every customer-facing auth surface below is dead. We keep the
+ * route names registered (register / password.request / verification.*
+ * etc.) so any framework helper or view partial that calls route(...)
+ * still resolves — but the response is always 404. That preserves the
+ * "single cohesive Mail Minted app" feel: customers never see a
+ * LinkStack signup / reset / verification screen, even by accident.
+ *
+ * The two things still alive here are the login POST (admin / scripted
+ * submissions) and the logout POST (backwards-compat for anything that
+ * still POSTs the stock Laravel logout route).
+ */
+$dead = function () { abort(404); };
 
-        Route::post($register, function () {
-            abort(404);
-        });
-    }
+// Register — accounts are auto-provisioned by Mail Minted's checkout.
+Route::get($register,  $dead)->name('register');
+Route::post($register, $dead);
 
-// Login GET redirects to Mail Minted's login page so LinkStack always
-// feels like a single cohesive piece of the Mail Minted product.
-// Customers never see LinkStack's stock login form. The POST route
-// below still exists for direct submissions (e.g. admin panel, tests).
-// If MAILMINTED_APP_URL is unconfigured we fall back to the stock
-// LinkStack form so the app never becomes unreachable.
+// Login: GET → redirect to Mail Minted's /login (never expose the
+// LinkStack form). POST kept alive for admin panel + scripted use.
 Route::get($login, function () {
     $mmUrl = rtrim((string) env('MAILMINTED_APP_URL', ''), '/');
     if ($mmUrl) {
         return redirect()->away($mmUrl . '/login');
     }
     return app(\App\Http\Controllers\Auth\AuthenticatedSessionController::class)->create();
-})
-                ->middleware('guest')
-                ->name('login');
+})->middleware('guest')->name('login');
 
 Route::post($login, [AuthenticatedSessionController::class, 'store'])
                 ->middleware('guest');
 
-Route::get( $forgot_password, [PasswordResetLinkController::class, 'create'])
-                ->middleware('guest')
-                ->name('password.request');
+// Password reset — resets Supabase credentials on Mail Minted.
+Route::get($forgot_password,           $dead)->name('password.request');
+Route::post($forgot_password,          $dead)->name('password.email');
+Route::get('/reset-password/{token}',  $dead)->name('password.reset');
+Route::post('/reset-password',         $dead)->name('password.update');
 
-Route::post( $forgot_password, [PasswordResetLinkController::class, 'store'])
-                ->middleware('guest')
-                ->name('password.email');
+// Email verification — Supabase handles this.
+Route::get('/verify-email',                     $dead)->name('verification.notice');
+Route::get('/verify-email/{id}/{hash}',         $dead)->name('verification.verify');
+Route::post('/email/verification-notification', $dead)->name('verification.send');
 
-Route::get('/reset-password/{token}', [NewPasswordController::class, 'create'])
-                ->middleware('guest')
-                ->name('password.reset');
-
-Route::post('/reset-password', [NewPasswordController::class, 'store'])
-                ->middleware('guest')
-                ->name('password.update');
-
-Route::get('/verify-email', [EmailVerificationPromptController::class, '__invoke'])
-                ->middleware('auth')
-                ->name('verification.notice');
-
-Route::get('/verify-email/{id}/{hash}', [VerifyEmailController::class, '__invoke'])
-                ->middleware(['auth', 'signed', 'throttle:6,1'])
-                ->name('verification.verify');
-
-Route::post('/email/verification-notification', [EmailVerificationNotificationController::class, 'store'])
-                ->middleware(['auth', 'throttle:6,1'])
-                ->name('verification.send');
-
-Route::get('/confirm-password', [ConfirmablePasswordController::class, 'show'])
-                ->middleware('auth')
-                ->name('password.confirm');
-
-Route::post('/confirm-password', [ConfirmablePasswordController::class, 'store'])
-                ->middleware('auth');
+// Password confirmation — customers have no LinkStack password to confirm.
+Route::get('/confirm-password',  $dead)->name('password.confirm');
+Route::post('/confirm-password', $dead);
 
 Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
                 ->middleware('auth')
