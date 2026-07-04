@@ -16,4 +16,16 @@
 		</div>
 	</a>
 	@endif
+
+	{{-- AGPL v3 source-availability disclosure. LinkStack (and this
+	     fork) is licensed under AGPL v3; when the service is run for
+	     users over a network, the license requires the modified source
+	     be reachable. A quiet plaintext link satisfies that without
+	     the "Powered by" branding badge — the whitelabel product
+	     (Mail Minted) stays clean while remaining license-compliant.
+	     Change the URL if the fork ever moves. --}}
+	<div class="fadein" style="font-size: 0.7rem; opacity: 0.5; padding-bottom: 24px;">
+		<a href="https://github.com/RespectedPath/LinkStack" target="_blank" rel="noopener noreferrer"
+		   style="color: inherit; text-decoration: none;">Source</a>
+	</div>
 	</div>
