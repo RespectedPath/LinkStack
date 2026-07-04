@@ -48,7 +48,19 @@ Route::post('/validate-handle', [RegisteredUserController::class, 'validateHandl
         });
     }
 
-Route::get($login, [AuthenticatedSessionController::class, 'create'])
+// Login GET redirects to Mail Minted's login page so LinkStack always
+// feels like a single cohesive piece of the Mail Minted product.
+// Customers never see LinkStack's stock login form. The POST route
+// below still exists for direct submissions (e.g. admin panel, tests).
+// If MAILMINTED_APP_URL is unconfigured we fall back to the stock
+// LinkStack form so the app never becomes unreachable.
+Route::get($login, function () {
+    $mmUrl = rtrim((string) env('MAILMINTED_APP_URL', ''), '/');
+    if ($mmUrl) {
+        return redirect()->away($mmUrl . '/login');
+    }
+    return app(\App\Http\Controllers\Auth\AuthenticatedSessionController::class)->create();
+})
                 ->middleware('guest')
                 ->name('login');
 
