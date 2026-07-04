@@ -497,10 +497,16 @@ $usrhandl = Auth::user()->littlelink_name;
                     <li><a class="dropdown-item" data-bs-toggle="offcanvas" data-bs-target="#offcanvasExample" role="button" aria-controls="offcanvasExample"><i class="bi bi-brush-fill"></i> {{__('messages.Styling')}}</a></li>
                     <li><hr class="dropdown-divider"></li>
                     <li>
-					<form action="{{ route('logout') }}" method="post">
-						<input type="hidden" name="_token" value="{{ csrf_token() }}">
-						<button type="submit" class="dropdown-item" href="{{ route('logout') }}"><i class="bi bi-box-arrow-in-left"></i> {{__('messages.Logout')}}</button>
-					</form>
+					{{-- Logout button — routes through the Mail Minted SSO
+					     bridge so signing out of LinkStack also signs out
+					     of Mail Minted (Supabase session). The bridge
+					     clears the Laravel session, then redirects to
+					     Mail Minted's /logout-complete which calls
+					     supabase.signOut(). Original Laravel /logout
+					     route still exists for programmatic /admin use. --}}
+					<a class="dropdown-item" href="{{ route('mailminted.sso.logout') }}">
+						<i class="bi bi-box-arrow-in-left"></i> {{__('messages.Logout')}}
+					</a>
 					</li>
                   </ul>
                 </li>

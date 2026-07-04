@@ -75,3 +75,49 @@ Route::get('/sso/mailminted', function (Request $request) {
     $request->session()->regenerate();
     return redirect('/dashboard');
 })->name('mailminted.sso');
+
+
+/*
+ * SSO Logout — the mirror of the login handoff above.
+ *
+ * Both apps' logout buttons bounce through this endpoint so LinkStack
+ * and Mail Minted's sessions clear together. The customer never ends
+ * up authenticated on one side but not the other.
+ *
+ *   From LinkStack: sidebar logout POSTs / GETs here directly.
+ *   From Mail Minted: frontend logout button redirects here with
+ *     ?return=<mailminted-post-logout-url> so the browser bounces
+ *     back to Mail Minted after LinkStack's session is cleared.
+ *
+ * Security:
+ *   - No token required (users can always sign themselves out).
+ *   - The return URL is validated against MAILMINTED_APP_URL to
+ *     prevent open-redirect abuse. Anything not under that origin
+ *     falls back to a safe default.
+ *   - GET is accepted (browser redirects can't POST easily), and
+ *     the operation is idempotent, so CSRF exemption is fine here.
+ */
+Route::get('/sso/logout', function (Request $request) {
+    // Clear the Laravel session — mirror of what
+    // AuthenticatedSessionController@destroy does.
+    Auth::guard('web')->logout();
+    $request->session()->invalidate();
+    $request->session()->regenerateToken();
+
+    // Validate ?return against the configured Mail Minted origin so a
+    // malicious link can't turn this route into an open redirector.
+    $return = $request->query('return');
+    $mmUrl  = rtrim((string) env('MAILMINTED_APP_URL', ''), '/');
+
+    if ($return && $mmUrl && str_starts_with($return, $mmUrl . '/')) {
+        return redirect()->away($return);
+    }
+
+    // No return URL provided (or it didn't validate). Redirect to the
+    // Mail Minted logout-complete page if we know where that lives,
+    // otherwise the LinkStack login page as a last resort.
+    if ($mmUrl) {
+        return redirect()->away($mmUrl . '/logout-complete');
+    }
+    return redirect('/login');
+})->name('mailminted.sso.logout');
