@@ -76,6 +76,7 @@
           {{-- ===== Top-level tabs ===== --}}
           <nav class="mm-edit-tabs" role="tablist" aria-label="Page editor sections">
             <button type="button" class="mm-edit-tab" data-mm-tab="basics"     role="tab"><i class="bi bi-person-vcard"></i> Basics</button>
+            <button type="button" class="mm-edit-tab" data-mm-tab="themes"     role="tab"><i class="bi bi-brush"></i> Themes</button>
             <button type="button" class="mm-edit-tab" data-mm-tab="appearance" role="tab"><i class="bi bi-palette-fill"></i> Appearance</button>
             <button type="button" class="mm-edit-tab" data-mm-tab="social"     role="tab"><i class="bi bi-share-fill"></i> Social</button>
             <button type="button" class="mm-edit-tab" data-mm-tab="blocks"     role="tab"><i class="bi bi-link-45deg"></i> Blocks</button>
@@ -85,6 +86,7 @@
           <div class="appearance-layout">
             <div class="mm-edit-content">
               <div class="mm-pane" id="pane-basics"     role="tabpanel">@include('studio.partials.edit.basics')</div>
+              <div class="mm-pane" id="pane-themes"     role="tabpanel">@include('studio.partials.edit.themes')</div>
               <div class="mm-pane" id="pane-appearance" role="tabpanel">@include('studio.partials.edit.appearance')</div>
               <div class="mm-pane" id="pane-social"     role="tabpanel">@include('studio.partials.edit.social')</div>
               <div class="mm-pane" id="pane-blocks"     role="tabpanel">@include('studio.partials.edit.blocks')</div>
@@ -105,7 +107,7 @@
 <script src="{{ asset('assets/js/appearance.js') }}?v={{ filemtime(public_path('assets/js/appearance.js')) }}"></script>
 <script>
 (function () {
-    var VALID = ['basics', 'appearance', 'social', 'blocks'];
+    var VALID = ['basics', 'themes', 'appearance', 'social', 'blocks'];
     var tabs  = Array.prototype.slice.call(document.querySelectorAll('.mm-edit-tab'));
     var panes = {};
     VALID.forEach(function (t) { panes[t] = document.getElementById('pane-' + t); });

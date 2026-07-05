@@ -924,7 +924,10 @@ class UserController extends Controller
         }
 
 
-        return Redirect('/studio/theme')->with("success", $message);
+        // Both the customer theme-select and the admin zip-upload land on
+        // the unified editor's Themes tab, where the chosen/new theme is
+        // immediately visible in the grid. (item 12a)
+        return Redirect('/studio/edit#themes')->with("success", $message);
     }
 
     //Show user (name, email, password)
