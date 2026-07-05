@@ -20,7 +20,7 @@
 --}}
 
 <section class="text-gray-400">
-  <h3 class="mb-3 card-header"><i class="bi bi-palette-fill"></i> Appearance</h3>
+  <h3 class="mb-4 card-header"><i class="bi bi-palette-fill"></i> Appearance</h3>
   <p class="text-muted">Customize how your public page looks. Changes apply on top of your selected theme.</p>
 
   {{-- Wrapper: holds the tab nav + tab panes + the main save form.

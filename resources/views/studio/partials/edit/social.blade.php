@@ -49,7 +49,7 @@
 @endphp
 
 <section class='text-gray-400'>
-  <h3 class="mb-3 card-header"><i class="fa-solid fa-icons"></i> {{__('messages.Page Icons')}}</h3>
+  <h3 class="mb-4 card-header"><i class="fa-solid fa-icons"></i> {{__('messages.Page Icons')}}</h3>
   <p class="text-muted small">
     Small brand icons rendered as a row near the top of your public page.
     For brands not listed below, use <a href="#" data-mm-tab="blocks">Blocks &rarr; Predefined Site</a>.

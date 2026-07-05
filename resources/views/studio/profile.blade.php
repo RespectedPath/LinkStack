@@ -61,7 +61,7 @@
                    resources/views/studio/partials/.
               --}}
               <div class="col-lg-8 mt-5">
-                <h3 class="card-header mb-3"><i class="bi bi-plug"></i> Integrations</h3>
+                <h3 class="mb-4 card-header"><i class="bi bi-plug"></i> Integrations</h3>
                 <p class="text-muted mb-4">Connect external services to your public page.</p>
 
                 @include('studio.partials.integration-stripe',    ['profile' => $profile])

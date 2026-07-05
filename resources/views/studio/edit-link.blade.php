@@ -268,7 +268,7 @@
                              ==================================================== --}}
                         <a href="{{ url('studio/links') }}" class="mm-edit-back"><i class="bi bi-arrow-left"></i> Back to Blocks</a>
                         <section class='text-gray-400'>
-                            <h3 class="card-header"><i class="bi bi-journal-plus"></i> {{__('messages.Add')}} {{__('messages.Block')}}</h3>
+                            <h3 class="mb-4 card-header"><i class="bi bi-journal-plus"></i> {{__('messages.Add')}} {{__('messages.Block')}}</h3>
                             <div class='card-body'>
                                 <p class="text-muted mb-3">Choose what kind of block to add to your page. You can add as many of each type as you want &mdash; each one is independent.</p>
 
@@ -390,7 +390,7 @@
 
                         <a href="{{ url('studio/links') }}" class="mm-edit-back"><i class="bi bi-arrow-left"></i> Back to Blocks</a>
                         <section class='text-gray-400'>
-                            <h3 class="card-header"><i class="bi bi-journal-plus"></i> {{__('messages.Edit')}} {{__('messages.Block')}}</h3>
+                            <h3 class="mb-4 card-header"><i class="bi bi-journal-plus"></i> {{__('messages.Edit')}} {{__('messages.Block')}}</h3>
                             <div class='card-body'>
                                 <form action="{{ route('addLink') }}" method="post" id="my-form">
                                     @method('POST')
