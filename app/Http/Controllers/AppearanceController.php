@@ -91,16 +91,12 @@ class AppearanceController extends Controller
         ];
     }
 
-    public function show(Request $request)
-    {
-        $user = User::find(Auth::id());
-        $saved = self::loadForUser($user);
-        return view('studio.appearance', [
-            'user'    => $user,
-            'saved'   => $saved,
-            'fonts'   => self::GOOGLE_FONTS,
-        ]);
-    }
+    // show() removed 2026-07-05: the standalone /studio/appearance page
+    // became the Appearance tab of the unified /studio/edit editor
+    // (showEditor assembles $user/$saved/$fonts for the tab partial),
+    // and the old GET route is now a redirect closure. save(), the
+    // static loadForUser()/defaults()/isConfigured() helpers, and the
+    // background-image endpoints below all remain live.
 
     public function save(Request $request)
     {

@@ -507,43 +507,11 @@ class UserController extends Controller
 
     }
 
-    //Show link, click number, up link in links page
-    public function showLinks()
-    {
-        $userId = Auth::user()->id;
-        $data['pagePage'] = 10;
-
-        $data['links'] = Link::select()->where('user_id', $userId)->orderBy('up_link', 'asc')->orderBy('order', 'asc')->paginate(99999);
-        return view('studio/links', $data);
-    }
-
-    /**
-     * Social-icons page — the small brand badges (Facebook, Instagram,
-     * etc.) that render as a row near the top of the public bio page.
-     * Used to live as a section underneath the Links list; extracted to
-     * its own page because the discoverability was poor — owners didn't
-     * realize the section was hidden below their main link cards.
-     *
-     * The form posts to the existing `editIcons` route — no controller-
-     * side changes there; only the housing UI moved.
-     */
-    public function showSocialIcons()
-    {
-        // Configured icons: anything in the links table with the
-        // special "icon" button (id 94) belonging to this user.
-        // Ordered by the `order` column (set via drag-reorder POST
-        // to reorderSocialIcons below) with id as a tiebreaker.
-        $configuredIcons = DB::table('links')
-            ->where('user_id', Auth::id())
-            ->where('button_id', 94)
-            ->orderBy('order', 'asc')
-            ->orderBy('id', 'asc')
-            ->get();
-
-        return view('studio/social-icons', [
-            'configuredIcons' => $configuredIcons,
-        ]);
-    }
+    // showLinks() and showSocialIcons() removed 2026-07-05: their
+    // standalone pages became tabs of the unified /studio/edit editor
+    // (studio/partials/edit/blocks + .social), and the old GET routes
+    // are now redirect closures. The reorderSocialIcons endpoint below
+    // is still live — the Social tab's drag-reorder posts to it.
 
     /**
      * Receives a new ordering of the user's social icons from the
