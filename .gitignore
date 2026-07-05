@@ -6,7 +6,15 @@
 /vendor
 .env
 .env.backup
+.env.*
+!.env.example
 .phpunit.result.cache
+
+# Local dev SQLite DB — was tracked historically; now untracked so the
+# working copy (which fills with real test data) can never be committed
+# or pushed to the public fork. Ship migrations, not the DB.
+/database/database.sqlite
+*.sqlite
 docker-compose.override.yml
 Homestead.json
 Homestead.yaml
