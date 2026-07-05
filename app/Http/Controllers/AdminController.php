@@ -257,6 +257,10 @@ class AdminController extends Controller
 
     Schema::enableForeignKeyConstraints();
 
+    // Remove the user's uploaded avatar + background so deleted
+    // accounts don't leave orphaned image files on disk.
+    purge_user_uploads($id);
+
     return redirect("admin/users/all");
   }
 
@@ -273,6 +277,9 @@ class AdminController extends Controller
     $user->forceDelete();
 
     Schema::enableForeignKeyConstraints();
+
+    // Remove the user's uploaded avatar + background (see deleteUser).
+    purge_user_uploads($id);
   }
 
   //Show user to edit

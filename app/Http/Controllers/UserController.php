@@ -1043,6 +1043,9 @@ class UserController extends Controller
         Schema::disableForeignKeyConstraints();
         $user->forceDelete();
         Schema::enableForeignKeyConstraints();
+
+        // Remove the user's uploaded avatar + background on self-delete.
+        purge_user_uploads($id);
     }
 
         return redirect('/');

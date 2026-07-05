@@ -262,6 +262,58 @@ if (!function_exists('purify_user_html')) {
     }
 }
 
+if (!function_exists('purge_user_uploads')) {
+    /**
+     * Delete every uploaded file belonging to a user — their avatar
+     * (assets/img) and background image (assets/img/background-img).
+     *
+     * Single source of truth for "remove this user's files". Called on
+     * account deletion (admin panel, self-serve, and the Mail Minted
+     * deprovision API) so a cancelled/removed customer doesn't leave
+     * orphaned images on disk, and by the storage:reconcile command.
+     *
+     * File naming matches findAvatar()/findBackground(): "<id>.<ext>"
+     * or "<id>_<suffix>.<ext>". The pattern anchors <id> followed by
+     * "_" or "." so id "1" never matches "10_x.jpg" (collision-safe).
+     *
+     * @return int number of files deleted
+     */
+    function purge_user_uploads($userId): int
+    {
+        $userId = (string) $userId;
+        if ($userId === '' || !ctype_digit($userId)) {
+            return 0;
+        }
+
+        $dirs = [
+            base_path('assets/img'),
+            base_path('assets/img/background-img'),
+        ];
+        $pattern = '/^' . preg_quote($userId, '/') . '(_\w+)?\.\w+$/i';
+        $deleted = 0;
+
+        foreach ($dirs as $dir) {
+            if (!is_dir($dir)) {
+                continue;
+            }
+            foreach (scandir($dir) ?: [] as $entry) {
+                if ($entry === '.' || $entry === '..') {
+                    continue;
+                }
+                if (!preg_match($pattern, $entry)) {
+                    continue;
+                }
+                $full = $dir . '/' . $entry;
+                if (is_file($full) && @unlink($full)) {
+                    $deleted++;
+                }
+            }
+        }
+
+        return $deleted;
+    }
+}
+
 if(!function_exists('setBlockAssetContext')) {
   function setBlockAssetContext($type = null) {
       static $currentType = null;

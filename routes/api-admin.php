@@ -127,6 +127,9 @@ Route::prefix('admin')->group(function () {
             return response()->json(['error' => 'refusing to delete admin user_id=1'], 409);
         }
         $user->delete();
+        // Remove the customer's uploaded avatar + background so a
+        // deprovisioned (cancelled) account leaves no orphaned files.
+        purge_user_uploads($id);
         return response()->json(['user_id' => (int) $id, 'deleted' => true]);
     });
 
