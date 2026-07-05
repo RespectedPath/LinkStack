@@ -167,8 +167,9 @@ Route::post('/studio/theme', [UserController::class, 'editTheme'])->name('editTh
 Route::get('/deleteLink/{id}', [UserController::class, 'deleteLink'])->name('deleteLink')->middleware('link-id');
 Route::get('/upLink/{up}/{id}', [UserController::class, 'upLink'])->name('upLink')->middleware('link-id');
 Route::post('/studio/edit-link/{id}', [UserController::class, 'editLink'])->name('editLink')->middleware('link-id');
-Route::get('/studio/button-editor/{id}', [UserController::class, 'showCSS'])->name('showCSS')->middleware('link-id');
-Route::post('/studio/button-editor/{id}', [UserController::class, 'editCSS'])->name('editCSS')->middleware('link-id');
+// Legacy /studio/button-editor routes removed: the per-block CSS editor
+// was replaced by the Appearance section of the unified /studio/edit
+// editor (Pass 3). Its view, showCSS, and editCSS methods are gone.
 Route::get('/studio/page', fn() => redirect('/studio/edit#basics'))->name('showPage');
 Route::get('/studio/no_page_name', fn() => redirect('/studio/edit#basics'));
 Route::post('/studio/page', [UserController::class, 'editPage'])->name('editPage');

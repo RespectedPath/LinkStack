@@ -652,11 +652,6 @@ class UserController extends Controller
     // Redirect any bookmark / muscle-memory traffic to the new home
     // (the `appearance` URL fragment scrolls the new section into
     // view on arrival).
-    public function showCSS(request $request)
-    {
-        return redirect('/studio/edit-link/' . $request->id . '#appearance');
-    }
-
     //Save edit link
     public function editLink(request $request)
     {
@@ -684,33 +679,6 @@ class UserController extends Controller
         Link::where('id', $linkId)->update(['link' => $link, 'title' => $title, 'order' => $order, 'button_id' => $buttonId]);
 
         return redirect('/studio/links');
-    }
-
-    //Save edit custom CSS + custom icon
-    public function editCSS(request $request)
-    {
-        $linkId = $request->id;
-        $custom_icon = $request->custom_icon;
-        $custom_css = $request->custom_css;
-
-        if ($request->custom_css == "" and $request->custom_icon = !"") {
-            Link::where('id', $linkId)->update(['custom_icon' => $custom_icon]);
-        } elseif ($request->custom_icon == "" and $request->custom_css = !"") {
-            Link::where('id', $linkId)->update(['custom_css' => $custom_css]);
-        } else {
-            Link::where('id', $linkId)->update([]);
-        }
-        return Redirect('#result');
-    }
-
-    //Show littlelinke page for edit
-    public function showPage(request $request)
-    {
-        $userId = Auth::user()->id;
-
-        $data['pages'] = User::where('id', $userId)->select('littlelink_name', 'littlelink_description', 'image', 'name')->get();
-
-        return view('/studio/page', $data);
     }
 
     /**
