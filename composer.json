@@ -2,7 +2,9 @@
     "name": "linkstackorg/linkstack",
     "type": "project",
     "description": "LinkStack is a highly customizable link sharing platform",
-    "keywords": ["link"],
+    "keywords": [
+        "link"
+    ],
     "license": "GPL-3.0-or-later",
     "require": {
         "php": ">=8.0",
@@ -12,6 +14,7 @@
         "awssat/laravel-visits": "^6.0",
         "cohensive/oembed": "^0.17",
         "doctrine/dbal": "^3.0",
+        "ezyang/htmlpurifier": "^4.19.0",
         "fideloper/proxy": "^4.4",
         "firebase/php-jwt": "^7.0",
         "geo-sot/laravel-env-editor": "^2.0",

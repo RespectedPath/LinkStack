@@ -730,9 +730,7 @@ class UserController extends Controller
     
         $profilePhoto = $request->file('image');
         $pageName = $request->littlelink_name;
-        $pageDescription = strip_tags($request->pageDescription, '<a><p><strong><i><ul><ol><li><blockquote><h2><h3><h4>');
-        $pageDescription = preg_replace("/<a([^>]*)>/i", "<a $1 rel=\"noopener noreferrer nofollow\">", $pageDescription);
-        $pageDescription = strip_tags_except_allowed_protocols($pageDescription);
+        $pageDescription = purify_user_html($request->pageDescription);
         $name = $request->name;
         $checkmark = $request->checkmark;
         $sharebtn = $request->sharebtn;
@@ -1184,11 +1182,7 @@ class UserController extends Controller
             }
 
             if (isset($userData['littlelink_description'])) {
-                $sanitizedText = $userData['littlelink_description'];
-                $sanitizedText = strip_tags($sanitizedText, '<a><p><strong><i><ul><ol><li><blockquote><h2><h3><h4>');
-                $sanitizedText = preg_replace("/<a([^>]*)>/i", "<a $1 rel=\"noopener noreferrer nofollow\">", $sanitizedText);
-                $sanitizedText = strip_tags_except_allowed_protocols($sanitizedText);
-                $user->littlelink_description = $sanitizedText;
+                $user->littlelink_description = purify_user_html($userData['littlelink_description']);
             }
 
             if (isset($userData['image_data'])) {
@@ -1237,13 +1231,10 @@ class UserController extends Controller
                 $newLink->button_id = $linkData['button_id'];
                 $newLink->link = $linkData['link'];
                 
-                // Sanitize the title
+                // Sanitize the title (button_id 93 == text block, which
+                // permits rich HTML). purify_user_html strips XSS vectors.
                 if ($linkData['button_id'] == 93) {
-                    $sanitizedText = strip_tags($linkData['title'], '<a><p><strong><i><ul><ol><li><blockquote><h2><h3><h4>');
-                    $sanitizedText = preg_replace("/<a([^>]*)>/i", "<a $1 rel=\"noopener noreferrer nofollow\">", $sanitizedText);
-                    $sanitizedText = strip_tags_except_allowed_protocols($sanitizedText);
-                
-                    $newLink->title = $sanitizedText;
+                    $newLink->title = purify_user_html($linkData['title']);
                 } else {
                     $newLink->title = $linkData['title'];
                 }

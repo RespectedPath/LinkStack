@@ -214,6 +214,54 @@ function strip_tags_except_allowed_protocols($str) {
     return $str;
 }
 
+if (!function_exists('purify_user_html')) {
+    /**
+     * Sanitize user-supplied HTML for safe rendering on public pages.
+     *
+     * Replaces the old strip_tags() + strip_tags_except_allowed_protocols()
+     * combination, which was bypassable: PHP's strip_tags never removes
+     * ATTRIBUTES from allowed tags, and the protocol helper only inspected
+     * <a> elements. So `<a href="https://x" onclick="…">` and
+     * `<p onmouseover="…">` both survived and rendered as live script
+     * when ALLOW_USER_HTML=true — a stored-XSS hole (customer content
+     * runs on the same origin as the dashboard/admin).
+     *
+     * HTMLPurifier drops every tag, attribute, and URI scheme not on its
+     * allowlist below (all on* event handlers, style, javascript:/data:
+     * URIs, etc.), so the output is safe to echo with {!! !!}.
+     *
+     * Allowlist mirrors the tags the studio's rich-text controls emit
+     * (bold / italic / links / lists / headings / quotes).
+     */
+    function purify_user_html($html) {
+        static $purifier = null;
+
+        if ($purifier === null) {
+            $config = \HTMLPurifier_Config::createDefault();
+            $config->set('HTML.Allowed',
+                'a[href|title],p,br,strong,b,em,i,u,s,ul,ol,li,blockquote,h2,h3,h4');
+            $config->set('URI.AllowedSchemes', [
+                'http' => true, 'https' => true, 'mailto' => true, 'tel' => true,
+            ]);
+            // External links get target=_blank + rel=noopener automatically.
+            $config->set('HTML.TargetBlank', true);
+
+            // HTMLPurifier writes a small serializer cache; point it at a
+            // writable storage dir (created if missing) so it never tries
+            // to write inside vendor/.
+            $cacheDir = storage_path('app/htmlpurifier');
+            if (!is_dir($cacheDir)) {
+                @mkdir($cacheDir, 0755, true);
+            }
+            $config->set('Cache.SerializerPath', $cacheDir);
+
+            $purifier = new \HTMLPurifier($config);
+        }
+
+        return $purifier->purify((string) $html);
+    }
+}
+
 if(!function_exists('setBlockAssetContext')) {
   function setBlockAssetContext($type = null) {
       static $currentType = null;
