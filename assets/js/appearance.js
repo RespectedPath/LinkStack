@@ -334,11 +334,21 @@
 
     iframe.addEventListener('load', function () {
         iframeReady = true;
-        syncPreview();
+        // Deliberately DO NOT syncPreview() here. On load the iframe
+        // already shows the true server render — the selected theme,
+        // plus the user's saved appearance override if they have one.
+        // Injecting the form-derived preview CSS on load would disable
+        // that server render and repaint with appearance defaults
+        // (white bg, blue buttons, etc.), masking the freshly-selected
+        // theme. Injection is deferred until the user actually edits an
+        // Appearance control (handlers below), which is the only time a
+        // live, unsaved preview is needed.
     });
 
     // Fire on every input / change so the preview matches the form in
     // real time (colors change within a frame of dragging the picker).
+    // The first such event flips the iframe from the server render to
+    // the injected preview (syncPreview disables the server override).
     // Events bubble from inputs across tabs to the shared wrap element
     // (they don't bubble to the <form> element because they live
     // outside it in the tab panes).
