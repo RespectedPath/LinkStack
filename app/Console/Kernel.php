@@ -24,7 +24,19 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        // $schedule->command('inspire')->hourly();
+        // Weekly storage safety net — prunes orphaned upload files
+        // (avatars/backgrounds whose owning user was deleted) and logs
+        // any per-user accumulation. Account deletion already purges
+        // files inline (purge_user_uploads); this catches anything that
+        // slips through a missed path or a future regression. Runs
+        // Sunday 04:00 server time. See app/Console/Commands/
+        // StorageReconcile.php and PRE-DEPLOY-AUDIT.md.
+        //
+        // NB: requires the Laravel scheduler cron entry on the server:
+        //   * * * * * cd /path/to/app && php artisan schedule:run >> /dev/null 2>&1
+        $schedule->command('storage:reconcile --prune')
+                 ->weeklyOn(0, '4:00')
+                 ->withoutOverlapping();
     }
 
     /**
