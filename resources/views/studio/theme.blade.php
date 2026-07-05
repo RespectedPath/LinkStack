@@ -38,20 +38,23 @@
                     <div>
 
                         <div style="max-width:1000px" class="col-md-12">
-                            <div class="card rounded shadow-lg bg-light aos-init aos-animate" data-aos="fade-up" data-aos-delay="800">
+                            {{-- Live preview: use the shared studio partial so the
+                                 theme page matches the phone-frame preview used on the
+                                 unified editor (UI-IMPROVEMENTS item 12). Falls back to
+                                 the static theme thumbnail only when the user has no
+                                 public handle yet (nothing to render live). --}}
+                            @if(env('USE_THEME_PREVIEW_IFRAME') === false || $page->littlelink_name == '')
+                            <div class="card rounded shadow-lg bg-light">
                               <div class="flex-wrap card-header d-flex justify-content-between align-items-center bg-light">
-                                <div class="header-title">
-                                  <h4 class="card-title">{{__('messages.Preview')}}</h4>         
-                                </div>
+                                <div class="header-title"><h4 class="card-title">{{__('messages.Preview')}}</h4></div>
                               </div>
                               <div class="card-body">
-                                @if(env('USE_THEME_PREVIEW_IFRAME') === false or $page->littlelink_name == '')
-                                <center><img style="width:95%;max-width:700px;argin-left:1rem!important;" src="@if(file_exists(base_path() . '/themes/' . $page->theme . '/preview.png')){{url('/themes/' . $page->theme . '/preview.png')}}@elseif($page->theme === 'default' or empty($page->theme)){{url('/assets/linkstack/images/themes/default.png')}}@else{{url('/assets/linkstack/images/themes/no-preview.png')}}@endif"></img></center>
-                                 @else
-                                <iframe frameborder="0" allowtransparency="true" id="frPreview" style="background: #FFFFFF;height:400px;" class='w-100' src="{{ url('') }}/@<?= Auth::user()->littlelink_name ?>">{{__('messages.No compatible browser')}}</iframe>
-                                @endif
+                                <center><img style="width:95%;max-width:700px;" src="@if(file_exists(base_path() . '/themes/' . $page->theme . '/preview.png')){{url('/themes/' . $page->theme . '/preview.png')}}@elseif($page->theme === 'default' or empty($page->theme)){{url('/assets/linkstack/images/themes/default.png')}}@else{{url('/assets/linkstack/images/themes/no-preview.png')}}@endif"></center>
                               </div>
                             </div>
+                            @else
+                            @include('studio.partials.live-preview', ['littleLinkName' => $page->littlelink_name])
+                            @endif
                           </div>
   
                    </div>
