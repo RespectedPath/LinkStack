@@ -62,42 +62,14 @@
       </div>
     </div>
 
-    <div class="col-lg-12">
-        <div class="card   rounded">
-           <div class="card-body">
-              <div class="row">
-                  <div class="col-sm-12">  
-                    @if(env('ALLOW_CUSTOM_BACKGROUNDS') == true)
-                    <form action="{{ route('themeBackground') }}" enctype="multipart/form-data" method="post">
-                        @csrf
-                        <h3 class="mb-4 card-header">{{__('messages.Custom background')}}</h3>
-                        <div style="display: none;" class="form-group col-lg-8">
-                            <select class="form-control" name="theme">
-                                <option>{{ $page->theme }}</option>
-                            </select>
-                            <br>
-                        </div>
-                        <div class="form-group col-lg-8">
-                            <figure style="max-width:1000px;max-height:562.5px;" class="figure">
-                            @if(!file_exists(base_path('assets/img/background-img/'.findBackground(Auth::user()->id))))<p><i>{{__('messages.No image selected')}}</i></p>@endif
-                            <img class="bd-placeholder-img figure-img img-fluid rounded" src="@if(file_exists(base_path('assets/img/background-img/'.findBackground(Auth::user()->id)))){{url('assets//img/background-img/'.findBackground(Auth::user()->id))}}@else{{url('/assets/linkstack/images/themes/no-preview.png')}}@endif"><br>
-                            @if(file_exists(base_path('assets/img/background-img/'.findBackground(Auth::user()->id))))<button class="mt-3 ml-3 btn btn-primary" style="background-color:tomato!important;border-color:tomato!important;transform: scale(.9);" title="Delete background image"><a href="{{ url('/studio/rem-background') }}" style="color:#FFFFFF;"><i class="bi bi-trash-fill"></i>{{__('messages.Remove background')}}</a></button><br>@endif
-                            {{-- <figcaption class="figure-caption">A caption for the above image.</figcaption> --}}
-                        </figure>
-                            <br>
-                            <br><br>
-                            <div class="mb-3">
-                                <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp,image/gif" class="form-control form-control-lg" name="image"><br>
-                            </div>
-                        </div>
-                            <button type="submit" class="btn btn-primary">{{__('messages.Apply')}}</button>
-                    </form>
-                    @endif
-                  </div>
-              </div>
-           </div>
-        </div>
-     </div>  
+    {{-- Custom background uploader removed (Mail Minted): it duplicated
+         the Appearance → Background tab (/studio/appearance), which owns
+         solid / gradient / image backgrounds with browser-side resize and
+         stores them in theme_customization. Keeping two upload paths for
+         the same thing was the "double preview box" on this page. The
+         themeBackground route + rem-background route still exist server-
+         side; they're just no longer surfaced here. See PRE-DEPLOY-AUDIT.md
+         and UI-IMPROVEMENTS item 10. --}}
 
      @if(auth()->user()->role == 'admin')
     <div class="col-lg-12">
