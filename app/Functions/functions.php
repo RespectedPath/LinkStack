@@ -389,11 +389,18 @@ if (!function_exists('block_appearance_style')) {
       if ($btnCss !== '' && !empty($selectors['button'])) {
           // Neutralize anything that could escape the <style> element.
           $btnCss = str_replace(['<', '>'], '', $btnCss);
-          $scoped = implode(', ', array_map(
+          $scoped = array_map(
               fn ($s) => "#{$wrapId} {$s}",
               (array) $selectors['button']
-          ));
-          $rules[] = "{$scoped} { {$btnCss} }";
+          );
+          // When the block is collapsed, its accordion summary is the
+          // block's button face — the custom styling applies there
+          // too. The summary sits OUTSIDE the block wrapper (the
+          // <details> wraps both), so it's scoped by the accordion id.
+          if (!empty($selectors['summary_id'])) {
+              $scoped[] = "#{$selectors['summary_id']} > .block-accordion-summary";
+          }
+          $rules[] = implode(', ', $scoped) . " { {$btnCss} }";
       }
 
       foreach (['heading' => 'appearance_heading', 'text' => 'appearance_color'] as $slot => $key) {

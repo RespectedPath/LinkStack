@@ -8,7 +8,7 @@
     type_params here — keep the server/client boundary intact.
 --}}
 <div class="button-entrance newsletter-wrapper" style="--delay: {{ $initial ?? 1 }}s" id="newsletter-signup-{{ $link->id }}">
-    {!! block_appearance_style($link, ['id' => 'newsletter-signup-' . $link->id, 'button' => ['.ns-submit'], 'heading' => ['.ns-heading']]) !!}
+    {!! block_appearance_style($link, ['id' => 'newsletter-signup-' . $link->id, 'button' => ['.ns-submit'], 'heading' => ['.ns-heading'], 'summary_id' => 'block-' . $link->id]) !!}
     <h3 class="ns-heading">{{ $link->title }}</h3>
 
     @if(session('newsletter_success') === (int) $link->id)

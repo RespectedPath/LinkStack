@@ -129,32 +129,38 @@
             /* Collapsible custom_html blocks. <details>/<summary> native
                element — no JS, browser auto-opens it when a URL fragment
                points inside (which makes contact_form's withFragment()
-               redirect-after-error continue to work). */
+               redirect-after-error continue to work).
+
+               The summary carries the .button classes, so the collapsed
+               row wears the THEME's real button face (and follows
+               page-wide and per-block appearance overrides) instead of
+               a theme-agnostic gray bar — the row IS this block's
+               button when collapsed, and now it looks like one. Our
+               rules below add only the accordion mechanics: layout
+               envelope, centering, the chevron, marker removal. */
             .block-accordion {
-                margin: 12px auto;
+                margin: 0 auto;
                 width: 100%;
-                max-width: 520px;
-                border: 1px solid rgba(128, 128, 128, 0.25);
-                border-radius: 10px;
-                background: rgba(128, 128, 128, 0.04);
-                overflow: hidden;
+                max-width: var(--block-max-width);
             }
             .block-accordion-summary {
-                /* Title centered to match the page's centered rhythm;
-                   the expand chevron is pinned to the right edge
-                   (absolute) instead of flex space-between, which
-                   read as a lone left-aligned row. Symmetric side
-                   padding keeps long titles clear of the chevron
-                   without skewing the centering. */
                 position: relative;
-                padding: 14px 40px;
-                cursor: pointer;
-                font-weight: 600;
-                list-style: none;
-                display: flex;
+                /* own the layout — themes disagree on .button display
+                   and width (some hardcode 300px) */
+                display: flex !important;
                 align-items: center;
                 justify-content: center;
                 text-align: center;
+                width: 100% !important;
+                max-width: 100% !important;
+                box-sizing: border-box;
+                /* symmetric side padding keeps long titles clear of
+                   the chevron without skewing the centering */
+                padding-left: 40px !important;
+                padding-right: 40px !important;
+                margin-bottom: 16px;
+                cursor: pointer;
+                list-style: none;
                 user-select: none;
             }
             .block-accordion-summary::-webkit-details-marker { display: none; }
@@ -174,9 +180,6 @@
             }
             .block-accordion[open] .block-accordion-summary::after {
                 transform: translateY(-50%) rotate(180deg);
-            }
-            .block-accordion[open] .block-accordion-summary {
-                border-bottom: 1px solid rgba(128, 128, 128, 0.18);
             }
             /* Hide each custom block's own heading when it's inside an
                accordion — the summary text already shows the heading,
@@ -199,7 +202,7 @@
                 @php setBlockAssetContext($link->type); @endphp
                 @if(!empty($link->collapsed))
                     <details class="block-accordion" id="block-{{ $link->id }}">
-                        <summary class="block-accordion-summary">{{ $link->title ?: 'View more' }}</summary>
+                        <summary class="block-accordion-summary button button-default">{{ $link->title ?: 'View more' }}</summary>
                         @include('blocks::' . $link->type . '.display', ['link' => $link, 'initial' => $initial++])
                     </details>
                 @else
