@@ -58,7 +58,12 @@
           take payments until you connect one. Connect now, then come back
           and build the block.
         </div>
-        <a href="{{ route('stripe.connect') }}" class="btn btn-sm btn-primary">
+        {{-- target="_top" breaks out of the block-editor iframe: the
+             OAuth flow (and Stripe's authorize page) can't render inside
+             a frame — Stripe sends X-Frame-Options: DENY — so the whole
+             window navigates to Stripe, authorizes, and the callback
+             returns to the Settings page. --}}
+        <a href="{{ route('stripe.connect') }}" target="_top" rel="noopener" class="btn btn-sm btn-primary">
           <i class="bi bi-box-arrow-up-right"></i> Connect Stripe
         </a>
       </div>
