@@ -327,7 +327,27 @@ class UserController extends Controller
         // (Handled by the included file)
 
         // Step 7: Save or Update Link
-        $OrigLink = Link::find($request->linkid);
+        //
+        // Scope the update target to the caller's OWN links. This POST
+        // endpoint (route addLink) has no {id} route param, so the
+        // link-id middleware never runs here — the target id arrives in
+        // the request body. Without this owner check any authenticated
+        // user could overwrite anyone's block (content, link URL,
+        // custom_css) by posting that block's id as `linkid`.
+        //
+        // linkid 0 / empty is the "new block" sentinel (add flow posts
+        // $LinkID = 0), so it falls through to the create path below. A
+        // non-empty id that doesn't belong to the caller is refused
+        // rather than silently creating a new block.
+        $OrigLink = null;
+        if (!empty($request->linkid)) {
+            $OrigLink = Link::where('id', $request->linkid)
+                ->where('user_id', $userId)
+                ->first();
+            if (!$OrigLink) {
+                abort(403);
+            }
+        }
         $linkColumns = Schema::getColumnListing('links'); // Get all column names of links table
         $filteredLinkData = array_intersect_key($linkData, array_flip($linkColumns)); // Filter $linkData to only include keys that are columns in the links table
 
@@ -900,7 +920,33 @@ class UserController extends Controller
             $zipfile->move($themesPath, "temp.zip");
 
             $zip = new ZipArchive;
-            $zip->open($tmpPath);
+            if ($zip->open($tmpPath) !== true) {
+                @unlink($tmpPath);
+                return Redirect('/studio/edit#themes')->with('error', 'Could not read the theme archive.');
+            }
+
+            // Zip Slip guard: reject the archive if ANY entry would land
+            // outside themes/ (absolute path or ../ traversal) BEFORE
+            // extracting anything. Without this, a crafted theme zip —
+            // e.g. a community theme download — could drop a .php file
+            // into a servable/autoloaded path (../../public/…, ../../
+            // routes/…) which is arbitrary code execution. Legitimate
+            // themes contain only "ThemeName/…" relative entries, which
+            // pass untouched. Backslashes are normalized first so a
+            // Windows-crafted "..\..\" can't slip past.
+            for ($i = 0; $i < $zip->numFiles; $i++) {
+                $entry = str_replace('\\', '/', (string) $zip->getNameIndex($i));
+                if ($entry === '') {
+                    continue;
+                }
+                if ($entry[0] === '/' || preg_match('#(^|/)\.\.(/|$)#', $entry)) {
+                    $zip->close();
+                    @unlink($tmpPath);
+                    return Redirect('/studio/edit#themes')
+                        ->with('error', 'Theme archive contains unsafe file paths and was rejected.');
+                }
+            }
+
             $zip->extractTo($themesPath);
             $zip->close();
             unlink($tmpPath);
