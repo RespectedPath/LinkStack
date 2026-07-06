@@ -290,6 +290,13 @@ class UserController extends Controller
             }
         }
 
+        // Sanitize per-block CSS at rest (defense in depth) — neutralize
+        // at-rules / legacy script-in-CSS / script url() schemes before
+        // it's stored. See mm_sanitize_block_css().
+        if (array_key_exists('custom_css', $linkData)) {
+            $linkData['custom_css'] = mm_sanitize_block_css($linkData['custom_css']);
+        }
+
         // Sparse discipline (Phase 5): an empty custom_css means "this
         // block's BUTTON follows the theme." Drop the button-channel
         // appearance_* state too so the editor re-hydrates from the

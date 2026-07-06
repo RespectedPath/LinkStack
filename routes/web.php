@@ -205,7 +205,7 @@ Route::get('/stripe/connect/callback', [StripeConnectController::class, 'callbac
 Route::get('/stripe/status', [StripeConnectController::class, 'status'])->name('stripe.status');
 Route::post('/stripe/disconnect', [StripeConnectController::class, 'disconnect'])->name('stripe.disconnect');
 Route::post('/edit-icons', [UserController::class, 'editIcons'])->name('editIcons');
-Route::get('/clearIcon/{id}', [UserController::class, 'clearIcon'])->name('clearIcon');
+Route::get('/clearIcon/{id}', [UserController::class, 'clearIcon'])->name('clearIcon')->middleware('link-id');
 Route::get('/studio/page/delprofilepicture', [UserController::class, 'delProfilePicture'])->name('delProfilePicture');
 Route::post('/studio/profile-picture', [UserController::class, 'editProfilePicture'])->name('editProfilePicture');
 // Self-serve /studio/delete-user removed — see UserController note.
