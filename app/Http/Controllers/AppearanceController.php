@@ -283,6 +283,35 @@ class AppearanceController extends Controller
     }
 
     /**
+     * The theme's REAL resting button CSS (from theme.json _meta,
+     * emitted by the generator) — used by the block editor's sample
+     * preview so a theme-following block previews the theme's true
+     * treatment (accent side-bars etc.), not the preset approximation.
+     * Returns null when the user has page-wide button overrides (the
+     * approximation is then the accurate render) or no manifest.
+     */
+    public static function themeButtonCss($user): ?string
+    {
+        $sparse = self::sparseForUser($user);
+        if (data_get($sparse, 'buttons') !== null
+            || data_get($sparse, 'colors.primary') !== null
+            || data_get($sparse, 'colors.button_text') !== null) {
+            return null;
+        }
+        $theme = trim((string) ($user->theme ?? ''));
+        if ($theme === '' || $theme === 'default') {
+            return null;
+        }
+        $path = base_path('themes/' . basename($theme) . '/theme.json');
+        if (!is_file($path)) {
+            return null;
+        }
+        $manifest = json_decode((string) file_get_contents($path), true);
+        $css = data_get($manifest, '_meta.button_css');
+        return (is_string($css) && $css !== '') ? $css : null;
+    }
+
+    /**
      * The raw sparse blob — only the knobs the user changed off their
      * theme. Empty array when nothing is customized.
      */

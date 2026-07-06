@@ -61,6 +61,23 @@ function themeJson(t) {
   const background = t.treatment === 'photo' && t.background
     ? { type: 'image', image_url: `/themes/${t.slug}/extra/custom-assets/${t.background}`, solid: t.vars['--background-color'] }
     : { type: 'solid', solid: t.vars['--background-color'] };
+  // The REAL resting button look as one self-contained declaration
+  // string (concrete hexes — consumers don't load the theme's CSS
+  // vars). The studio block editor paints its sample button with this
+  // while the block is following the theme, so the preview shows the
+  // theme's true treatment (accent side-bars etc.), not the
+  // filled/outline approximation above. Mirrors lib/css.js brands().
+  const baseBorderColor = t.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)';
+  let borderCss;
+  if (t.button.borderSide === 'all') {
+    borderCss = `border: ${t.button.border};`;
+    if (t.button.accentBar) borderCss += ` border-left: 4px solid ${t.button.accentBar};`;
+  } else if (t.button.borderSide === 'left') {
+    borderCss = `border: 1px solid ${baseBorderColor}; border-left: ${t.button.border};`;
+  } else { // bottom
+    borderCss = `border: 1px solid ${baseBorderColor}; border-bottom: ${t.button.border};`;
+  }
+  const buttonCss = `background-color: ${t.button.bg}; color: ${t.button.text}; ${borderCss} border-radius: ${t.shape};`;
   return JSON.stringify({
     _meta: {
       generated: 'by theme-toolkit build.js — do not edit by hand',
@@ -68,6 +85,7 @@ function themeJson(t) {
       mode: t.mode,
       heading_font: t.headingFont,
       body_font: t.bodyFont,
+      button_css: buttonCss,
     },
     colors: {
       primary: t.accent,

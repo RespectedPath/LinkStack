@@ -4,7 +4,8 @@
     "archetype": "bloom",
     "mode": "light",
     "heading_font": "Fraunces",
-    "body_font": "Nunito Sans"
+    "body_font": "Nunito Sans",
+    "button_css": "background-color: #FFFFFF; color: #3A3330; border: 1.5px solid #7FB7BE; border-radius: 999px;"
   },
   "colors": {
     "primary": "#7FB7BE",

@@ -4,7 +4,8 @@
     "archetype": "gallery",
     "mode": "dark",
     "heading_font": "Space Grotesk",
-    "body_font": "Inter"
+    "body_font": "Inter",
+    "button_css": "background-color: #1A1A1E; color: #FFFFFF; border: 1.5px solid #FF4D6D; border-radius: 14px;"
   },
   "colors": {
     "primary": "#FF4D6D",

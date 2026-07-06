@@ -4,7 +4,8 @@
     "archetype": "studio",
     "mode": "light",
     "heading_font": "Playfair Display",
-    "body_font": "Inter"
+    "body_font": "Inter",
+    "button_css": "background-color: #FFFFFF; color: #161616; border: 1px solid #161616; border-left: 4px solid #7B2D3A; border-radius: 4px;"
   },
   "colors": {
     "primary": "#7B2D3A",

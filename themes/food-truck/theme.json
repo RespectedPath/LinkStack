@@ -4,7 +4,8 @@
     "archetype": "hearth",
     "mode": "light",
     "heading_font": "Fraunces",
-    "body_font": "Nunito Sans"
+    "body_font": "Nunito Sans",
+    "button_css": "background-color: #2B2622; color: #FFF8EE; border: 1px solid rgba(0,0,0,0.07); border-bottom: 3px solid #E0A422; border-radius: 14px;"
   },
   "colors": {
     "primary": "#E0A422",

@@ -4,7 +4,8 @@
     "archetype": "trade",
     "mode": "dark",
     "heading_font": "Oswald",
-    "body_font": "Inter"
+    "body_font": "Inter",
+    "button_css": "background-color: #1F2733; color: #FFFFFF; border: 1px solid rgba(255,255,255,0.08); border-left: 3px solid #19B5C9; border-radius: 4px;"
   },
   "colors": {
     "primary": "#19B5C9",

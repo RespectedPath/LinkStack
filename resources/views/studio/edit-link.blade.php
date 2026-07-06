@@ -413,7 +413,23 @@
                                 'primary' => $mmEffective['colors']['primary'],
                                 'text'    => $mmEffective['colors']['button_text'],
                                 'shape'   => ['pill' => 999, 'rounded' => 16, 'square' => 0][$mmEffective['buttons']['shape']] ?? 16,
+                                // The theme's REAL resting button CSS (null when the
+                                // user's page-wide overrides make the preset
+                                // approximation the accurate render). While the block
+                                // follows the theme, the sample button wears this so
+                                // the preview matches the page's true treatment —
+                                // accent side-bars and all.
+                                'css'     => \App\Http\Controllers\AppearanceController::themeButtonCss(Auth::user()),
                             ];
+
+                            // Rich blocks' sample button should read like their real
+                            // action button, not the section heading.
+                            $mmPreviewLabel = match ($typename) {
+                                'contact_form'      => 'Send message',
+                                'newsletter_signup' => ($existingLink->link ?? '') !== '' ? $existingLink->link : 'Subscribe',
+                                'stripe_payment'    => ($existingLink->link ?? '') !== '' ? $existingLink->link : 'Pay now',
+                                default             => $existingLink->title ?? 'Sample button',
+                            };
 
                             // Preview stage wears the page's effective background
                             // so the sample button is judged in context.
@@ -492,7 +508,7 @@
                                             <div class="mm-preview-stage" style="{{ $mmStageBg }}">
                                                 <button type="button" id="mmPreviewBtn" class="mm-preview-btn">
                                                     <span id="mmPreviewIconWrap"></span>
-                                                    <span id="mmPreviewLabel">{{ $existingLink->title ?? 'Sample button' }}</span>
+                                                    <span id="mmPreviewLabel">{{ $mmPreviewLabel }}</span>
                                                 </button>
                                             </div>
                                             <button type="button" id="mmResetTheme" class="btn btn-sm btn-outline-secondary mt-2">
@@ -993,7 +1009,16 @@ function submitFormWithParam(paramValue) {
     }
 
     function applyToPreview() {
-        var css = generateCss();
+        // While the block follows the theme, show the theme's REAL
+        // button treatment (baseline.css from the manifest) — the
+        // generated preset CSS is an approximation that can look very
+        // different (e.g. accent-border themes would preview as a
+        // solid accent fill). The moment the user diverges, the
+        // generated CSS is exactly what will be saved, so it takes
+        // over.
+        var css = (baseline && baseline.css && matchesBaseline())
+            ? baseline.css
+            : generateCss();
         var presentation = ' padding: 12px 24px; font-size: 1rem; font-weight: 500; min-width: 200px; display: inline-flex; align-items: center; gap: 8px; justify-content: center; cursor: default; transition: all 0.18s ease;';
         $previewBtn.setAttribute('style', css + presentation);
     }
