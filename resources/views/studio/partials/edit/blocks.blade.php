@@ -51,12 +51,19 @@ if(!function_exists('strp')){function strp($urlStrp){return str_replace(array('h
 @endphp
 
 <style>
+/* Type chip pinned to the row's top-right corner — out of the title's
+   text flow so it reads as a label on the box, not part of the name. */
+#links-table-body > [data-id] { position: relative; }
 .mm-block-type-badge {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    /* the badge is a direct child of a Bootstrap .row, whose
+       `.row > *` rule forces width:100% — shrink-wrap it instead */
+    width: auto !important;
     font-size: 0.62rem;
     font-weight: 600;
     letter-spacing: 0.02em;
-    vertical-align: middle;
-    margin-right: 6px;
     white-space: nowrap;
     /* neutral + readable in light AND dark mode; deliberately not the
        mint state-chips (edited/Customized) — this is passive metadata */
@@ -105,6 +112,16 @@ if(!function_exists('strp')){function strp($urlStrp){return str_replace(array('h
                 @php if($buttonName == "default email"){$buttonName = "email";} if($buttonName == "default email_alt"){$buttonName = "email_alt";} @endphp
                 @if($button && $button->name !== 'icon')
                 <div class='row h-100 pb-0 mb-2 border rounded hvr-glow w-100' data-id="{{$link->id}}">
+                    @php
+                        // Type badge label: mapped name, or — for brand/site
+                        // buttons (predefined or legacy rows without a type)
+                        // — the brand itself, which is the informative part.
+                        $mmTypeLabel = $mmTypeNames[$link->type] ?? null;
+                        if ($mmTypeLabel === null || $link->type === 'predefined') {
+                            $mmTypeLabel = ucwords(str_replace(['default ', '_'], ['', ' '], (string) $buttonName)) ?: 'Link';
+                        }
+                    @endphp
+                    <span class="badge mm-block-type-badge">{{ $mmTypeLabel }}</span>
                     <div class="d-flex ">
 
                         <div class='col-auto p-2 my-auto mr-2' title="{{ $link->link }}">
@@ -131,18 +148,6 @@ if(!function_exists('strp')){function strp($urlStrp){return str_replace(array('h
                                     @else
                                     <span class="bg-soft-secondary" style="border: 1px solid #d0d4d7 !important;border-radius:5px;width:25px!important;height:25px!important;"><img style="max-width:15px !important;" alt="button-icon" height="15" class="m-1 " src="{{ asset('\/assets/linkstack/icons\/') . $buttonName }}.svg "></span>
                                     @endif
-
-                                    @php
-                                        // Type badge label: mapped name, or — for
-                                        // brand/site buttons (predefined or legacy
-                                        // rows without a type) — the brand itself,
-                                        // which is the informative part.
-                                        $mmTypeLabel = $mmTypeNames[$link->type] ?? null;
-                                        if ($mmTypeLabel === null || $link->type === 'predefined') {
-                                            $mmTypeLabel = ucwords(str_replace(['default ', '_'], ['', ' '], (string) $buttonName)) ?: 'Link';
-                                        }
-                                    @endphp
-                                    <span class="badge mm-block-type-badge">{{ $mmTypeLabel }}</span>
 
                                     @if($button->name == "space")
                                         Spacer ({{ (int) $link->title }} px)
