@@ -1,7 +1,7 @@
 @if($customBackgroundExists == true)
   @if(($info->theme == '' || $info->theme == 'default') || theme('enable_dynamic_contrast') == 'true')
     @push('linkstack-body-end')
-      <script>
+      <script nonce="{{ csp_nonce() }}">
           BackgroundCheck.init({
           targets: '.dynamic-contrast',
           images: 'body'

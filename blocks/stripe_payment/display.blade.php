@@ -130,7 +130,7 @@
 </div>
 
 @if($mode === 'tip_jar')
-<script>
+<script nonce="{{ csp_nonce() }}">
 (function () {
     var wrap = document.getElementById('stripe-payment-{{ $link->id }}');
     if (!wrap) return;

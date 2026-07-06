@@ -76,7 +76,7 @@
     </div>
   </div>
 
-  <script>
+  <script nonce="{{ csp_nonce() }}">
     let icon = document.querySelector('.report-icon-container')
     let expandingPill = document.querySelector('.report-expanding-pill')
     let text = document.querySelector('.report-text')

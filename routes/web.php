@@ -116,6 +116,17 @@ Route::get('/block-asset/{type}', [LinkTypeViewController::class, 'blockAsset'])
 // Throttle protects against bot-driven abuse; validation + business
 // logic live in the respective controllers.
 
+// CSP violation collector (browsers POST report JSON here; see the
+// report-uri in App\Http\Middleware\Headers). CSRF-exempt — the browser
+// can't attach a token — and throttled so it can't be used to flood the
+// log. Report-Only on studio/other pages routes Phase-2 violations here.
+Route::post('/csp-report', function (\Illuminate\Http\Request $request) {
+    \Illuminate\Support\Facades\Log::warning('CSP report', [
+        'body' => mb_substr((string) $request->getContent(), 0, 2000),
+    ]);
+    return response()->noContent();
+})->name('cspReport')->middleware('throttle:60,1');
+
 Route::post('/contact-form/{id}/submit', [ContactFormController::class, 'submit'])
   ->name('contactFormSubmit')
   ->where(['id' => '[0-9]+'])

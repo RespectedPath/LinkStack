@@ -26,5 +26,5 @@
 <span class="copy-icon" tabindex="0" role="button" aria-label="{{__('messages.Copy URL to clipboard')}}"></span>
 
 @if($ShowShrBtn == 'true')
-<script>const shareButtons=document.querySelectorAll(".share-button");shareButtons.forEach((e=>{e.addEventListener("click",(()=>{const r=e.dataset.share;navigator.share?navigator.share({title:"{{__('messages.Share this page')}}",url:r}).catch((e=>console.error("Error:",e))):navigator.clipboard.writeText(r).then((()=>{alert("{{__('messages.URL has been copied to your clipboard!')}}")})).catch((e=>{alert("Error",e)}))}))}));</script>
+<script nonce="{{ csp_nonce() }}">const shareButtons=document.querySelectorAll(".share-button");shareButtons.forEach((e=>{e.addEventListener("click",(()=>{const r=e.dataset.share;navigator.share?navigator.share({title:"{{__('messages.Share this page')}}",url:r}).catch((e=>console.error("Error:",e))):navigator.clipboard.writeText(r).then((()=>{alert("{{__('messages.URL has been copied to your clipboard!')}}")})).catch((e=>{alert("Error",e)}))}))}));</script>
 @endif

@@ -238,10 +238,10 @@
                     @endif
                 @case('custom_website')
                    @if($link->custom_css === "" || $link->custom_css === "NULL" || empty($link->custom_css))
-                     <div style="--delay: {{ $initial++ }}s" class="button-entrance"><a id="{{ $link->id }}" class="button button-custom_website button-click button-hover icon-hover" rel="noopener noreferrer nofollow noindex" href="{{ mm_safe_href($link->link) }}" @if((UserData::getData($userinfo->id, 'links-new-tab') != false))target="_blank"@endif ><img alt="{{ $link->name }}" class="icon hvr-icon" src="@if(file_exists(base_path("assets/favicon/icons/").localIcon($link->id))){{url('assets/favicon/icons/'.localIcon($link->id))}}@else{{getFavIcon($link->id)}}@endif" onerror="this.onerror=null; this.src='{{asset('assets/linkstack/icons/website.svg')}}';">{{ $link->title }}</a></div>
+                     <div style="--delay: {{ $initial++ }}s" class="button-entrance"><a id="{{ $link->id }}" class="button button-custom_website button-click button-hover icon-hover" rel="noopener noreferrer nofollow noindex" href="{{ mm_safe_href($link->link) }}" @if((UserData::getData($userinfo->id, 'links-new-tab') != false))target="_blank"@endif ><img alt="{{ $link->name }}" class="icon hvr-icon" src="@if(file_exists(base_path("assets/favicon/icons/").localIcon($link->id))){{url('assets/favicon/icons/'.localIcon($link->id))}}@else{{getFavIcon($link->id)}}@endif" data-fallback="{{asset('assets/linkstack/icons/website.svg')}}">{{ $link->title }}</a></div>
                        @break
                    @else
-                    <div style="--delay: {{ $initial++ }}s" class="button-entrance"><a id="{{ $link->id }}" class="button button-custom_website button-click button-hover icon-hover" style="{{ $link->custom_css }}" rel="noopener noreferrer nofollow noindex" href="{{ mm_safe_href($link->link) }}" @if((UserData::getData($userinfo->id, 'links-new-tab') != false))target="_blank"@endif ><img alt="{{ $link->name }}" class="icon hvr-icon" src="@if(file_exists(base_path("assets/favicon/icons/").localIcon($link->id))){{url('assets/favicon/icons/'.localIcon($link->id))}}@else{{getFavIcon($link->id)}}@endif" onerror="this.onerror=null; this.src='{{asset('assets/linkstack/icons/website.svg')}}';">{{ $link->title }}</a></div>
+                    <div style="--delay: {{ $initial++ }}s" class="button-entrance"><a id="{{ $link->id }}" class="button button-custom_website button-click button-hover icon-hover" style="{{ $link->custom_css }}" rel="noopener noreferrer nofollow noindex" href="{{ mm_safe_href($link->link) }}" @if((UserData::getData($userinfo->id, 'links-new-tab') != false))target="_blank"@endif ><img alt="{{ $link->name }}" class="icon hvr-icon" src="@if(file_exists(base_path("assets/favicon/icons/").localIcon($link->id))){{url('assets/favicon/icons/'.localIcon($link->id))}}@else{{getFavIcon($link->id)}}@endif" data-fallback="{{asset('assets/linkstack/icons/website.svg')}}">{{ $link->title }}</a></div>
                      @break
                    @endif
                    @default
@@ -255,7 +255,20 @@
         @endif
     @endforeach
 
-    <script>
+    <script nonce="{{ csp_nonce() }}">
+        // Favicon fallback — replaces the inline onerror handlers so
+        // website-block icons still fall back to the default glyph under
+        // a strict script-src CSP. Capture phase because <img> error
+        // events don't bubble; runs immediately so it catches errors
+        // that fire before DOMContentLoaded.
+        document.addEventListener('error', function (event) {
+            var t = event.target;
+            if (t && t.tagName === 'IMG' && t.dataset && t.dataset.fallback && t.getAttribute('src') !== t.dataset.fallback) {
+                t.src = t.dataset.fallback;
+                t.removeAttribute('data-fallback');
+            }
+        }, true);
+
         document.addEventListener('DOMContentLoaded', function () {
             function handleClickOrTouch(event) {
                 if (event.target.classList.contains('button-click')) {

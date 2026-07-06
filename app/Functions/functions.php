@@ -493,3 +493,17 @@ if (!function_exists('mm_sanitize_block_css')) {
       return trim($css);
   }
 }
+
+/**
+ * The per-request CSP nonce (set by App\Http\Middleware\Headers before
+ * the view renders). Every inline <script> on a CSP-enforced page must
+ * carry nonce="{{ csp_nonce() }}" or it will be blocked. Returns '' on
+ * requests where the middleware didn't run (console, sub-requests) —
+ * those pages carry no CSP either, so an empty nonce is harmless.
+ */
+if (!function_exists('csp_nonce')) {
+  function csp_nonce(): string
+  {
+      return (string) request()->attributes->get('csp_nonce', '');
+  }
+}
