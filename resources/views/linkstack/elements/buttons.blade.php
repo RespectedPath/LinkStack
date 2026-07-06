@@ -140,26 +140,40 @@
                 overflow: hidden;
             }
             .block-accordion-summary {
-                padding: 14px 18px;
+                /* Title centered to match the page's centered rhythm;
+                   the expand chevron is pinned to the right edge
+                   (absolute) instead of flex space-between, which
+                   read as a lone left-aligned row. Symmetric side
+                   padding keeps long titles clear of the chevron
+                   without skewing the centering. */
+                position: relative;
+                padding: 14px 40px;
                 cursor: pointer;
                 font-weight: 600;
                 list-style: none;
                 display: flex;
                 align-items: center;
-                justify-content: space-between;
+                justify-content: center;
+                text-align: center;
                 user-select: none;
             }
             .block-accordion-summary::-webkit-details-marker { display: none; }
             .block-accordion-summary::after {
                 content: '⌄';
+                position: absolute;
+                right: 18px;
+                top: 50%;
                 font-size: 1.1rem;
                 line-height: 1;
                 opacity: 0.6;
                 transition: transform 0.2s ease;
+                /* 45% pivot keeps the glyph's visual center as the
+                   rotation point (it sits high in its em box). */
                 transform-origin: center 45%;
+                transform: translateY(-50%);
             }
             .block-accordion[open] .block-accordion-summary::after {
-                transform: rotate(180deg);
+                transform: translateY(-50%) rotate(180deg);
             }
             .block-accordion[open] .block-accordion-summary {
                 border-bottom: 1px solid rgba(128, 128, 128, 0.18);
