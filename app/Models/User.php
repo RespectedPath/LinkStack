@@ -30,8 +30,6 @@ class User extends Authenticatable implements MustVerifyEmail
         'custom_domain',
         'stripe_account_id',
         'google_analytics_id',
-        'redirect_enabled',
-        'redirect_url',
         'theme_customization',
     ];
 

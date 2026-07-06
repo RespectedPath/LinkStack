@@ -45,7 +45,6 @@
                      stripe-connect-panel partial and stay in sync. --}}
                 @include('studio.partials.integration-stripe',    ['profile' => $profile])
                 @include('studio.partials.integration-analytics', ['profile' => $profile])
-                @include('studio.partials.integration-redirect',  ['profile' => $profile])
               </div>
 
               @if(env('ALLOW_USER_EXPORT') != false)

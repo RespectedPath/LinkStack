@@ -187,7 +187,6 @@ Route::get('/studio/rem-background', [UserController::class, 'removeBackground']
 Route::get('/studio/profile', [UserController::class, 'showProfile'])->name('showProfile');
 Route::post('/studio/profile', [UserController::class, 'editProfile'])->name('editProfile');
 Route::post('/studio/profile/analytics', [UserController::class, 'editAnalytics'])->name('editAnalytics');
-Route::post('/studio/profile/redirect',  [UserController::class, 'editRedirect'])->name('editRedirect');
 
 // Live-preview Appearance editor (colors, background, typography, button + avatar shape).
 Route::get('/studio/appearance',        fn() => redirect('/studio/edit#appearance'))->name('showAppearance');
