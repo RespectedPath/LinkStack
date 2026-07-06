@@ -408,12 +408,19 @@ class UserController extends Controller
                 continue;
             }
 
-            $linkNewOrders[$linkId] = $newOrder;
-            Link::where("id", $linkId)
+            // Scoped to the caller's own links — without this, any
+            // signed-in user could reorder anyone's page by posting
+            // foreign link ids. Foreign/unknown ids update nothing and
+            // stay out of the response map.
+            $updated = Link::where("id", $linkId)
+                ->where('user_id', Auth::id())
                 ->update([
                     'order' => $newOrder
                 ]);
-            $newOrder++;
+            if ($updated) {
+                $linkNewOrders[$linkId] = $newOrder;
+                $newOrder++;
+            }
         }
 
         return response()->json([

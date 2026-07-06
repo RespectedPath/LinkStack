@@ -45,36 +45,26 @@
                         'currentPage': currentPage,
                         'perPage': perPage,
                     };
-                    // $.blockUI({
-                    // 	message: '<img width="70px" src="img/loading.gif" />',
-                    // 	css: {
-                    // 		backgroundColor: 'transparent',
-                    // 		border: 'none',
-                    // 		color: '#444444',
-                    // 	}
-                    // });
 
-                    // VERY janky solution; have to fix later
-                    var str = window.location.pathname;
-                    str = str.replace("/studio/links", "");
+                    // Endpoint emitted by the Blocks tab (route('sortLinks')).
+                    // The old code derived the URL from location.pathname by
+                    // stripping "/studio/links" — which 404'd silently once
+                    // the blocks list moved to /studio/edit, so drags never
+                    // saved.
+                    var url = window.mmSortLinkUrl || '/studio/sort-link';
 
-                    $.post(str + "/studio/sort-link", formData, function (response) {
-                        if (response.linkOrders) {
-                            $.each(response.linkOrders, function (linkId, linkOrder) {
-                                // $("#links-table-body div[data-id='"+linkId+"']")
-                                // 	.find("div:eq(3)")
-                                // 	.html(linkOrder);
-                            });
-                            //$.unblockUI();
-                        } else {
-                            alert("Something went wrong! Please, Try again.")
+                    $.post(url, formData, function (response) {
+                        if (!response || response.status !== 'OK') {
+                            alert('Could not save the new block order. Please try again.');
+                            return;
                         }
+                        // Saved — refresh the live preview so the public
+                        // page reflects the new order.
+                        var frame = document.getElementById('appearance-preview-iframe');
+                        if (frame) frame.src += '';
+                    }).fail(function () {
+                        alert('Could not save the new block order. Please try again.');
                     });
-                    
-                    setTimeout(function(){
-                        document.getElementById('frPreview1').src += '';
-                        document.getElementById('frPreview2').src += '';
-                    }, 300);
                 }
             }
         });

@@ -219,6 +219,8 @@ if(!function_exists('strp')){function strp($urlStrp){return str_replace(array('h
 
             <script type="text/javascript">
                 const linksTableOrders = "{{ implode(' | ', $links->pluck('id')->toArray()) }}"
+                // Save endpoint for drag-to-reorder (main-dashboard.js).
+                window.mmSortLinkUrl = "{{ route('sortLinks') }}";
             </script>
         </div>
 
