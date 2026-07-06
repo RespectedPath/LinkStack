@@ -1,0 +1,36 @@
+{
+  "_meta": {
+    "generated": "by theme-toolkit build.js — do not edit by hand",
+    "archetype": "studio",
+    "mode": "light",
+    "heading_font": "Playfair Display",
+    "body_font": "Inter"
+  },
+  "colors": {
+    "primary": "#243B53",
+    "background": "#F4F2EE",
+    "text": "#161616",
+    "button_text": "#161616"
+  },
+  "background": {
+    "type": "solid",
+    "solid": "#F4F2EE"
+  },
+  "typography": {
+    "font": ""
+  },
+  "buttons": {
+    "shape": "square",
+    "style": "outline"
+  },
+  "avatar": {
+    "shape": "circle"
+  },
+  "social_icons": {
+    "color": "auto",
+    "size": "medium",
+    "spacing": "normal",
+    "background_style": "none",
+    "hover": "none"
+  }
+}

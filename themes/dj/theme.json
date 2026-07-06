@@ -1,0 +1,36 @@
+{
+  "_meta": {
+    "generated": "by theme-toolkit build.js — do not edit by hand",
+    "archetype": "gallery",
+    "mode": "dark",
+    "heading_font": "Space Grotesk",
+    "body_font": "Inter"
+  },
+  "colors": {
+    "primary": "#00E0D0",
+    "background": "#0D0D0F",
+    "text": "#FFFFFF",
+    "button_text": "#FFFFFF"
+  },
+  "background": {
+    "type": "solid",
+    "solid": "#0D0D0F"
+  },
+  "typography": {
+    "font": ""
+  },
+  "buttons": {
+    "shape": "rounded",
+    "style": "filled"
+  },
+  "avatar": {
+    "shape": "circle"
+  },
+  "social_icons": {
+    "color": "auto",
+    "size": "medium",
+    "spacing": "normal",
+    "background_style": "none",
+    "hover": "none"
+  }
+}
