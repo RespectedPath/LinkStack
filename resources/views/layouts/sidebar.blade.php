@@ -175,12 +175,8 @@ $usrhandl = Auth::user()->littlelink_name;
             <div class="sidebar-list">
                 <!-- Sidebar Menu Start -->
                 <ul class="navbar-nav iq-main-menu" id="sidebar-menu">
-                    <li class="nav-item static-item">
-                        <a class="nav-link static-item disabled" href="#" tabindex="-1">
-                            <span class="default-icon">{{__('messages.Home')}}</span>
-                            <span class="mini-icon">-</span>
-                        </a>
-                    </li>
+                    {{-- "Home" section divider removed — the sidebar is short
+                         enough that section labels are just clutter. --}}
                     <li class="nav-item">
                         <a class="nav-link {{ Request::segment(1) == 'dashboard' ? 'active' : 'bg-soft-primary'}}" aria-current="page" href="{{ route('panelIndex') }}">
                             <i class="icon">
@@ -240,12 +236,7 @@ $usrhandl = Auth::user()->littlelink_name;
                         </ul>
                     </li>
                     @endif
-                    <li class="nav-item static-item">
-                        <a class="nav-link static-item disabled" href="#" tabindex="-1">
-                            <span class="default-icon">{{__('messages.Personalization')}}</span>
-                            <span class="mini-icon">-</span>
-                        </a>
-                    </li>
+                    {{-- "Personalization" section divider removed — clutter. --}}
                     {{-- Unified studio editor — replaces the four separate
                          items (Blocks / Social icons / Page info / Appearance)
                          with one entry. Active for /studio/edit and the old
@@ -312,6 +303,17 @@ $usrhandl = Auth::user()->littlelink_name;
             .sidebar .data-scrollbar {
                 max-height: calc(100vh - 120px) !important;
             }
+
+            /* Collapsed (mini) sidebar: hide the Sign out label (icon
+               only), and shrink the theme selector to a single icon
+               showing the current mode — a click cycles through the
+               modes (see the script below). */
+            .sidebar.sidebar-mini .sidebar-footer .item-name { display: none; }
+            .sidebar.sidebar-mini .sidebar-footer .nav-link { justify-content: center; }
+            .sidebar.sidebar-mini .sidebar-footer .nav-link i { margin: 0 !important; }
+            .sidebar.sidebar-mini .mm-theme-select { padding-left: 0 !important; padding-right: 0 !important; }
+            .sidebar.sidebar-mini .mm-theme-select .btn:not(.active) { display: none; }
+            .sidebar.sidebar-mini .mm-theme-select .btn.active { width: 100%; }
         </style>
         @endonce
         <div class="sidebar-footer">
@@ -340,6 +342,55 @@ $usrhandl = Auth::user()->littlelink_name;
                 <span class="item-name">Sign out</span>
             </a>
         </div>
+        @push('sidebar-scripts')
+        <script>
+        (function () {
+            var sel = document.querySelector('.mm-theme-select');
+            if (!sel) return;
+            var ORDER = ['light', 'dark', 'auto'];
+
+            function isMini() {
+                var a = document.querySelector('.sidebar');
+                return !!(a && a.classList.contains('sidebar-mini'));
+            }
+            function activeMode() {
+                var a = sel.querySelector('.btn.active');
+                return a ? a.getAttribute('data-value') : 'light';
+            }
+
+            // Mirror .active onto whichever mode button was chosen, so the
+            // collapsed single-icon reflects the current mode even if
+            // hope-ui doesn't manage .active on these buttons itself.
+            sel.addEventListener('click', function (e) {
+                var btn = e.target.closest('[data-setting="color-mode"]');
+                if (!btn) return;
+                sel.querySelectorAll('[data-setting="color-mode"]').forEach(function (b) {
+                    b.classList.toggle('active', b === btn);
+                });
+            });
+
+            // Collapsed: only the active icon shows, so clicking it should
+            // advance to the next mode instead of re-selecting the current
+            // one. Capture-phase interception runs before hope-ui's
+            // delegated handler; the guard stops the synthetic click from
+            // looping. Expanded (all 3 visible) is untouched.
+            var cycling = false;
+            sel.addEventListener('click', function (e) {
+                if (cycling || !isMini()) return;
+                var btn = e.target.closest('[data-setting="color-mode"]');
+                if (!btn) return;
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                var next = ORDER[(ORDER.indexOf(activeMode()) + 1) % ORDER.length];
+                var nextBtn = sel.querySelector('[data-value="' + next + '"]');
+                if (!nextBtn) return;
+                cycling = true;
+                nextBtn.click();
+                cycling = false;
+            }, true);
+        })();
+        </script>
+        @endpush
     </aside>    <main class="main-content">
       <div class="position-relative iq-banner">
         <!--Nav Start-->

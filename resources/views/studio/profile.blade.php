@@ -25,25 +25,20 @@
               
               @if(($_SERVER['QUERY_STRING'] ?? '') === '')
               <section class="text-gray-400">
-                      <h3 class="mb-4 card-header"><i class="bi bi-person">{{__('messages.Account Settings')}}</i></h3>
+                      <h3 class="mb-4 card-header"><i class="bi bi-person"></i> {{__('messages.Account Settings')}}</h3>
               <div class="card-body p-0 p-md-3">
-              
-                      @foreach($profile as $profile)
-              
-                            {{-- Email, password, and role controls removed: customers
-                   authenticate through Mail Minted (Supabase SSO), so a
-                   local LinkStack email/password change would desync from /
-                   break the SSO identity. Role display is irrelevant to
-                   normal customers. Account Settings now surfaces only
-                   Integrations + data export/import. --}}
 
-              {{-- ================= Integrations =================
-                   Each card is a self-contained partial under
-                   resources/views/studio/partials/.
-              --}}
-              <div class="col-lg-8 mt-5">
-                <h3 class="mb-4 card-header"><i class="bi bi-plug"></i> Integrations</h3>
-                <p class="text-muted mb-4">Connect external services to your public page.</p>
+                      @foreach($profile as $profile)
+
+              {{-- Email / password / role / delete controls removed —
+                   customer auth + account lifecycle are owned by Mail
+                   Minted (Supabase SSO + billing). This page holds
+                   integrations and data export/import only. --}}
+
+              {{-- ===== Integrations (each card is a partial) ===== --}}
+              <div class="col-lg-8">
+                <h4 class="mb-2"><i class="bi bi-plug"></i> Integrations</h4>
+                <p class="text-muted mb-3">Connect external services to your public page.</p>
 
                 {{-- Stripe connection is account-level (one account serves
                      all payment blocks), so it's managed both here and
@@ -55,9 +50,9 @@
               </div>
 
               @if(env('ALLOW_USER_EXPORT') != false)
-              <div class="mt-3"><br><br><br>
-                <h4>{{__('messages.Export user data')}}</h4>
-                <p>{{__('messages.Export your user data')}}</p>
+              <div class="col-lg-8 mt-4">
+                <h4 class="mb-2">{{__('messages.Export user data')}}</h4>
+                <p class="text-muted mb-3">{{__('messages.Export your user data')}}</p>
                 <div class="row">
                   <div class="col-lg-8">
                     <button class="btn btn-outline-secondary">
@@ -78,8 +73,8 @@
               @if(env('ALLOW_USER_IMPORT') != false)
               <form action="{{ route('importData') }}" enctype="multipart/form-data" method="post">
                 @csrf
-                <div class="form-group col-lg-8"><br><br><br>
-                  <h4>{{__('messages.Import user data')}}</h4>
+                <div class="form-group col-lg-8 mt-4">
+                  <h4 class="mb-2">{{__('messages.Import user data')}}</h4>
                     <label>{{__('messages.Import your user data from another instance')}}</label>
                     <input type="file" accept="application/JSON" class="form-control" id="customFile" name="import">
                 </div>
