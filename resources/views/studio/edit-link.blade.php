@@ -511,9 +511,14 @@
                                                     <span id="mmPreviewLabel">{{ $mmPreviewLabel }}</span>
                                                 </button>
                                             </div>
-                                            <button type="button" id="mmResetTheme" class="btn btn-sm btn-outline-secondary mt-2">
-                                                <i class="bi bi-arrow-counterclockwise"></i> Reset to theme
-                                            </button>
+                                            <div class="d-flex align-items-center mt-2" style="gap: 10px;">
+                                                <button type="button" id="mmResetTheme" class="btn btn-sm btn-outline-secondary">
+                                                    <i class="bi bi-arrow-counterclockwise"></i> Reset to theme
+                                                </button>
+                                                <span id="mmResetMsg" class="small text-muted" style="display:none;">
+                                                    Theme look restored &mdash; click <strong>Save</strong> below to apply.
+                                                </span>
+                                            </div>
                                         </div>
 
                                         {{-- ===== Style presets =====
@@ -1026,6 +1031,26 @@ function submitFormWithParam(paramValue) {
     function syncAll() {
         applyToPreview();
         syncHiddenInputs();
+        refreshResetState();
+    }
+
+    /* The Reset button tells the truth about its usefulness: disabled
+       (with an explanatory tooltip) while the block is already
+       following the theme, enabled the moment anything diverges. The
+       staged-change hint is hidden again as soon as the user edits. */
+    function refreshResetState() {
+        var btn = document.getElementById('mmResetTheme');
+        if (!btn || !baseline) return;
+        var headingAtTheme = true;
+        var hHead = document.getElementById('appHeading');
+        if (hHead && hHead.value !== '') headingAtTheme = false;
+        var atTheme = matchesBaseline() && headingAtTheme;
+        btn.disabled = atTheme;
+        btn.title = atTheme
+            ? 'This block is already following your theme'
+            : "Put this block back on your theme's styling";
+        var msg = document.getElementById('mmResetMsg');
+        if (msg && !atTheme) msg.style.display = 'none';
     }
 
     /* --------- Treatment toggling ---------
@@ -1139,9 +1164,11 @@ function submitFormWithParam(paramValue) {
         $headingCustom.addEventListener('change', function () {
             $headingColor.style.display = this.checked ? '' : 'none';
             $hHeading.value = this.checked ? $headingColor.value : '';
+            refreshResetState();
         });
         $headingColor.addEventListener('input', function () {
             if ($headingCustom.checked) $hHeading.value = this.value;
+            refreshResetState();
         });
     }
 
@@ -1172,6 +1199,10 @@ function submitFormWithParam(paramValue) {
                 reflectPreset();
                 reflectShape();
                 syncAll();
+                // Reset only STAGES the change — say so, or it reads
+                // as "nothing happened" when the user doesn't save.
+                var msg = document.getElementById('mmResetMsg');
+                if (msg) msg.style.display = '';
             });
         }
     }
@@ -1182,9 +1213,9 @@ function submitFormWithParam(paramValue) {
     highlightIconTile(state.icon);
     updatePreviewIcon();
     applyToPreview();
-    /* Don't call syncHiddenInputs here — keeps form pristine until
-       user actually changes something. Their submit listener does
-       the final flush regardless. */
+    refreshResetState();
+    /* Don't call syncHiddenInputs here — keeps the form pristine until
+       the user actually changes something. */
 })();
 </script>
 
