@@ -285,20 +285,31 @@ $usrhandl = Auth::user()->littlelink_name;
                             <span class="item-name">Account</span>
                         </a>
                     </li>
-                    {{-- Styling (dashboard light/dark theme) — moved from the
-                         top-right dropdown to the sidebar; opens the offcanvas. --}}
-                    <li class="nav-item">
-                        <a class="nav-link" href="#" data-bs-toggle="offcanvas" data-bs-target="#offcanvasExample" role="button" aria-controls="offcanvasExample">
-                            <i class="bi bi-brush-fill"></i>
-                            <span class="item-name">{{__('messages.Styling')}}</span>
-                        </a>
-                    </li>
+                    {{-- Styling nav item removed — replaced by the compact
+                         light/dark/system selector pinned in the sidebar
+                         footer (above Sign out). --}}
                         </ul>
                     </li>
                 </ul>
                 <!-- Sidebar Menu End -->        </div>
         </div>
         <div class="sidebar-footer">
+            {{-- Light / Dark / System theme selector — replaces the old
+                 Styling offcanvas. Uses hope-ui.js's color-mode setting
+                 (data-setting="color-mode"), the same mechanism the old
+                 Scheme toggle used, so it flips the dashboard theme +
+                 persists the choice. Pinned above Sign out. --}}
+            <div class="mm-theme-select d-flex gap-1 px-3 pb-2">
+                <div class="btn btn-sm btn-border flex-fill active" role="button" title="Light" data-setting="color-mode" data-name="color" data-value="light">
+                    <i class="bi bi-sun-fill"></i>
+                </div>
+                <div class="btn btn-sm btn-border flex-fill" role="button" title="Dark" data-setting="color-mode" data-name="color" data-value="dark">
+                    <i class="bi bi-moon-stars-fill"></i>
+                </div>
+                <div class="btn btn-sm btn-border flex-fill" role="button" title="System" data-setting="color-mode" data-name="color" data-value="auto">
+                    <i class="bi bi-display-fill"></i>
+                </div>
+            </div>
             {{-- Sign out pinned at the bottom of the sidebar, mirroring the
                  Mail Minted portal. Routes through the SSO logout bridge so
                  signing out here also clears the Mail Minted (Supabase)
@@ -586,43 +597,11 @@ $usrhandl = Auth::user()->littlelink_name;
       </footer>
       <!-- Footer Section End -->    </main>
 
-    <!-- offcanvas start -->
-    <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasExample" data-bs-scroll="true" data-bs-backdrop="true" aria-labelledby="offcanvasExampleLabel">
-      <div class="offcanvas-header">
-        <div class="d-flex align-items-center">
-          <h3 class="offcanvas-title me-3" id="offcanvasExampleLabel">{{__('messages.Settings')}}</h3>
-        </div>
-        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-      </div>
-      <div class="offcanvas-body data-scrollbar">
-        <div class="row">
-          <div class="col-lg-12">
-             <h5 class="mb-3">{{__('messages.Scheme')}}</h5>
-            <div class="d-grid gap-3 grid-cols-3 mb-4">
-              <div class="btn btn-border" data-setting="color-mode" data-name="color" data-value="auto">
-                  <svg class="icon-20" width="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path fill="currentColor" d="M7,2V13H10V22L17,10H13L17,2H7Z" />
-                  </svg>
-                <span class="ms-2 "> {{__('messages.Auto')}} </span>
-              </div>
-    
-               <div class="btn btn-border" data-setting="color-mode" data-name="color" data-value="dark">
-                 <svg class="icon-20" width="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path fill="currentColor" d="M9,2C7.95,2 6.95,2.16 6,2.46C10.06,3.73 13,7.5 13,12C13,16.5 10.06,20.27 6,21.54C6.95,21.84 7.95,22 9,22A10,10 0 0,0 19,12A10,10 0 0,0 9,2Z" />
-                  </svg>
-                <span class="ms-2 "> {{__('messages.Dark')}}  </span>
-              </div>
-               <div class="btn btn-border active" data-setting="color-mode" data-name="color" data-value="light">
-                  <svg class="icon-20" width="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path fill="currentColor" d="M12,8A4,4 0 0,0 8,12A4,4 0 0,0 12,16A4,4 0 0,0 16,12A4,4 0 0,0 12,8M12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6A6,6 0 0,1 18,12A6,6 0 0,1 12,18M20,8.69V4H15.31L12,0.69L8.69,4H4V8.69L0.69,12L4,15.31V20H8.69L12,23.31L15.31,20H20V15.31L23.31,12L20,8.69Z" />
-                </svg>
-                <span class="ms-2 "> {{__('messages.Light')}}</span>
-              </div>
-            </div>
-            </div>
-          </div>
-        </div>
-      </div>
+
+    {{-- Layout wrapper close. The removed Styling offcanvas block carried
+         a stray closing </div> here (upstream template quirk — it balanced
+         an unclosed wrapper opened earlier). Kept on its own so removing
+         the offcanvas didn't unbalance the page. --}}
     </div>
 
       <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
