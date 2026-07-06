@@ -66,6 +66,51 @@
                 max-width: 100%;
                 border: 0;
             }
+            /* True-center block titles. Stock rendering (text-align:
+               center + inline icon) and generated themes (flex
+               centering + relative nudge) both center the icon+title
+               PAIR, which reads as the title sitting ~10-14px right
+               of the button's real center. Pull the icon out of the
+               text flow and pin it to the button's left edge so the
+               title centers on the button itself. Symmetric side
+               padding keeps long titles clear of the icon without
+               skewing the centering. */
+            .button-entrance .button {
+                position: relative;
+                /* Own the layout: themes disagree on .button display
+                   (flex vs block vs inline-block, and animation CSS
+                   overrides some of them), so single-line titles were
+                   not reliably centered vertically either. Flex
+                   centers the title box both ways on every theme. */
+                display: flex !important;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+                padding-left: 44px !important;
+                padding-right: 44px !important;
+            }
+            .button-entrance .button .icon {
+                position: absolute;
+                left: 14px;
+                top: 50%;
+                transform: translateY(-50%);
+                /* neutralize the inline-flow nudges stock CSS and
+                   themes give .icon */
+                right: auto;
+                bottom: auto;
+                margin: 0;
+                padding: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                line-height: 1;
+            }
+            /* Custom links with no icon picked render an empty <i>
+               (no fa-* class) — hide it rather than pinning a blank
+               box to the edge. */
+            .button-entrance .button i.icon:not([class*="fa-"]) {
+                display: none;
+            }
         </style>
 
         @php
