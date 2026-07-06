@@ -1,6 +1,7 @@
 <link rel="stylesheet" href="{{ block_asset('styles.css') }}">
 
 <div class="button-entrance contact-form-wrapper" style="--delay: {{ $initial ?? 1 }}s" id="contact-form-{{ $link->id }}">
+    {!! block_appearance_style($link, ['id' => 'contact-form-' . $link->id, 'button' => ['.cf-submit'], 'heading' => ['.cf-heading']]) !!}
     <h3 class="cf-heading">{{ $link->title }}</h3>
 
     @if(session('contact_form_success') === (int) $link->id)

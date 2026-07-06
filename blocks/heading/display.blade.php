@@ -1,1 +1,1 @@
-<div class="fadein mm-heading-block"><h2>{{ $link->title }}</h2></div>
+<div class="fadein mm-heading-block" id="heading-block-{{ $link->id }}">{!! block_appearance_style($link, ['id' => 'heading-block-' . $link->id, 'text' => ['', ' h2']]) !!}<h2>{{ $link->title }}</h2></div>

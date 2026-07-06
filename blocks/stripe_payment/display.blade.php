@@ -38,6 +38,9 @@
 @endphp
 
 <div class="button-entrance stripe-payment-wrapper" style="--delay: {{ $initial ?? 1 }}s" id="stripe-payment-{{ $link->id }}">
+    {{-- Cancel deliberately excluded: a secondary action shouldn't
+         take the accent recolor. --}}
+    {!! block_appearance_style($link, ['id' => 'stripe-payment-' . $link->id, 'button' => ['.sp-option', '.sp-submit', '.sp-tip-confirm'], 'heading' => ['.sp-heading']]) !!}
     <h3 class="sp-heading">{{ $link->title }}</h3>
 
     @if(session('stripe_payment_error') === (int) $link->id)

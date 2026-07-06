@@ -15,7 +15,8 @@
         $align = 'center';
     }
 @endphp
-<div class="fadein mm-text-block" style="text-align: {{ $align }};">
+<div class="fadein mm-text-block" style="text-align: {{ $align }};" id="text-block-{{ $link->id }}">
+    {!! block_appearance_style($link, ['id' => 'text-block-' . $link->id, 'text' => ['', ' p', ' h1', ' h2', ' h3', ' a']]) !!}
     @if(env('ALLOW_USER_HTML') === true)
         {!! $link->title !!}
     @else

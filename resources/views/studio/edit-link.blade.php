@@ -380,11 +380,24 @@
                                 }
                             }
 
-                            // Per-block CSS only affects button-family blocks at
-                            // render (elements/buttons.blade.php); custom_html
-                            // blocks (contact form, Stripe, text, …) never read
-                            // it, so don't show dead controls for them.
-                            $blockSupportsAppearance = empty($existingTP['custom_html']);
+                            // Appearance capability by block type (Phase 6):
+                            //   full  — button-family blocks; custom_css inlines
+                            //           onto the button (elements/buttons.blade)
+                            //   rich  — blocks with an action button (contact
+                            //           form, newsletter, Stripe): same controls,
+                            //           consumed scoped via block_appearance_style,
+                            //           plus a heading-color option
+                            //   color — text + heading blocks: one color control
+                            //   none  — embeds/spacer/BMC: nothing stylable; a
+                            //           note explains instead of dead controls
+                            $mmRichButtonTypes = ['contact_form', 'newsletter_signup', 'stripe_payment'];
+                            $mmColorOnlyTypes  = ['text', 'heading'];
+                            $blockAppearanceMode = empty($existingTP['custom_html'])
+                                ? 'full'
+                                : (in_array($typename, $mmRichButtonTypes, true) ? 'rich'
+                                : (in_array($typename, $mmColorOnlyTypes, true) ? 'color' : 'none'));
+                            $apHeading = $existingTP['appearance_heading'] ?? '';
+                            $apColor   = $existingTP['appearance_color'] ?? '';
 
                             // Theme baseline (Phase 5, THEME-APPEARANCE-PLAN.md):
                             // a block with no styling of its own hydrates the
@@ -460,7 +473,7 @@
                                          - `type_params` JSON ← raw state (preset +
                                            each color + shape + hover) so re-edit can
                                            rehydrate controls without parsing CSS. --}}
-                                    @if($blockSupportsAppearance)
+                                    @if($blockAppearanceMode === 'full' || $blockAppearanceMode === 'rich')
                                     <fieldset class="mm-edit-section mm-appearance" id="appearance">
                                         <legend><i class="bi bi-palette"></i> Appearance</legend>
                                         <p class="text-muted small mb-3">
@@ -547,6 +560,24 @@
                                                 <input type="color" id="mmSecondaryColor" value="{{ $apSecondary }}" class="form-control form-control-color" style="width: 100%;">
                                             </div>
                                         </div>
+
+                                        @if($blockAppearanceMode === 'rich')
+                                        {{-- Heading color — rich blocks only (plain button
+                                             blocks have no heading). Independent of the button
+                                             styling: off = follow the theme, and it survives a
+                                             button-only customization and vice versa. --}}
+                                        <div class="mm-control-group mt-3">
+                                            <label class="mm-control-label" for="mmHeadingCustom">Heading color</label>
+                                            <div class="d-flex align-items-center" style="gap: 12px;">
+                                                <div class="form-check form-switch mb-0">
+                                                    <input class="form-check-input" type="checkbox" id="mmHeadingCustom" @if($apHeading !== '') checked @endif>
+                                                    <label class="form-check-label small" for="mmHeadingCustom">Custom</label>
+                                                </div>
+                                                <input type="color" id="mmHeadingColor" value="{{ $apHeading !== '' ? $apHeading : '#111111' }}" class="form-control form-control-color" @if($apHeading === '') style="display:none" @endif>
+                                            </div>
+                                            <small class="text-muted">Off &mdash; the heading follows your theme.</small>
+                                        </div>
+                                        @endif
 
                                         {{-- ===== Shape ===== --}}
                                         <div class="mm-control-group">
@@ -653,9 +684,45 @@
                                         <input type="hidden" name="appearance_shape"     id="appShape"     value="{{ $apShape }}">
                                         <input type="hidden" name="appearance_hover"     id="appHover"     value="{{ $apHover }}">
                                         <input type="hidden" name="appearance_advanced"  id="appAdvanced"  value="{{ $apAdvanced }}">
+                                        @if($blockAppearanceMode === 'rich')
+                                        <input type="hidden" name="appearance_heading"   id="appHeading"   value="{{ $apHeading }}">
+                                        @endif
 
                                         <script>window.MM_BLOCK_BASELINE = @json($mmBaseline);</script>
                                     </fieldset>
+                                    @elseif($blockAppearanceMode === 'color')
+                                    {{-- Text + heading blocks: one knob — text color.
+                                         Off = theme's text color; on = this block only. --}}
+                                    <fieldset class="mm-edit-section">
+                                        <legend><i class="bi bi-palette"></i> Appearance</legend>
+                                        <div class="mm-control-group">
+                                            <label class="mm-control-label" for="mmColorCustom">Text color</label>
+                                            <div class="d-flex align-items-center" style="gap: 12px;">
+                                                <div class="form-check form-switch mb-0">
+                                                    <input class="form-check-input" type="checkbox" id="mmColorCustom" @if($apColor !== '') checked @endif>
+                                                    <label class="form-check-label small" for="mmColorCustom">Custom</label>
+                                                </div>
+                                                <input type="color" id="mmColorPicker" value="{{ $apColor !== '' ? $apColor : '#111111' }}" class="form-control form-control-color" @if($apColor === '') style="display:none" @endif>
+                                            </div>
+                                            <small class="text-muted">Off &mdash; this block follows your theme's text color.</small>
+                                        </div>
+                                        <input type="hidden" name="appearance_color" id="appColor" value="{{ $apColor }}">
+                                    </fieldset>
+                                    <script>
+                                    (function () {
+                                        var toggle = document.getElementById('mmColorCustom');
+                                        var picker = document.getElementById('mmColorPicker');
+                                        var hidden = document.getElementById('appColor');
+                                        if (!toggle || !picker || !hidden) return;
+                                        toggle.addEventListener('change', function () {
+                                            picker.style.display = this.checked ? '' : 'none';
+                                            hidden.value = this.checked ? picker.value : '';
+                                        });
+                                        picker.addEventListener('input', function () {
+                                            if (toggle.checked) hidden.value = this.value;
+                                        });
+                                    })();
+                                    </script>
                                     @else
                                     {{-- custom_html blocks (contact form, payments, text, …)
                                          never consume per-block CSS — the controls used to
@@ -1036,11 +1103,28 @@ function submitFormWithParam(paramValue) {
        the block stopped following the theme. Untouched controls now
        leave the server-rendered hidden values exactly as they were. */
 
+    /* --------- Heading color (rich blocks, Phase 6) ---------
+       Independent channel from the button styling: it renders via
+       block_appearance_style, not custom_css, so it never affects
+       matchesBaseline(). Off (unchecked) posts '' = follow the theme. */
+    var $headingCustom = document.getElementById('mmHeadingCustom');
+    var $headingColor  = document.getElementById('mmHeadingColor');
+    var $hHeading      = document.getElementById('appHeading');
+    if ($headingCustom && $headingColor && $hHeading) {
+        $headingCustom.addEventListener('change', function () {
+            $headingColor.style.display = this.checked ? '' : 'none';
+            $hHeading.value = this.checked ? $headingColor.value : '';
+        });
+        $headingColor.addEventListener('input', function () {
+            if ($headingCustom.checked) $hHeading.value = this.value;
+        });
+    }
+
     /* --------- Reset to theme (Phase 5) ---------
        Puts the styling state back to the theme baseline; the
        matchesBaseline() check then saves an empty custom_css and the
        block follows the theme again. Icon is content, not styling —
-       it survives the reset. */
+       it survives the reset. The heading channel resets too. */
     var $resetTheme = document.getElementById('mmResetTheme');
     if ($resetTheme) {
         if (!baseline) {
@@ -1055,6 +1139,11 @@ function submitFormWithParam(paramValue) {
                 $primaryColor.value = baseline.primary;
                 $textColor.value    = baseline.text;
                 $advancedCss.value  = '';
+                if ($headingCustom && $headingColor && $hHeading) {
+                    $headingCustom.checked = false;
+                    $headingColor.style.display = 'none';
+                    $hHeading.value = '';
+                }
                 reflectPreset();
                 reflectShape();
                 syncAll();

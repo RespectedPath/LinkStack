@@ -283,17 +283,18 @@ class UserController extends Controller
                   'appearance_preset', 'appearance_primary',
                   'appearance_text', 'appearance_secondary',
                   'appearance_shape', 'appearance_hover',
-                  'appearance_advanced'] as $appKey) {
+                  'appearance_advanced', 'appearance_heading',
+                  'appearance_color'] as $appKey) {
             if ($request->has($appKey)) {
                 $linkData[$appKey] = $request->input($appKey);
             }
         }
 
         // Sparse discipline (Phase 5): an empty custom_css means "this
-        // block follows the theme." Drop the appearance_* state too so
-        // the editor re-hydrates from the theme's values next time —
-        // otherwise stale state would resurrect old choices after a
-        // reset-to-theme or a theme switch.
+        // block's BUTTON follows the theme." Drop the button-channel
+        // appearance_* state too so the editor re-hydrates from the
+        // theme's values next time — otherwise stale state would
+        // resurrect old choices after a reset-to-theme or theme switch.
         if (array_key_exists('custom_css', $linkData) && trim((string) $linkData['custom_css']) === '') {
             // ConvertEmptyStringsToNull turned the posted '' into null,
             // and the update path drops nulls (so partial forms don't
@@ -304,6 +305,15 @@ class UserController extends Controller
                       'appearance_text', 'appearance_secondary',
                       'appearance_shape', 'appearance_hover',
                       'appearance_advanced'] as $appKey) {
+                unset($linkData[$appKey]);
+            }
+        }
+
+        // Heading / text color are channels of their own (Phase 6) —
+        // they render via block_appearance_style, independent of the
+        // button styling. Empty = follow the theme = store nothing.
+        foreach (['appearance_heading', 'appearance_color'] as $appKey) {
+            if (array_key_exists($appKey, $linkData) && trim((string) $linkData[$appKey]) === '') {
                 unset($linkData[$appKey]);
             }
         }
