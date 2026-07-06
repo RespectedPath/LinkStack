@@ -289,6 +289,25 @@ class UserController extends Controller
             }
         }
 
+        // Sparse discipline (Phase 5): an empty custom_css means "this
+        // block follows the theme." Drop the appearance_* state too so
+        // the editor re-hydrates from the theme's values next time —
+        // otherwise stale state would resurrect old choices after a
+        // reset-to-theme or a theme switch.
+        if (array_key_exists('custom_css', $linkData) && trim((string) $linkData['custom_css']) === '') {
+            // ConvertEmptyStringsToNull turned the posted '' into null,
+            // and the update path drops nulls (so partial forms don't
+            // wipe columns). Coerce back to '' so returning a block to
+            // the theme actually CLEARS a previously saved style.
+            $linkData['custom_css'] = '';
+            foreach (['appearance_preset', 'appearance_primary',
+                      'appearance_text', 'appearance_secondary',
+                      'appearance_shape', 'appearance_hover',
+                      'appearance_advanced'] as $appKey) {
+                unset($linkData[$appKey]);
+            }
+        }
+
         // Step 5: User and Button Information
         $userId = Auth::user()->id;
         $button = Button::where('name', $request->button)->first();

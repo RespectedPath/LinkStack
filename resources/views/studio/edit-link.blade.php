@@ -379,11 +379,45 @@
                                     $existingTP = $decoded;
                                 }
                             }
-                            $apPreset    = $existingTP['appearance_preset']    ?? 'filled';
-                            $apPrimary   = $existingTP['appearance_primary']   ?? '#3b82f6';
-                            $apText      = $existingTP['appearance_text']      ?? '#ffffff';
+
+                            // Per-block CSS only affects button-family blocks at
+                            // render (elements/buttons.blade.php); custom_html
+                            // blocks (contact form, Stripe, text, …) never read
+                            // it, so don't show dead controls for them.
+                            $blockSupportsAppearance = empty($existingTP['custom_html']);
+
+                            // Theme baseline (Phase 5, THEME-APPEARANCE-PLAN.md):
+                            // a block with no styling of its own hydrates the
+                            // controls from the page's EFFECTIVE button look —
+                            // theme manifest + the user's page-wide overrides —
+                            // mapped onto this editor's preset/shape vocabulary.
+                            // The JS diffs against this baseline so a pristine
+                            // block stays pristine (custom_css only saves when
+                            // the user actually diverges from the theme).
+                            $mmEffective = \App\Http\Controllers\AppearanceController::effectiveForUser(Auth::user());
+                            $mmBaseline = [
+                                'preset'  => ['filled' => 'filled', 'outline' => 'outlined', 'soft' => 'soft'][$mmEffective['buttons']['style']] ?? 'filled',
+                                'primary' => $mmEffective['colors']['primary'],
+                                'text'    => $mmEffective['colors']['button_text'],
+                                'shape'   => ['pill' => 999, 'rounded' => 16, 'square' => 0][$mmEffective['buttons']['shape']] ?? 16,
+                            ];
+
+                            // Preview stage wears the page's effective background
+                            // so the sample button is judged in context.
+                            $mmBg = $mmEffective['background'];
+                            $mmStageBg = match ($mmBg['type'] ?? 'solid') {
+                                'gradient' => "background: linear-gradient({$mmBg['gradient_direction']}, {$mmBg['gradient_start']}, {$mmBg['gradient_end']});",
+                                'image'    => !empty($mmBg['image_url'])
+                                    ? "background: url('{$mmBg['image_url']}') center / cover no-repeat;"
+                                    : "background: {$mmEffective['colors']['background']};",
+                                default    => "background: {$mmBg['solid']};",
+                            };
+
+                            $apPreset    = $existingTP['appearance_preset']    ?? $mmBaseline['preset'];
+                            $apPrimary   = $existingTP['appearance_primary']   ?? $mmBaseline['primary'];
+                            $apText      = $existingTP['appearance_text']      ?? $mmBaseline['text'];
                             $apSecondary = $existingTP['appearance_secondary'] ?? '#764ba2';
-                            $apShape     = $existingTP['appearance_shape']     ?? 16;
+                            $apShape     = $existingTP['appearance_shape']     ?? $mmBaseline['shape'];
                             $apHover     = $existingTP['appearance_hover']     ?? 'lift';
                             $apAdvanced  = $existingTP['appearance_advanced']  ?? '';
                         @endphp
@@ -426,26 +460,31 @@
                                          - `type_params` JSON ← raw state (preset +
                                            each color + shape + hover) so re-edit can
                                            rehydrate controls without parsing CSS. --}}
+                                    @if($blockSupportsAppearance)
                                     <fieldset class="mm-edit-section mm-appearance" id="appearance">
                                         <legend><i class="bi bi-palette"></i> Appearance</legend>
                                         <p class="text-muted small mb-3">
-                                            Pick a style and tweak the colors, shape, and icon.
-                                            Changes preview live above &mdash; click Save when you're happy.
+                                            Your theme styles this block automatically &mdash; tweak the
+                                            style, colors, shape, or icon only if you want this one block
+                                            to stand out. Changes preview live above.
                                         </p>
 
-                                        {{-- Live preview button. The icon lives inside a
-                                             wrapper span so the JS can swap its innerHTML
-                                             when the user picks a new icon — that triggers
-                                             FontAwesome's MutationObserver and the new <i>
-                                             gets converted to its <svg> glyph. --}}
+                                        {{-- Live preview button on the page's own background.
+                                             The icon lives inside a wrapper span so the JS can
+                                             swap its innerHTML when the user picks a new icon —
+                                             that triggers FontAwesome's MutationObserver and the
+                                             new <i> gets converted to its <svg> glyph. --}}
                                         <div class="mm-preview-wrap">
                                             <span class="mm-preview-label small text-muted">Preview</span>
-                                            <div class="mm-preview-stage">
+                                            <div class="mm-preview-stage" style="{{ $mmStageBg }}">
                                                 <button type="button" id="mmPreviewBtn" class="mm-preview-btn">
                                                     <span id="mmPreviewIconWrap"></span>
                                                     <span id="mmPreviewLabel">{{ $existingLink->title ?? 'Sample button' }}</span>
                                                 </button>
                                             </div>
+                                            <button type="button" id="mmResetTheme" class="btn btn-sm btn-outline-secondary mt-2">
+                                                <i class="bi bi-arrow-counterclockwise"></i> Reset to theme
+                                            </button>
                                         </div>
 
                                         {{-- ===== Style presets =====
@@ -614,7 +653,10 @@
                                         <input type="hidden" name="appearance_shape"     id="appShape"     value="{{ $apShape }}">
                                         <input type="hidden" name="appearance_hover"     id="appHover"     value="{{ $apHover }}">
                                         <input type="hidden" name="appearance_advanced"  id="appAdvanced"  value="{{ $apAdvanced }}">
+
+                                        <script>window.MM_BLOCK_BASELINE = @json($mmBaseline);</script>
                                     </fieldset>
+                                    @endif
 
                                     {{-- ===== Settings section ===== --}}
                                     <fieldset class="mm-edit-section">
@@ -833,9 +875,32 @@ function submitFormWithParam(paramValue) {
         return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
     }
 
+    /* --------- Theme baseline (Phase 5) ---------
+       The page's effective button look (theme manifest + page-wide
+       overrides), injected server-side. When the current state matches
+       it, the block is "just following the theme" and we save an EMPTY
+       custom_css — the server then also drops the appearance_* state,
+       so the block keeps tracking the theme (including future theme
+       switches). Diverge and only then does styling get frozen in. */
+    var baseline = window.MM_BLOCK_BASELINE || null;
+
+    function matchesBaseline() {
+        if (!baseline) return false;
+        if ((state.advanced || '').trim() !== '') return false;
+        if (state.preset !== baseline.preset) return false;
+        if (state.shape !== baseline.shape) return false;
+        if (String(state.primary).toLowerCase() !== String(baseline.primary).toLowerCase()) return false;
+        // Text color only affects the generated CSS in presets that
+        // use it; ignore it elsewhere so an inert change doesn't
+        // needlessly freeze the block.
+        var usesText = (state.preset === 'filled' || state.preset === 'gradient' || state.preset === 'glass');
+        if (usesText && String(state.text).toLowerCase() !== String(baseline.text).toLowerCase()) return false;
+        return true;
+    }
+
     /* --------- Render passes --------- */
     function syncHiddenInputs() {
-        $cssInput.value   = generateCss();
+        $cssInput.value   = matchesBaseline() ? '' : generateCss();
         $iconInput.value  = state.icon || '';
         $hPreset.value    = state.preset;
         $hPrimary.value   = state.primary;
@@ -950,25 +1015,37 @@ function submitFormWithParam(paramValue) {
         syncAll();
     });
 
-    /* Safety belt: re-sync hidden inputs at form submission so what
-       gets POSTed always matches what's visible in the preview, even
-       if some control event missed. Also logs the payload to the
-       console so it's easy to verify what the server is receiving. */
-    var $form = $previewBtn.closest('form');
-    if ($form) {
-        $form.addEventListener('submit', function () {
-            syncHiddenInputs();
-            console.log('[MM Appearance] Submitting with:', {
-                custom_css:           $cssInput.value,
-                custom_icon:          $iconInput.value,
-                appearance_preset:    $hPreset.value,
-                appearance_primary:   $hPrimary.value,
-                appearance_text:      $hText.value,
-                appearance_secondary: $hSecondary.value,
-                appearance_shape:     $hShape.value,
-                appearance_hover:     $hHover.value
+    /* NOTE: no submit-time flush. Every control handler above syncs
+       the hidden inputs as it fires, and an unconditional flush here
+       was the bug that froze pristine blocks: saving ANY edit (even a
+       title fix) generated custom_css from the hydrated defaults and
+       the block stopped following the theme. Untouched controls now
+       leave the server-rendered hidden values exactly as they were. */
+
+    /* --------- Reset to theme (Phase 5) ---------
+       Puts the styling state back to the theme baseline; the
+       matchesBaseline() check then saves an empty custom_css and the
+       block follows the theme again. Icon is content, not styling —
+       it survives the reset. */
+    var $resetTheme = document.getElementById('mmResetTheme');
+    if ($resetTheme) {
+        if (!baseline) {
+            $resetTheme.style.display = 'none';
+        } else {
+            $resetTheme.addEventListener('click', function () {
+                state.preset   = baseline.preset;
+                state.primary  = baseline.primary;
+                state.text     = baseline.text;
+                state.shape    = baseline.shape;
+                state.advanced = '';
+                $primaryColor.value = baseline.primary;
+                $textColor.value    = baseline.text;
+                $advancedCss.value  = '';
+                reflectPreset();
+                reflectShape();
+                syncAll();
             });
-        });
+        }
     }
 
     /* --------- Initialize from server-rendered state --------- */
