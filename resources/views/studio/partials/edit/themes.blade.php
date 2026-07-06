@@ -94,6 +94,14 @@
                       if ($entry === '.' || $entry === '..') continue;
                       $readme = base_path('themes') . '/' . $entry . '/readme.md';
                       if (!file_exists($readme)) continue;
+                      // Only manifest-shipping themes are pickable: without
+                      // a theme.json the editor can't hydrate its controls
+                      // from the theme, making it second-class under the
+                      // sparse-override model. Hides the stock LinkStack
+                      // leftovers (PolySleek, galaxy). A theme already set
+                      // on an account still renders (manifest loading falls
+                      // back to factory defaults) — it just can't be picked.
+                      if (!file_exists(base_path('themes') . '/' . $entry . '/theme.json')) continue;
                       $text = file_get_contents($readme);
                       $themeName = null; $themeCat = 'Other';
                       if (preg_match('/Theme Name:\s*(.*)/', $text, $mn))  $themeName = trim($mn[1]);
