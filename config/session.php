@@ -168,7 +168,11 @@ return [
     |
     */
 
-    'secure' => env('SESSION_SECURE_COOKIE'),
+    // Secure-by-default in production: when SESSION_SECURE_COOKIE is
+    // unset the flag follows the environment, so prod (HTTPS) gets a
+    // Secure session cookie while local dev over HTTP still works.
+    // Set SESSION_SECURE_COOKIE explicitly to override either way.
+    'secure' => env('SESSION_SECURE_COOKIE', env('APP_ENV') === 'production'),
 
     /*
     |--------------------------------------------------------------------------

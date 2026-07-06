@@ -417,3 +417,34 @@ if (!function_exists('block_appearance_style')) {
       return $rules ? "<style>\n" . implode("\n", $rules) . "\n</style>" : '';
   }
 }
+
+/**
+ * Neutralize dangerous URL schemes before a user-supplied URL is placed
+ * in an href. Blade's {{ }} escaping stops attribute breakout but does
+ * NOT stop the `javascript:` / `data:` / `vbscript:` schemes, which
+ * execute script when the link is clicked (stored XSS on a public bio
+ * page). Allowlists http/https/mailto/tel and relative/protocol-
+ * relative URLs; anything else becomes '#'. Runs at render time so it
+ * also covers URLs already stored in the DB.
+ */
+if (!function_exists('mm_safe_href')) {
+  function mm_safe_href($url): string
+  {
+      $url = (string) $url;
+      if (trim($url) === '') {
+          return $url;
+      }
+      // Detect the scheme on a copy with all control chars + spaces
+      // stripped, so "java\tscript:" or leading whitespace can't smuggle
+      // a blocked scheme past the check (browsers strip those before
+      // parsing the scheme).
+      $probe = preg_replace('/[\x00-\x20]+/', '', $url);
+      if (preg_match('/^([a-zA-Z][a-zA-Z0-9+.\-]*):/', $probe, $m)) {
+          $scheme = strtolower($m[1]);
+          if (!in_array($scheme, ['http', 'https', 'mailto', 'tel'], true)) {
+              return '#';
+          }
+      }
+      return $url;
+  }
+}
