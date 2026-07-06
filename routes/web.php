@@ -199,6 +199,7 @@ Route::post('/studio/appearance/background-image/remove', [AppearanceController:
 // ==== Stripe Connect OAuth onboarding (auth-scoped) ====
 Route::get('/stripe/connect', [StripeConnectController::class, 'connect'])->name('stripe.connect');
 Route::get('/stripe/connect/callback', [StripeConnectController::class, 'callback'])->name('stripe.connect.callback');
+Route::get('/stripe/status', [StripeConnectController::class, 'status'])->name('stripe.status');
 Route::post('/stripe/disconnect', [StripeConnectController::class, 'disconnect'])->name('stripe.disconnect');
 Route::post('/edit-icons', [UserController::class, 'editIcons'])->name('editIcons');
 Route::get('/clearIcon/{id}', [UserController::class, 'clearIcon'])->name('clearIcon');

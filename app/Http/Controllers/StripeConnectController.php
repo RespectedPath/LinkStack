@@ -57,8 +57,7 @@ class StripeConnectController extends Controller
         $expectedState = $request->session()->pull('stripe_oauth_state');
         $providedState = (string) $request->query('state', '');
         if ($expectedState === null || !hash_equals((string) $expectedState, $providedState)) {
-            return redirect()->route('showProfile')
-                ->with('error', 'Stripe connection could not be verified. Please try again.');
+            return $this->popupClose('error', 'Stripe connection could not be verified. Please try again.');
         }
 
         // User denied or Stripe returned an error
@@ -68,20 +67,17 @@ class StripeConnectController extends Controller
                 'error'             => $request->query('error'),
                 'error_description' => $request->query('error_description'),
             ]);
-            return redirect()->route('showProfile')
-                ->with('error', 'Stripe authorization was cancelled or failed.');
+            return $this->popupClose('error', 'Stripe authorization was cancelled or failed.');
         }
 
         $code = (string) $request->query('code', '');
         if ($code === '') {
-            return redirect()->route('showProfile')
-                ->with('error', 'Stripe did not return an authorization code.');
+            return $this->popupClose('error', 'Stripe did not return an authorization code.');
         }
 
         $secret = (string) env('STRIPE_SECRET', '');
         if ($secret === '') {
-            return redirect()->route('showProfile')
-                ->with('error', 'Stripe Connect is not configured on this platform yet.');
+            return $this->popupClose('error', 'Stripe Connect is not configured on this platform yet.');
         }
 
         Stripe::setApiKey($secret);
@@ -96,8 +92,7 @@ class StripeConnectController extends Controller
                 'user_id' => Auth::id(),
                 'error'   => $e->getMessage(),
             ]);
-            return redirect()->route('showProfile')
-                ->with('error', 'Could not complete Stripe connection. Please try again.');
+            return $this->popupClose('error', 'Could not complete Stripe connection. Please try again.');
         }
 
         $connectedId = (string) ($response->stripe_user_id ?? '');
@@ -105,16 +100,44 @@ class StripeConnectController extends Controller
             Log::error('Stripe Connect response missing stripe_user_id', [
                 'user_id' => Auth::id(),
             ]);
-            return redirect()->route('showProfile')
-                ->with('error', 'Stripe response was unexpected. Please try again.');
+            return $this->popupClose('error', 'Stripe response was unexpected. Please try again.');
         }
 
         $user = User::find(Auth::id());
         $user->stripe_account_id = $connectedId;
         $user->save();
 
-        return redirect()->route('showProfile')
-            ->with('success', 'Stripe account connected.');
+        return $this->popupClose('success', 'Stripe account connected.');
+    }
+
+    /**
+     * Tiny page shown in the OAuth popup after the callback. It self-
+     * closes (a script-opened window can close itself even when COOP
+     * severed the opener reference from the Stripe round-trip); if it
+     * somehow isn't a popup, it navigates to the block editor instead.
+     * The block form polls /stripe/status independently, so the
+     * "connected" state reflects even if the close/redirect is blocked.
+     */
+    private function popupClose(string $status, string $message)
+    {
+        return response()->view('stripe.popup-close', [
+            'status'  => $status,
+            'message' => $message,
+        ]);
+    }
+
+    /**
+     * Lightweight JSON status the block editor polls after opening the
+     * Connect popup, so the connected state reflects without relying on
+     * cross-window messaging.
+     */
+    public function status(Request $request)
+    {
+        $user = User::find(Auth::id());
+        return response()->json([
+            'connected'  => !empty($user->stripe_account_id),
+            'account_id' => $user->stripe_account_id ?: null,
+        ]);
     }
 
     public function disconnect(Request $request)
@@ -125,6 +148,11 @@ class StripeConnectController extends Controller
             $user->save();
         }
 
+        // The block editor calls this via fetch — answer with JSON so it
+        // can update in place. Non-AJAX callers still get a redirect.
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json(['connected' => false]);
+        }
         return redirect()->route('showProfile')
             ->with('success', 'Stripe account disconnected.');
     }

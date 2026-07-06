@@ -64,7 +64,10 @@
                 <h3 class="mb-4 card-header"><i class="bi bi-plug"></i> Integrations</h3>
                 <p class="text-muted mb-4">Connect external services to your public page.</p>
 
-                @include('studio.partials.integration-stripe',    ['profile' => $profile])
+                {{-- Stripe connect/disconnect moved into the Stripe payment
+                     block editor (its natural home — that's where the need
+                     is discovered). See blocks/stripe_payment/form.blade.php.
+                     The integration-stripe partial is no longer included. --}}
                 @include('studio.partials.integration-analytics', ['profile' => $profile])
                 @include('studio.partials.integration-redirect',  ['profile' => $profile])
               </div>

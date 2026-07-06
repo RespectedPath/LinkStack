@@ -34,42 +34,141 @@
   $remaining = array_diff_key($allCurr, $pinned);
 ?>
 
-{{-- Stripe connection status. Payment blocks pay out to the page
-     owner's connected Stripe account (users.stripe_account_id), set up
-     via the Stripe Connect OAuth flow — NOT by entering keys here.
-     Surfacing the status + a Connect button directly in the block so
-     the requirement is obvious instead of the block silently failing
-     at checkout. Reads the authenticated user's account directly (this
-     form renders server-side within the studio session). --}}
-@php $spConnected = !empty(auth()->user()->stripe_account_id ?? null); @endphp
-@if($spConnected)
-  <div class="alert alert-success d-flex align-items-center gap-2 py-2 mb-3">
-    <i class="bi bi-check-circle-fill"></i>
-    <div class="small mb-0">Stripe is connected — payments from this block pay out to your account.</div>
-  </div>
-@else
-  <div class="alert alert-warning mb-3">
-    <div class="d-flex align-items-start gap-2">
-      <i class="bi bi-exclamation-triangle-fill mt-1"></i>
-      <div>
-        <strong>Connect your Stripe account first</strong>
-        <div class="small mb-2">
-          This block routes payments to your own Stripe account. It can't
-          take payments until you connect one. Connect now, then come back
-          and build the block.
-        </div>
-        {{-- target="_top" breaks out of the block-editor iframe: the
-             OAuth flow (and Stripe's authorize page) can't render inside
-             a frame — Stripe sends X-Frame-Options: DENY — so the whole
-             window navigates to Stripe, authorizes, and the callback
-             returns to the Settings page. --}}
-        <a href="{{ route('stripe.connect') }}" target="_top" rel="noopener" class="btn btn-sm btn-primary">
-          <i class="bi bi-box-arrow-up-right"></i> Connect Stripe
-        </a>
-      </div>
-    </div>
-  </div>
-@endif
+{{-- Stripe connection status + connect/disconnect, self-contained in
+     the block (the Settings-page card was removed — this is now the
+     single home for connecting Stripe). Payment blocks pay out to the
+     page owner's connected account (users.stripe_account_id) set up via
+     Stripe Connect OAuth — never by entering keys here.
+
+     The connect flow runs in a POPUP window so the editor never
+     navigates away: the block form can't host the OAuth page inline
+     (Stripe refuses to be framed), so we window.open() a popup that
+     self-closes when done. Rather than rely on cross-window messaging
+     (COOP can sever the opener after the Stripe round-trip), the form
+     polls /stripe/status and flips to "connected" when the account
+     lands. Disconnect posts via fetch and swaps the banner in place. --}}
+<div id="sp-connect-banner"
+     data-connected="{{ !empty(auth()->user()->stripe_account_id ?? null) ? '1' : '0' }}"
+     data-account="{{ auth()->user()->stripe_account_id ?? '' }}"
+     class="mb-3"></div>
+
+<script>
+(function () {
+    var banner = document.getElementById('sp-connect-banner');
+    if (!banner) return;
+
+    var CSRF           = @json(csrf_token());
+    var CONNECT_URL    = @json(route('stripe.connect'));
+    var STATUS_URL     = @json(route('stripe.status'));
+    var DISCONNECT_URL = @json(route('stripe.disconnect'));
+
+    var popupHandle = null;
+    var pollTimer   = null;
+
+    function esc(s) {
+        return String(s || '').replace(/[&<>"]/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+        });
+    }
+
+    function renderConnected(account) {
+        banner.innerHTML =
+            '<div class="alert alert-success py-2 mb-0">' +
+              '<div class="d-flex align-items-start gap-2">' +
+                '<i class="bi bi-check-circle-fill mt-1"></i>' +
+                '<div class="flex-grow-1">' +
+                  '<div class="small">Stripe is connected — payments from this block pay out to your account' +
+                    (account ? ' (<code>' + esc(account) + '</code>)' : '') + '.</div>' +
+                  '<button type="button" id="sp-disconnect" class="btn btn-sm btn-outline-danger mt-2">' +
+                    '<i class="bi bi-x-circle"></i> Disconnect</button>' +
+                '</div>' +
+              '</div>' +
+            '</div>';
+        var db = document.getElementById('sp-disconnect');
+        if (db) db.addEventListener('click', doDisconnect);
+    }
+
+    function renderNotConnected() {
+        banner.innerHTML =
+            '<div class="alert alert-warning mb-0">' +
+              '<div class="d-flex align-items-start gap-2">' +
+                '<i class="bi bi-exclamation-triangle-fill mt-1"></i>' +
+                '<div>' +
+                  '<strong>Connect your Stripe account first</strong>' +
+                  '<div class="small mb-2">This block routes payments to your own Stripe account — ' +
+                    'it can\'t take payments until you connect one. A Stripe window opens when you click ' +
+                    'below and closes itself when you\'re done.</div>' +
+                  '<button type="button" id="sp-connect-btn" class="btn btn-sm btn-primary">' +
+                    '<i class="bi bi-box-arrow-up-right"></i> Connect Stripe</button>' +
+                  '<span id="sp-connect-waiting" class="small text-muted ms-2" style="display:none;">' +
+                    'Waiting for Stripe…</span>' +
+                '</div>' +
+              '</div>' +
+            '</div>';
+        var cb = document.getElementById('sp-connect-btn');
+        if (cb) cb.addEventListener('click', startConnect);
+    }
+
+    function startConnect() {
+        var waiting = document.getElementById('sp-connect-waiting');
+        if (waiting) waiting.style.display = '';
+        var w = 600, h = 850;
+        var x = Math.max(0, (screen.width  - w) / 2);
+        var y = Math.max(0, (screen.height - h) / 2);
+        // Popup opens as a top-level window (not inside the editor iframe),
+        // so Stripe's no-framing policy doesn't apply.
+        popupHandle = window.open(CONNECT_URL, 'stripeConnect',
+            'popup,width=' + w + ',height=' + h + ',left=' + x + ',top=' + y);
+        startPolling();
+    }
+
+    function startPolling() {
+        var elapsed = 0;
+        if (pollTimer) clearInterval(pollTimer);
+        pollTimer = setInterval(function () {
+            elapsed += 2000;
+            fetch(STATUS_URL, { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                    if (d && d.connected) {
+                        stopPolling();
+                        try { if (popupHandle && !popupHandle.closed) popupHandle.close(); } catch (e) {}
+                        renderConnected(d.account_id);
+                    }
+                })
+                .catch(function () {});
+            if (elapsed >= 180000) stopPolling(); // give up after ~3 min
+        }, 2000);
+    }
+
+    function stopPolling() {
+        if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+        var waiting = document.getElementById('sp-connect-waiting');
+        if (waiting) waiting.style.display = 'none';
+    }
+
+    function doDisconnect() {
+        if (!confirm('Disconnect this Stripe account? Payment blocks will stop working until you reconnect.')) return;
+        fetch(DISCONNECT_URL, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': CSRF,
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            credentials: 'same-origin',
+        }).then(function () { renderNotConnected(); })
+          .catch(function () { renderNotConnected(); });
+    }
+
+    // Initial paint from the server-rendered state.
+    if (banner.getAttribute('data-connected') === '1') {
+        renderConnected(banner.getAttribute('data-account'));
+    } else {
+        renderNotConnected();
+    }
+})();
+</script>
 
 {{-- Select2 for the searchable currency picker. Loaded from CDN;
      admin-only so CDN latency is not a concern. --}}
