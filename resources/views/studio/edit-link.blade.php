@@ -656,6 +656,20 @@
 
                                         <script>window.MM_BLOCK_BASELINE = @json($mmBaseline);</script>
                                     </fieldset>
+                                    @else
+                                    {{-- custom_html blocks (contact form, payments, text, …)
+                                         never consume per-block CSS — the controls used to
+                                         show here anyway and silently did nothing. Explain
+                                         instead of leaving a hole where a section was. --}}
+                                    <fieldset class="mm-edit-section">
+                                        <legend><i class="bi bi-palette"></i> Appearance</legend>
+                                        <p class="text-muted small mb-0">
+                                            This block is styled by your theme automatically &mdash; it
+                                            doesn't have per-block style controls. To change your page's
+                                            overall look, use the <strong>Themes</strong> and
+                                            <strong>Appearance</strong> tabs.
+                                        </p>
+                                    </fieldset>
                                     @endif
 
                                     {{-- ===== Settings section ===== --}}
