@@ -268,12 +268,15 @@ $usrhandl = Auth::user()->littlelink_name;
                         </a>
                     </li>
                     @endif
-                    {{-- Account settings — moved from the top-right dropdown
-                         into the sidebar to mirror the Mail Minted portal. --}}
+                    {{-- Integrations (Stripe / Analytics / Redirect + data
+                         export-import) — the /studio/profile page, renamed
+                         from "Account" now that auth/account controls are
+                         Mail Minted's. Lives in the sidebar to mirror the
+                         Mail Minted portal. --}}
                     <li class="nav-item">
                         <a class="nav-link {{ Request::segment(2) == 'profile' ? 'active' : ''}}" href="{{ url('/studio/profile') }}">
-                            <i class="bi bi-gear-fill"></i>
-                            <span class="item-name">Account</span>
+                            <i class="bi bi-plug-fill"></i>
+                            <span class="item-name">Integrations</span>
                         </a>
                     </li>
                     {{-- Styling nav item removed — replaced by the compact

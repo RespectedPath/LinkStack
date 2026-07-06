@@ -25,7 +25,7 @@
               
               @if(($_SERVER['QUERY_STRING'] ?? '') === '')
               <section class="text-gray-400">
-                      <h3 class="mb-4 card-header"><i class="bi bi-person"></i> {{__('messages.Account Settings')}}</h3>
+                      <h3 class="mb-4 card-header"><i class="bi bi-plug"></i> Integrations</h3>
               <div class="card-body p-0 p-md-3">
 
                       @foreach($profile as $profile)
@@ -35,9 +35,8 @@
                    Minted (Supabase SSO + billing). This page holds
                    integrations and data export/import only. --}}
 
-              {{-- ===== Integrations (each card is a partial) ===== --}}
+              {{-- ===== Integration cards (each is a partial) ===== --}}
               <div class="col-lg-8">
-                <h4 class="mb-2"><i class="bi bi-plug"></i> Integrations</h4>
                 <p class="text-muted mb-3">Connect external services to your public page.</p>
 
                 {{-- Stripe connection is account-level (one account serves
