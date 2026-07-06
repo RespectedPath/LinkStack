@@ -34,6 +34,38 @@
   $remaining = array_diff_key($allCurr, $pinned);
 ?>
 
+{{-- Stripe connection status. Payment blocks pay out to the page
+     owner's connected Stripe account (users.stripe_account_id), set up
+     via the Stripe Connect OAuth flow — NOT by entering keys here.
+     Surfacing the status + a Connect button directly in the block so
+     the requirement is obvious instead of the block silently failing
+     at checkout. Reads the authenticated user's account directly (this
+     form renders server-side within the studio session). --}}
+@php $spConnected = !empty(auth()->user()->stripe_account_id ?? null); @endphp
+@if($spConnected)
+  <div class="alert alert-success d-flex align-items-center gap-2 py-2 mb-3">
+    <i class="bi bi-check-circle-fill"></i>
+    <div class="small mb-0">Stripe is connected — payments from this block pay out to your account.</div>
+  </div>
+@else
+  <div class="alert alert-warning mb-3">
+    <div class="d-flex align-items-start gap-2">
+      <i class="bi bi-exclamation-triangle-fill mt-1"></i>
+      <div>
+        <strong>Connect your Stripe account first</strong>
+        <div class="small mb-2">
+          This block routes payments to your own Stripe account. It can't
+          take payments until you connect one. Connect now, then come back
+          and build the block.
+        </div>
+        <a href="{{ route('stripe.connect') }}" class="btn btn-sm btn-primary">
+          <i class="bi bi-box-arrow-up-right"></i> Connect Stripe
+        </a>
+      </div>
+    </div>
+  </div>
+@endif
+
 {{-- Select2 for the searchable currency picker. Loaded from CDN;
      admin-only so CDN latency is not a concern. --}}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
