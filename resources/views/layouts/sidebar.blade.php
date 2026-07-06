@@ -312,8 +312,18 @@ $usrhandl = Auth::user()->littlelink_name;
             .sidebar.sidebar-mini .sidebar-footer .nav-link { justify-content: center; }
             .sidebar.sidebar-mini .sidebar-footer .nav-link i { margin: 0 !important; }
             .sidebar.sidebar-mini .mm-theme-select { padding-left: 0 !important; padding-right: 0 !important; }
-            .sidebar.sidebar-mini .mm-theme-select .btn:not(.active) { display: none; }
-            .sidebar.sidebar-mini .mm-theme-select .btn.active { width: 100%; }
+            /* Collapsed: show only the button matching the current mode.
+               Driven by data-mode on the container (set by the script from
+               localStorage 'color-mode'), NOT by hope-ui's .active class —
+               hope-ui doesn't reliably mark these buttons active, which is
+               why relying on .active hid all three. */
+            .sidebar.sidebar-mini .mm-theme-select .btn { display: none; }
+            .sidebar.sidebar-mini .mm-theme-select[data-mode="light"] [data-value="light"],
+            .sidebar.sidebar-mini .mm-theme-select[data-mode="dark"]  [data-value="dark"],
+            .sidebar.sidebar-mini .mm-theme-select[data-mode="auto"]  [data-value="auto"] {
+                display: flex !important;
+                width: 100%;
+            }
         </style>
         @endonce
         <div class="sidebar-footer">
@@ -322,7 +332,7 @@ $usrhandl = Auth::user()->littlelink_name;
                  (data-setting="color-mode"), the same mechanism the old
                  Scheme toggle used, so it flips the dashboard theme +
                  persists the choice. Pinned above Sign out. --}}
-            <div class="mm-theme-select d-flex gap-1 px-3 pb-2">
+            <div class="mm-theme-select d-flex gap-1 px-3 pb-2" data-mode="auto">
                 <div class="btn btn-sm btn-border flex-fill active" role="button" title="Light" data-setting="color-mode" data-name="color" data-value="light">
                     <i class="bi bi-sun-fill"></i>
                 </div>
@@ -348,32 +358,44 @@ $usrhandl = Auth::user()->littlelink_name;
             var sel = document.querySelector('.mm-theme-select');
             if (!sel) return;
             var ORDER = ['light', 'dark', 'auto'];
+            var buttons = {};
+            ORDER.forEach(function (m) { buttons[m] = sel.querySelector('[data-value="' + m + '"]'); });
 
             function isMini() {
                 var a = document.querySelector('.sidebar');
                 return !!(a && a.classList.contains('sidebar-mini'));
             }
-            function activeMode() {
-                var a = sel.querySelector('.btn.active');
-                return a ? a.getAttribute('data-value') : 'light';
+            function storedMode() {
+                // detect-dark-mode.js keeps localStorage 'color-mode' in
+                // {light,dark,auto}; default auto if missing/invalid.
+                var s = localStorage.getItem('color-mode');
+                return ORDER.indexOf(s) === -1 ? 'auto' : s;
+            }
+            // Single source of truth for which button shows when collapsed
+            // (data-mode drives the CSS) and which is highlighted when
+            // expanded (.active). Managed here rather than relying on
+            // hope-ui, which doesn't mark these buttons active.
+            function setMode(mode) {
+                if (ORDER.indexOf(mode) === -1) mode = 'auto';
+                sel.setAttribute('data-mode', mode);
+                ORDER.forEach(function (m) {
+                    if (buttons[m]) buttons[m].classList.toggle('active', m === mode);
+                });
             }
 
-            // Mirror .active onto whichever mode button was chosen, so the
-            // collapsed single-icon reflects the current mode even if
-            // hope-ui doesn't manage .active on these buttons itself.
+            setMode(storedMode()); // initialise from the stored mode
+
+            // Keep in sync on any mode-button click (real or synthetic).
             sel.addEventListener('click', function (e) {
                 var btn = e.target.closest('[data-setting="color-mode"]');
-                if (!btn) return;
-                sel.querySelectorAll('[data-setting="color-mode"]').forEach(function (b) {
-                    b.classList.toggle('active', b === btn);
-                });
+                if (btn) setMode(btn.getAttribute('data-value'));
             });
 
-            // Collapsed: only the active icon shows, so clicking it should
-            // advance to the next mode instead of re-selecting the current
-            // one. Capture-phase interception runs before hope-ui's
-            // delegated handler; the guard stops the synthetic click from
-            // looping. Expanded (all 3 visible) is untouched.
+            // Collapsed: the single visible icon cycles to the next mode
+            // (light -> dark -> auto). Capture-phase interception runs
+            // before hope-ui's delegated handler; the guard stops the
+            // synthetic click from looping. Expanded (all 3 shown) is
+            // untouched — each button selects its mode directly.
             var cycling = false;
             sel.addEventListener('click', function (e) {
                 if (cycling || !isMini()) return;
@@ -381,12 +403,13 @@ $usrhandl = Auth::user()->littlelink_name;
                 if (!btn) return;
                 e.preventDefault();
                 e.stopImmediatePropagation();
-                var next = ORDER[(ORDER.indexOf(activeMode()) + 1) % ORDER.length];
-                var nextBtn = sel.querySelector('[data-value="' + next + '"]');
-                if (!nextBtn) return;
-                cycling = true;
-                nextBtn.click();
-                cycling = false;
+                var cur = sel.getAttribute('data-mode') || 'auto';
+                var next = ORDER[(ORDER.indexOf(cur) + 1) % ORDER.length];
+                if (buttons[next]) {
+                    cycling = true;
+                    buttons[next].click();
+                    cycling = false;
+                }
             }, true);
         })();
         </script>
