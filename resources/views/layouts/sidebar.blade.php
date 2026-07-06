@@ -303,6 +303,12 @@ $usrhandl = Auth::user()->littlelink_name;
             .sidebar .data-scrollbar {
                 max-height: calc(100vh - 120px) !important;
             }
+            /* Current-mode highlight (expanded view). Custom class, not
+               Bootstrap's .active — see the setMode() comment for why. */
+            .mm-theme-select .btn.mm-active {
+                background-color: rgba(128, 128, 128, 0.2);
+                font-weight: 600;
+            }
 
             /* Collapsed (mini) sidebar: hide the Sign out label (icon
                only), and shrink the theme selector to a single icon
@@ -333,7 +339,7 @@ $usrhandl = Auth::user()->littlelink_name;
                  Scheme toggle used, so it flips the dashboard theme +
                  persists the choice. Pinned above Sign out. --}}
             <div class="mm-theme-select d-flex gap-1 px-3 pb-2" data-mode="auto">
-                <div class="btn btn-sm btn-border flex-fill active" role="button" title="Light" data-setting="color-mode" data-name="color" data-value="light">
+                <div class="btn btn-sm btn-border flex-fill" role="button" title="Light" data-setting="color-mode" data-name="color" data-value="light">
                     <i class="bi bi-sun-fill"></i>
                 </div>
                 <div class="btn btn-sm btn-border flex-fill" role="button" title="Dark" data-setting="color-mode" data-name="color" data-value="dark">
@@ -378,8 +384,12 @@ $usrhandl = Auth::user()->littlelink_name;
             function setMode(mode) {
                 if (ORDER.indexOf(mode) === -1) mode = 'auto';
                 sel.setAttribute('data-mode', mode);
+                // Use mm-active (NOT Bootstrap's .active): hope-ui's sidebar
+                // init does sidebar.querySelectorAll('.active') and assumes
+                // every match sits inside a <ul> menu — these footer buttons
+                // don't, so a plain .active here crashes it (white page).
                 ORDER.forEach(function (m) {
-                    if (buttons[m]) buttons[m].classList.toggle('active', m === mode);
+                    if (buttons[m]) buttons[m].classList.toggle('mm-active', m === mode);
                 });
             }
 
