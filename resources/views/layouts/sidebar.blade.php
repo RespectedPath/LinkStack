@@ -293,6 +293,27 @@ $usrhandl = Auth::user()->littlelink_name;
                 </ul>
                 <!-- Sidebar Menu End -->        </div>
         </div>
+        @once
+        <style>
+            /* Pin the footer (theme selector + Sign out) to the bottom of
+               the sidebar. The sidebar is position:fixed; top:0; bottom:0
+               (full viewport height) but display:block, so the footer
+               otherwise just trails the nav. Absolute bottom:0 sticks it
+               to the bottom; the scroll area is shortened to reserve room
+               so nav items never tuck under it. */
+            .sidebar .sidebar-footer {
+                position: absolute;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                padding: 10px 12px;
+                border-top: 1px solid rgba(128, 128, 128, 0.15);
+            }
+            .sidebar .data-scrollbar {
+                max-height: calc(100vh - 120px) !important;
+            }
+        </style>
+        @endonce
         <div class="sidebar-footer">
             {{-- Light / Dark / System theme selector — replaces the old
                  Styling offcanvas. Uses hope-ui.js's color-mode setting

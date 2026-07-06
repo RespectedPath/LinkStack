@@ -30,21 +30,12 @@
               
                       @foreach($profile as $profile)
               
-              @if(env('REGISTER_AUTH') != 'verified' or auth()->user()->role == 'admin')
-                      <form  action="{{ route('editProfile') }}" method="post">
-                      @csrf
-                        <div class="form-group col-lg-8">
-                          <h4>Email</h4>
-                          <input type="email" class="form-control" name="email" value="{{ $profile->email }}" required>
-                        </div>
-                        <button type="Change " class="mt-3 ml-3 btn btn-primary">{{__('messages.Change email')}}</button>
-                      </form>
-              @endif
-              
-              {{-- Password change removed: customers authenticate through
-                   Mail Minted (Supabase SSO), so a local LinkStack password
-                   reset would desync from / break the SSO identity. Role
-                   display removed too — irrelevant to normal customers. --}}
+                            {{-- Email, password, and role controls removed: customers
+                   authenticate through Mail Minted (Supabase SSO), so a
+                   local LinkStack email/password change would desync from /
+                   break the SSO identity. Role display is irrelevant to
+                   normal customers. Account Settings now surfaces only
+                   Integrations + data export/import. --}}
 
               {{-- ================= Integrations =================
                    Each card is a self-contained partial under
