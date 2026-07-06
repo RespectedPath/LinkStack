@@ -15,6 +15,10 @@
 @php
     $currentTheme = $user->theme ?? '';
     $isDefault = ($currentTheme === '' || $currentTheme === 'default');
+    // Whether the user has appearance overrides on top of the theme —
+    // drives the Customized badge, the reset action, and the "switching
+    // resets your tweaks" confirm below.
+    $mmCustomized = !empty(App\Http\Controllers\AppearanceController::sparseForUser($user));
     // Resolve a friendly name for the current theme from its readme.
     $currentName = 'Default Theme';
     if (!$isDefault) {
@@ -44,7 +48,22 @@
          style="width: 90px; height: auto; border-radius: 8px; border: 1px solid rgba(128,128,128,0.25);">
     <div>
       <div class="small text-muted">Current theme</div>
-      <div style="font-weight: 600; font-size: 1.05rem;">{{ $currentName }}</div>
+      <div style="font-weight: 600; font-size: 1.05rem;">
+        {{ $currentName }}
+        @if($mmCustomized)
+          <span class="badge bg-soft-primary mm-edited-badge" title="You've changed colors, shapes, or other appearance settings on top of this theme">Customized</span>
+        @endif
+      </div>
+      @if($mmCustomized)
+        <form action="{{ route('resetAppearance') }}" method="post" class="mt-2">
+          @csrf
+          <input type="hidden" name="return_to" value="themes">
+          <button type="submit" class="btn btn-sm btn-outline-secondary"
+                  onclick="return confirm('Reset your appearance back to the theme\'s own look? This clears every color, font, shape, and background you changed.')">
+            <i class="bi bi-arrow-counterclockwise"></i> Reset to theme
+          </button>
+        </form>
+      @endif
     </div>
   </div>
 
@@ -154,7 +173,16 @@
 
 @push('sidebar-scripts')
 <script>
+  var mmThemeCustomized = @json($mmCustomized);
+  var mmCurrentTheme = @json($isDefault ? 'default' : $currentTheme);
   function mmSetTheme(themeName) {
+    // Switching themes clears appearance overrides (editTheme does the
+    // clearing server-side) — warn before losing work. Re-picking the
+    // current theme changes nothing, so no confirm.
+    if (mmThemeCustomized && themeName !== mmCurrentTheme &&
+        !confirm('Switching themes resets the appearance changes you made on your current theme. Continue?')) {
+      return;
+    }
     var sel = document.getElementById('mm-theme-select');
     sel.querySelector('option').value = themeName;
     sel.form.submit();

@@ -310,3 +310,14 @@
         height: 70vh;
     }
 }
+
+/* "edited" chips — mark knobs that differ from the active theme
+   (Phase 3). Initial state is server-rendered; appearance.js toggles
+   them live from the preview-css endpoint's keys list. */
+.mm-edited-badge {
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    vertical-align: middle;
+    text-transform: none;
+}

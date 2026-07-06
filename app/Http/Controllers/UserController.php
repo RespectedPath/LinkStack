@@ -640,8 +640,10 @@ class UserController extends Controller
 
         // Appearance — controls hydrate from the theme manifest merged
         // with the user's sparse overrides, so the knobs always show
-        // what the page actually renders (Phase 2, sparse model).
+        // what the page actually renders (Phase 2, sparse model). The
+        // raw sparse blob feeds the "edited" indicators (Phase 3).
         $saved = AppearanceController::effectiveForUser($user);
+        $sparseAppearance = AppearanceController::sparseForUser($user);
         $fonts = AppearanceController::GOOGLE_FONTS;
 
         // Social icons — links rows using the special "icon" button (94)
@@ -661,7 +663,7 @@ class UserController extends Controller
             ->paginate(99999);
 
         return view('studio.edit', compact(
-            'user', 'pages', 'saved', 'fonts', 'configuredIcons', 'pagePage', 'links'
+            'user', 'pages', 'saved', 'sparseAppearance', 'fonts', 'configuredIcons', 'pagePage', 'links'
         ));
     }
 

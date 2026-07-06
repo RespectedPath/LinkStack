@@ -125,8 +125,21 @@
         }).then(function (r) { return r.json(); }).then(function (res) {
             if (seq !== previewSeq) return; // superseded by a newer edit
             injectPreview(res.css || '', res.font || null);
+            updateEditedBadges(res.keys || []);
         }).catch(function (err) {
             if (window.console) console.warn('[Appearance preview] fetch failed:', err);
+        });
+    }
+
+    // "edited" chips next to each knob — shown while the knob differs
+    // from the theme. The endpoint returns the overridden dot-keys for
+    // the form's CURRENT state, so chips appear/disappear live as the
+    // user edits (including editing a value back to the theme's own).
+    function updateEditedBadges(keys) {
+        document.querySelectorAll('[data-mm-edited-key]').forEach(function (el) {
+            var mine = el.getAttribute('data-mm-edited-key').split(/\s+/);
+            var on = mine.some(function (k) { return keys.indexOf(k) !== -1; });
+            el.style.display = on ? '' : 'none';
         });
     }
 

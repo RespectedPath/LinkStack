@@ -120,7 +120,10 @@ class AppearanceController extends Controller
         $user = User::find(Auth::id());
         $user->theme_customization = null;
         $user->save();
-        return redirect('/studio/edit#appearance')->with('success', 'Appearance reset to your theme.');
+        // Reset lives on both the Appearance tab and the Themes tab
+        // (next to the Customized badge) — land back where it was used.
+        $tab = $request->input('return_to') === 'themes' ? 'themes' : 'appearance';
+        return redirect('/studio/edit#' . $tab)->with('success', 'Appearance reset to your theme.');
     }
 
     /**
@@ -147,9 +150,23 @@ class AppearanceController extends Controller
 
         $sparse = self::diffAgainstManifest(self::mergeDeep($manifest, $input), $manifest);
 
+        // Dot-keys of everything currently overridden — the editor
+        // live-toggles its "edited" indicators from this list.
+        $keys = [];
+        foreach ($sparse as $group => $values) {
+            if ($group === 'background' || !is_array($values)) {
+                $keys[] = $group;
+                continue;
+            }
+            foreach ($values as $k => $v) {
+                $keys[] = $group . '.' . $k;
+            }
+        }
+
         return response()->json([
             'css'  => \App\Services\AppearanceCss::build($sparse, $manifest),
             'font' => \App\Services\AppearanceCss::fontHref($sparse),
+            'keys' => $keys,
         ]);
     }
 

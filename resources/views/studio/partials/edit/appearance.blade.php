@@ -85,7 +85,7 @@
              inputs use form="appearance-form" so they post
              with the main save (not the photo upload). --}}
         <fieldset class="appearance-section">
-          <legend>Photo shape</legend>
+          <legend>Photo shape @include('studio.partials.edited-badge', ['keys' => 'avatar.shape'])</legend>
           <div class="appearance-swatch-group" role="radiogroup">
             @foreach([['circle','Circle'],['rounded_square','Rounded square'],['off','Hidden']] as [$val, $lab])
               <label class="appearance-swatch" data-swatch="avatar-{{ $val }}">
@@ -102,7 +102,7 @@
       <div class="tab-pane fade" id="t-colors" role="tabpanel">
         <fieldset class="appearance-section">
           <legend>Colors</legend>
-          @include('studio.partials.appearance-color', ['id' => 'c-text', 'name' => 'colors[text]', 'label' => 'Text', 'help' => 'Primary text on the page', 'value' => $saved['colors']['text'], 'presets' => ['#111111', '#ffffff'], 'form' => 'appearance-form'])
+          @include('studio.partials.appearance-color', ['id' => 'c-text', 'name' => 'colors[text]', 'label' => 'Text', 'help' => 'Primary text on the page', 'value' => $saved['colors']['text'], 'presets' => ['#111111', '#ffffff'], 'form' => 'appearance-form', 'editedKeys' => 'colors.text'])
         </fieldset>
       </div>
 
@@ -112,7 +112,7 @@
           <legend>Background</legend>
 
           <div class="mb-3">
-            <label class="form-label d-block">Background type</label>
+            <label class="form-label d-block">Background type @include('studio.partials.edited-badge', ['keys' => 'background'])</label>
             @foreach([['solid','Solid color'],['gradient','Gradient'],['image','Image']] as [$val, $lab])
               <div class="form-check form-check-inline">
                 <input class="form-check-input appearance-bg-type" type="radio" name="background[type]" id="bgt-{{ $val }}" value="{{ $val }}" form="appearance-form" @if($saved['background']['type'] === $val) checked @endif>
@@ -148,11 +148,23 @@
             <input type="hidden" name="background[image_url]" id="bg-image-url-hidden" value="{{ $saved['background']['image_url'] }}" form="appearance-form">
 
             @if(!empty($saved['background']['image_url']))
+              @php
+                // No background override in the sparse blob means the
+                // image shown is the THEME's own photo — nothing to
+                // remove; uploading replaces it as an override.
+                $mmBgIsThemeOwned = data_get($sparseAppearance ?? [], 'background') === null;
+              @endphp
               <div class="appearance-bg-current mb-2" id="bg-current-wrap">
                 <img src="{{ $saved['background']['image_url'] }}" alt="Current background" class="appearance-bg-thumb">
-                <button type="button" id="bg-remove-btn" class="btn btn-sm btn-outline-danger">
-                  <i class="bi bi-trash"></i> Remove
-                </button>
+                @if($mmBgIsThemeOwned)
+                  <span class="small text-muted d-inline-flex align-items-center" style="gap: 4px;">
+                    <i class="bi bi-brush"></i> Your theme's background
+                  </span>
+                @else
+                  <button type="button" id="bg-remove-btn" class="btn btn-sm btn-outline-danger">
+                    <i class="bi bi-trash"></i> Remove &mdash; back to theme
+                  </button>
+                @endif
               </div>
             @endif
 
@@ -173,7 +185,7 @@
       <div class="tab-pane fade" id="t-type" role="tabpanel">
         <fieldset class="appearance-section">
           <legend>Typography</legend>
-          <label for="font-select" class="form-label">Font</label>
+          <label for="font-select" class="form-label">Font @include('studio.partials.edited-badge', ['keys' => 'typography.font'])</label>
           <select id="font-select" class="form-select" name="typography[font]" form="appearance-form">
             <option value="" @if(empty($saved['typography']['font'])) selected @endif>Theme default</option>
             @foreach($fonts as $f)
@@ -189,7 +201,7 @@
         <fieldset class="appearance-section">
           <legend>Buttons</legend>
 
-          <label class="form-label d-block">Shape</label>
+          <label class="form-label d-block">Shape @include('studio.partials.edited-badge', ['keys' => 'buttons.shape'])</label>
           <div class="appearance-swatch-group" role="radiogroup">
             @foreach(['pill','rounded','square'] as $shape)
               <label class="appearance-swatch" data-swatch="shape-{{ $shape }}">
@@ -200,7 +212,7 @@
             @endforeach
           </div>
 
-          <label class="form-label d-block mt-3">Style</label>
+          <label class="form-label d-block mt-3">Style @include('studio.partials.edited-badge', ['keys' => 'buttons.style'])</label>
           <div class="appearance-swatch-group" role="radiogroup">
             @foreach(['filled','outline','soft'] as $style)
               <label class="appearance-swatch" data-swatch="style-{{ $style }}">
@@ -212,8 +224,8 @@
           </div>
 
           <div class="mt-3">
-            @include('studio.partials.appearance-color', ['id' => 'c-primary',  'name' => 'colors[primary]',     'label' => 'Button color',      'help' => 'Fill (filled style) or border/text (outline, soft)', 'value' => $saved['colors']['primary'], 'form' => 'appearance-form'])
-            @include('studio.partials.appearance-color', ['id' => 'c-btn-text', 'name' => 'colors[button_text]', 'label' => 'Button text color', 'help' => 'Text on filled buttons',                              'value' => $saved['colors']['button_text'], 'form' => 'appearance-form'])
+            @include('studio.partials.appearance-color', ['id' => 'c-primary',  'name' => 'colors[primary]',     'label' => 'Button color',      'help' => 'Fill (filled style) or border/text (outline, soft)', 'value' => $saved['colors']['primary'], 'form' => 'appearance-form', 'editedKeys' => 'colors.primary'])
+            @include('studio.partials.appearance-color', ['id' => 'c-btn-text', 'name' => 'colors[button_text]', 'label' => 'Button text color', 'help' => 'Text on filled buttons',                              'value' => $saved['colors']['button_text'], 'form' => 'appearance-form', 'editedKeys' => 'colors.button_text'])
           </div>
         </fieldset>
       </div>
@@ -228,7 +240,7 @@
           </p>
 
           {{-- Color mode --}}
-          <label class="form-label d-block">Color</label>
+          <label class="form-label d-block">Color @include('studio.partials.edited-badge', ['keys' => 'social_icons.color social_icons.color_custom'])</label>
           <div class="appearance-swatch-group mb-2" role="radiogroup">
             @foreach([
               'auto'   => ['name' => 'Auto contrast', 'help' => 'Black on light bg, white on dark'],
@@ -246,7 +258,7 @@
           </div>
 
           {{-- Size --}}
-          <label class="form-label d-block mt-3">Size</label>
+          <label class="form-label d-block mt-3">Size @include('studio.partials.edited-badge', ['keys' => 'social_icons.size'])</label>
           <div class="appearance-swatch-group" role="radiogroup">
             @foreach(['small','medium','large','xl'] as $size)
               <label class="appearance-swatch" data-swatch="social-size-{{ $size }}">
@@ -257,7 +269,7 @@
           </div>
 
           {{-- Spacing --}}
-          <label class="form-label d-block mt-3">Spacing</label>
+          <label class="form-label d-block mt-3">Spacing @include('studio.partials.edited-badge', ['keys' => 'social_icons.spacing'])</label>
           <div class="appearance-swatch-group" role="radiogroup">
             @foreach(['tight','normal','loose'] as $spacing)
               <label class="appearance-swatch" data-swatch="social-spacing-{{ $spacing }}">
@@ -268,7 +280,7 @@
           </div>
 
           {{-- Background style --}}
-          <label class="form-label d-block mt-3">Background style</label>
+          <label class="form-label d-block mt-3">Background style @include('studio.partials.edited-badge', ['keys' => 'social_icons.background_style'])</label>
           <div class="appearance-swatch-group" role="radiogroup">
             @foreach([
               'none'    => 'No background',
@@ -284,7 +296,7 @@
           </div>
 
           {{-- Hover effect --}}
-          <label class="form-label d-block mt-3">Hover effect</label>
+          <label class="form-label d-block mt-3">Hover effect @include('studio.partials.edited-badge', ['keys' => 'social_icons.hover'])</label>
           <select name="social_icons[hover]" form="appearance-form" class="form-select" style="max-width: 260px;">
             @foreach([
               'none'       => 'None',

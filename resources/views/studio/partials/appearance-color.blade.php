@@ -6,11 +6,12 @@
     Required: $id, $name, $label, $value
     Optional: $help, $presets, $form (HTML form= id to associate when
               this input sits outside the form's DOM tree — used by
-              the Appearance editor's tabbed layout)
+              the Appearance editor's tabbed layout), $editedKeys
+              (dot-key(s) for the "edited" chip — see edited-badge)
 --}}
 <div class="appearance-color-field mb-3">
     <label for="{{ $id }}-hex" class="form-label d-flex justify-content-between align-items-center mb-1">
-        <span>{{ $label }}</span>
+        <span>{{ $label }}@isset($editedKeys) @include('studio.partials.edited-badge', ['keys' => $editedKeys])@endisset</span>
         @if(!empty($presets ?? null))
             <span class="appearance-color-presets">
                 @foreach($presets as $p)
