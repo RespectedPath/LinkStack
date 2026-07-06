@@ -30,7 +30,40 @@ if(!function_exists('strp')){function strp($urlStrp){return str_replace(array('h
     and the live-preview include — the unified shell owns both.
 --}}
 
+@php
+    // Human-readable block-type names for the per-row badge. The yml
+    // blocks carry their own titles (LinkType::get()); the legacy
+    // built-in types return null there, so they get explicit labels.
+    $mmTypeNames = [
+        'link'      => 'Link',
+        'vcard'     => 'Contact card',
+        'email'     => 'E-mail',
+        'telephone' => 'Phone',
+        'heading'   => 'Heading',
+        'spacer'    => 'Spacer',
+        'text'      => 'Text',
+    ];
+    foreach (\App\Models\LinkType::get() as $mmLt) {
+        if (!empty($mmLt['title'])) {
+            $mmTypeNames[$mmLt['typename']] = $mmLt['title'];
+        }
+    }
+@endphp
+
 <style>
+.mm-block-type-badge {
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    vertical-align: middle;
+    margin-right: 6px;
+    white-space: nowrap;
+    /* neutral + readable in light AND dark mode; deliberately not the
+       mint state-chips (edited/Customized) — this is passive metadata */
+    background: rgba(128, 128, 128, 0.18);
+    color: inherit;
+    opacity: 0.9;
+}
 .sortable-handle {
     margin-right: 25px;
     width: 25px;
@@ -98,6 +131,18 @@ if(!function_exists('strp')){function strp($urlStrp){return str_replace(array('h
                                     @else
                                     <span class="bg-soft-secondary" style="border: 1px solid #d0d4d7 !important;border-radius:5px;width:25px!important;height:25px!important;"><img style="max-width:15px !important;" alt="button-icon" height="15" class="m-1 " src="{{ asset('\/assets/linkstack/icons\/') . $buttonName }}.svg "></span>
                                     @endif
+
+                                    @php
+                                        // Type badge label: mapped name, or — for
+                                        // brand/site buttons (predefined or legacy
+                                        // rows without a type) — the brand itself,
+                                        // which is the informative part.
+                                        $mmTypeLabel = $mmTypeNames[$link->type] ?? null;
+                                        if ($mmTypeLabel === null || $link->type === 'predefined') {
+                                            $mmTypeLabel = ucwords(str_replace(['default ', '_'], ['', ' '], (string) $buttonName)) ?: 'Link';
+                                        }
+                                    @endphp
+                                    <span class="badge mm-block-type-badge">{{ $mmTypeLabel }}</span>
 
                                     @if($button->name == "space")
                                         Spacer ({{ (int) $link->title }} px)
