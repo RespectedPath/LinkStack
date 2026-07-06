@@ -305,14 +305,14 @@
          to it via their form="appearance-form" attribute. The
          Save button lives here so it's always visible below
          whichever tab the user is on. --}}
-    <form id="appearance-form" action="{{ route('saveAppearance') }}" method="post" class="appearance-save-form">
+    <form id="appearance-form" action="{{ route('saveAppearance') }}" method="post" class="appearance-save-form" data-preview-css-url="{{ route('previewAppearanceCss') }}">
       @csrf
       <div class="appearance-actions">
         <button type="submit" class="btn btn-primary">
           <i class="bi bi-save"></i> Save appearance
         </button>
         <button type="button" class="btn btn-outline-secondary" id="appearance-reset-btn">
-          <i class="bi bi-arrow-counterclockwise"></i> Reset to defaults
+          <i class="bi bi-arrow-counterclockwise"></i> Reset to theme
         </button>
       </div>
     </form>

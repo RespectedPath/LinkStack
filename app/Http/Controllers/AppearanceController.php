@@ -12,9 +12,16 @@ use Illuminate\Support\Facades\Auth;
  * Public rendering picks this up in UserController::littlelink() and
  * injects override CSS into the linkstack-head-end stack.
  *
- * This is a per-user customization layer on top of the existing
- * theme system (users.theme). The selected theme still provides
- * layout + structure; values here override visual properties.
+ * Sparse-override model (THEME-APPEARANCE-PLAN.md Phase 2): the blob
+ * stores ONLY the knobs the user changed off their theme. The editor
+ * hydrates its controls from the theme's manifest (themes/<slug>/
+ * theme.json, shipped by theme-toolkit) merged with the sparse blob;
+ * save() diffs the submitted state against the manifest and keeps
+ * just the differences. Untouched aspects keep the theme's own CSS.
+ *
+ * Legacy blobs from the pre-sparse model (every key present) render
+ * identically — they simply count as "everything overridden" — and
+ * slim down automatically on their next save.
  */
 class AppearanceController extends Controller
 {
@@ -94,16 +101,15 @@ class AppearanceController extends Controller
     // show() removed 2026-07-05: the standalone /studio/appearance page
     // became the Appearance tab of the unified /studio/edit editor
     // (showEditor assembles $user/$saved/$fonts for the tab partial),
-    // and the old GET route is now a redirect closure. save(), the
-    // static loadForUser()/defaults()/isConfigured() helpers, and the
-    // background-image endpoints below all remain live.
+    // and the old GET route is now a redirect closure.
 
     public function save(Request $request)
     {
-        $data = $this->validated($request);
-
         $user = User::find(Auth::id());
-        $user->theme_customization = json_encode($data, JSON_UNESCAPED_SLASHES);
+        $data = $this->validated($request, $user);
+
+        $sparse = self::diffAgainstManifest($data, self::themeManifest($user));
+        $user->theme_customization = empty($sparse) ? null : json_encode($sparse, JSON_UNESCAPED_SLASHES);
         $user->save();
 
         return redirect('/studio/edit#appearance')->with('success', 'Appearance saved.');
@@ -114,7 +120,37 @@ class AppearanceController extends Controller
         $user = User::find(Auth::id());
         $user->theme_customization = null;
         $user->save();
-        return redirect('/studio/edit#appearance')->with('success', 'Appearance reset to defaults.');
+        return redirect('/studio/edit#appearance')->with('success', 'Appearance reset to your theme.');
+    }
+
+    /**
+     * Live-preview CSS for the editor iframe. Takes the form's current
+     * (unsaved) state, diffs it against the theme manifest exactly like
+     * save() would, and returns the override CSS that state would
+     * produce — so the preview is byte-for-byte what a save would
+     * publish. Values are sanitized inside AppearanceCss; no strict
+     * validation here so a half-edited form still previews.
+     */
+    public function previewCss(Request $request)
+    {
+        $user = User::find(Auth::id());
+        $manifest = self::themeManifest($user);
+
+        $groups = ['colors', 'background', 'typography', 'buttons', 'avatar', 'social_icons'];
+        $input = [];
+        foreach ($groups as $g) {
+            $v = $request->input($g);
+            if (is_array($v)) {
+                $input[$g] = $v;
+            }
+        }
+
+        $sparse = self::diffAgainstManifest(self::mergeDeep($manifest, $input), $manifest);
+
+        return response()->json([
+            'css'  => \App\Services\AppearanceCss::build($sparse, $manifest),
+            'font' => \App\Services\AppearanceCss::fontHref($sparse),
+        ]);
     }
 
     /**
@@ -148,21 +184,24 @@ class AppearanceController extends Controller
         $fileName = $userId . '_' . time() . '.' . $file->extension();
         $file->move($dir, $fileName);
 
+        // Sparse model: the upload is one background override on top of
+        // the theme — never materialize other knobs into the blob.
         $user = User::find($userId);
-        $cfg  = self::loadForUser($user);
-        $cfg['background']['type']      = 'image';
-        $cfg['background']['image_url'] = '/assets/img/background-img/' . $fileName;
-        $user->theme_customization = json_encode($cfg, JSON_UNESCAPED_SLASHES);
+        $sparse = self::sparseForUser($user);
+        $sparse['background'] = [
+            'type'      => 'image',
+            'image_url' => '/assets/img/background-img/' . $fileName,
+        ];
+        $user->theme_customization = json_encode($sparse, JSON_UNESCAPED_SLASHES);
         $user->save();
 
-        return response()->json(['ok' => true, 'image_url' => $cfg['background']['image_url']]);
+        return response()->json(['ok' => true, 'image_url' => $sparse['background']['image_url']]);
     }
 
     /**
      * Remove the user's uploaded background. Deletes the file on disk
-     * and clears background.image_url in the JSON blob. Type is reset
-     * to 'solid' so the page falls through to the solid color rather
-     * than showing a broken image URL.
+     * and drops the background override from the sparse blob — the
+     * page falls back to the theme's own background.
      */
     public function removeBackgroundImage(Request $request)
     {
@@ -170,13 +209,10 @@ class AppearanceController extends Controller
         $this->removeBackgroundFileIfPresent($userId);
 
         $user = User::find($userId);
-        if ($user->theme_customization) {
-            $cfg = self::loadForUser($user);
-            $cfg['background']['image_url'] = '';
-            if (($cfg['background']['type'] ?? '') === 'image') {
-                $cfg['background']['type'] = 'solid';
-            }
-            $user->theme_customization = json_encode($cfg, JSON_UNESCAPED_SLASHES);
+        $sparse = self::sparseForUser($user);
+        if (array_key_exists('background', $sparse)) {
+            unset($sparse['background']);
+            $user->theme_customization = empty($sparse) ? null : json_encode($sparse, JSON_UNESCAPED_SLASHES);
             $user->save();
         }
 
@@ -204,34 +240,114 @@ class AppearanceController extends Controller
     }
 
     /**
-     * Returns the user's saved customization merged against defaults so
-     * consumers can always reach every key without null-checking. Used
-     * by both the editor view and (public-side) by UserController.
+     * The active theme's appearance manifest (themes/<slug>/theme.json,
+     * emitted by theme-toolkit) merged over factory defaults, so every
+     * key is always reachable. Default theme / missing manifest falls
+     * back to pure factory defaults.
      */
-    public static function loadForUser($user): array
+    public static function themeManifest($user): array
     {
         $defaults = self::defaults();
-        if (!$user || empty($user->theme_customization)) {
+        $theme = trim((string) ($user->theme ?? ''));
+        if ($theme === '' || $theme === 'default') {
             return $defaults;
         }
-        $parsed = json_decode($user->theme_customization, true);
-        if (!is_array($parsed)) {
+        // basename() guards against traversal if the column is ever junk.
+        $path = base_path('themes/' . basename($theme) . '/theme.json');
+        if (!is_file($path)) {
             return $defaults;
         }
-        return self::mergeDeep($defaults, $parsed);
+        $manifest = json_decode((string) file_get_contents($path), true);
+        if (!is_array($manifest)) {
+            return $defaults;
+        }
+        unset($manifest['_meta']);
+        return self::mergeDeep($defaults, $manifest);
     }
 
     /**
-     * Returns true if the user has any customization saved (vs falling
-     * through to pure theme defaults). Used by public rendering to
-     * skip injection entirely when nothing's customized.
+     * The raw sparse blob — only the knobs the user changed off their
+     * theme. Empty array when nothing is customized.
      */
-    public static function isConfigured($user): bool
+    public static function sparseForUser($user): array
     {
-        return $user && !empty($user->theme_customization);
+        if (!$user || empty($user->theme_customization)) {
+            return [];
+        }
+        $parsed = json_decode($user->theme_customization, true);
+        return is_array($parsed) ? $parsed : [];
     }
 
-    private static function mergeDeep(array $a, array $b): array
+    /**
+     * What the page actually renders: theme manifest with the user's
+     * sparse overrides on top. The editor hydrates its controls from
+     * this so the knobs always show the truth.
+     */
+    public static function effectiveForUser($user): array
+    {
+        return self::mergeDeep(self::themeManifest($user), self::sparseForUser($user));
+    }
+
+    /**
+     * Reduce a full submitted state to the sparse overrides: keep only
+     * leaves that differ from the theme manifest. `background` diffs as
+     * one group (its fields only mean anything together with the type),
+     * and `colors.background` is never stored — it isn't user-editable;
+     * it exists as the image-fallback color and comes from the theme.
+     */
+    public static function diffAgainstManifest(array $data, array $manifest): array
+    {
+        $sparse = [];
+
+        $bg = self::normalizeBackground($data['background'] ?? []);
+        if ($bg !== self::normalizeBackground($manifest['background'] ?? [])) {
+            $sparse['background'] = $bg;
+        }
+
+        foreach (['colors', 'typography', 'buttons', 'avatar', 'social_icons'] as $group) {
+            foreach ((array) ($data[$group] ?? []) as $key => $value) {
+                if ($group === 'colors' && $key === 'background') {
+                    continue;
+                }
+                if (is_array($value)) {
+                    continue; // no nested groups exist below this level
+                }
+                if ((string) $value !== (string) data_get($manifest, "{$group}.{$key}")) {
+                    $sparse[$group][$key] = $value;
+                }
+            }
+        }
+
+        return $sparse;
+    }
+
+    /**
+     * Strip a background group down to the fields its type actually
+     * uses, so stale values from inactive sub-panels (the form posts
+     * every field regardless of selected type) don't read as changes.
+     */
+    private static function normalizeBackground(array $bg): array
+    {
+        $type = $bg['type'] ?? 'solid';
+        return match ($type) {
+            'gradient' => [
+                'type'               => 'gradient',
+                'gradient_start'     => (string) ($bg['gradient_start'] ?? ''),
+                'gradient_end'       => (string) ($bg['gradient_end'] ?? ''),
+                'gradient_direction' => (string) ($bg['gradient_direction'] ?? ''),
+            ],
+            'image' => [
+                'type'      => 'image',
+                'image_url' => (string) ($bg['image_url'] ?? ''),
+            ],
+            default => [
+                'type'  => 'solid',
+                'solid' => (string) ($bg['solid'] ?? ''),
+            ],
+        };
+    }
+
+    public static function mergeDeep(array $a, array $b): array
     {
         foreach ($b as $k => $v) {
             if (is_array($v) && isset($a[$k]) && is_array($a[$k])) {
@@ -243,7 +359,7 @@ class AppearanceController extends Controller
         return $a;
     }
 
-    private function validated(Request $request): array
+    private function validated(Request $request, User $user): array
     {
         $hex = ['required', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'];
 
@@ -260,10 +376,11 @@ class AppearanceController extends Controller
             'background.gradient_start'     => ['nullable', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
             'background.gradient_end'       => ['nullable', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
             'background.gradient_direction' => ['nullable', 'in:to bottom,to right,to bottom right'],
-            // Accept http(s) URLs (legacy / external) or local paths
-            // starting with '/assets/' (uploaded backgrounds). Empty
-            // clears the field.
-            'background.image_url'          => ['nullable', 'string', 'max:2048', 'regex:#^(|https?://.+|/assets/img/background-img/.+)$#i'],
+            // Accept http(s) URLs (legacy / external), uploaded
+            // backgrounds under /assets/, or theme-shipped photos under
+            // /themes/ (photo-theme manifests round-trip their own
+            // background through the form). Empty clears the field.
+            'background.image_url'          => ['nullable', 'string', 'max:2048', 'regex:#^(|https?://.+|/assets/img/background-img/.+|/themes/[A-Za-z0-9._-]+/extra/custom-assets/.+)$#i'],
 
             'typography.font' => ['nullable', 'string', 'in:' . implode(',', array_merge([''], self::GOOGLE_FONTS))],
 
@@ -282,9 +399,9 @@ class AppearanceController extends Controller
 
         $validated = $request->validate($rules);
 
-        // Normalise: empty background fields get defaults so the stored
-        // blob is always shaped the same way.
-        $defaults = self::defaults();
-        return self::mergeDeep($defaults, $validated);
+        // Fill gaps from the THEME's values (not factory defaults):
+        // anything the form didn't submit reads as "unchanged from the
+        // theme," so the sparse diff drops it.
+        return self::mergeDeep(self::themeManifest($user), $validated);
     }
 }

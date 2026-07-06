@@ -192,6 +192,10 @@ Route::post('/studio/profile/analytics', [UserController::class, 'editAnalytics'
 Route::get('/studio/appearance',        fn() => redirect('/studio/edit#appearance'))->name('showAppearance');
 Route::post('/studio/appearance',       [AppearanceController::class, 'save'])->name('saveAppearance');
 Route::post('/studio/appearance/reset', [AppearanceController::class, 'reset'])->name('resetAppearance');
+// Live-preview CSS: the editor posts the form's unsaved state and gets
+// back the exact override CSS a save would publish (sparse-diffed
+// against the theme manifest server-side — single source of truth).
+Route::post('/studio/appearance/preview-css', [AppearanceController::class, 'previewCss'])->name('previewAppearanceCss');
 Route::post('/studio/appearance/background-image',        [AppearanceController::class, 'uploadBackgroundImage'])->name('uploadBackgroundImage');
 Route::post('/studio/appearance/background-image/remove', [AppearanceController::class, 'removeBackgroundImage'])->name('removeBackgroundImage');
 

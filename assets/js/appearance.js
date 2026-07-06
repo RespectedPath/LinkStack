@@ -76,231 +76,67 @@
     var resetForm = document.getElementById('appearance-reset-form');
     if (resetBtn && resetForm) {
         resetBtn.addEventListener('click', function () {
-            if (confirm('Reset all appearance customization to defaults? This clears every saved color, font, shape, and background.')) {
+            if (confirm("Reset your appearance back to the theme's own look? This clears every color, font, shape, and background you changed.")) {
                 resetForm.submit();
             }
         });
     }
 
-    // ---------- Live preview: iframe + CSS injection on every edit ----------
+    // ---------- Live preview: iframe + server-computed CSS ----------
     //
     // Iframe loads /@{user}?preview=1 (same origin → we can write into
-    // its document directly). On any form change we build an override
-    // stylesheet and push it into a single <style id="user-appearance-preview">
-    // inside the iframe's head. Cascading last beats both the theme
-    // CSS and any saved customization-override block.
+    // its document directly). On any form change we fetch the override
+    // CSS the current state would publish and push it into a single
+    // <style id="user-appearance-preview"> inside the iframe's head.
+    // Cascading last beats both the theme CSS and any saved
+    // customization-override block.
 
     var iframe = document.getElementById('appearance-preview-iframe');
     if (!iframe) return;
 
     var iframeReady = false;
 
-    function readFormState() {
+    // ---------- Server-computed preview CSS ----------
+    //
+    // The form's unsaved state is POSTed (debounced) to the
+    // preview-css endpoint, which sparse-diffs it against the theme
+    // manifest and returns the exact override CSS a save would
+    // publish (built by App\Services\AppearanceCss — the same code
+    // that renders the public page, so the preview cannot drift).
+    // Untouched knobs emit nothing, so the theme's own styling shows
+    // through in the preview exactly as it would after saving. This
+    // replaced ~200 lines of duplicated client-side CSS building
+    // (Phase 2, THEME-APPEARANCE-PLAN.md).
+
+    var previewCssUrl = form.getAttribute('data-preview-css-url');
+    var previewTimer = null;
+    var previewSeq = 0;
+
+    function fetchPreviewCss() {
+        // FormData(form) collects the form="appearance-form" inputs
+        // scattered across the tab panes, same as submitting would.
         var fd = new FormData(form);
-        var g = function (k) { return fd.get(k) || ''; };
-        return {
-            colors: {
-                primary:     g('colors[primary]'),
-                background:  g('colors[background]'),
-                text:        g('colors[text]'),
-                button_text: g('colors[button_text]'),
-            },
-            background: {
-                type:               g('background[type]'),
-                solid:              g('background[solid]'),
-                gradient_start:     g('background[gradient_start]'),
-                gradient_end:       g('background[gradient_end]'),
-                gradient_direction: g('background[gradient_direction]'),
-                image_url:          g('background[image_url]'),
-            },
-            typography: { font: g('typography[font]') },
-            buttons:    { shape: g('buttons[shape]'), style: g('buttons[style]') },
-            avatar:     { shape: g('avatar[shape]') },
-            social_icons: {
-                color:            g('social_icons[color]'),
-                color_custom:     g('social_icons[color_custom]'),
-                size:             g('social_icons[size]'),
-                spacing:          g('social_icons[spacing]'),
-                background_style: g('social_icons[background_style]'),
-                hover:            g('social_icons[hover]'),
-            },
-        };
+        var seq = ++previewSeq;
+        fetch(previewCssUrl, {
+            method: 'POST',
+            body: fd,
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'same-origin'
+        }).then(function (r) { return r.json(); }).then(function (res) {
+            if (seq !== previewSeq) return; // superseded by a newer edit
+            injectPreview(res.css || '', res.font || null);
+        }).catch(function (err) {
+            if (window.console) console.warn('[Appearance preview] fetch failed:', err);
+        });
     }
 
-    /* Brand colors map — mirrors AppearanceController::BRAND_COLORS.
-       Used by the live preview to render per-brand glyph colors in
-       Brand Colors mode and per-brand chip backgrounds in Solid
-       Filled Circle mode. Keep in sync with the PHP constant. */
-    var BRAND_COLORS = {
-        'instagram': '#E4405F', 'facebook':  '#1877F2', 'x-twitter': '#000000',
-        'github':    '#181717', 'linkedin':  '#0A66C2', 'tiktok':    '#000000',
-        'youtube':   '#FF0000', 'threads':   '#000000', 'twitch':    '#9146FF',
-        'pinterest': '#E60023', 'snapchat':  '#FFFC00', 'reddit':    '#FF4500',
-        'telegram':  '#26A5E4', 'behance':   '#1769FF', 'dribbble':  '#EA4C89',
-        'mastodon':  '#6364FF', 'bluesky':   '#0085FF', 'whatsapp':  '#25D366',
-        'discord':   '#5865F2'
-    };
-
-    function buildSocialIconCss(si) {
-        var sizes    = { small: 22, medium: 30, large: 38, xl: 46 };
-        var spacings = { tight: 4,  normal: 10, loose: 18 };
-        var siSize   = sizes[si.size]    || 30;
-        var siGap    = spacings[si.spacing] || 10;
-        var pad      = Math.max(Math.round(siGap / 2), 2);
-        var custom   = /^#[0-9a-fA-F]{6}$/.test(si.color_custom) ? si.color_custom : '#111111';
-
-        var rules = [
-            '.social-icon { font-size: ' + siSize + 'px !important; padding: ' + pad + 'px !important; transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease, color 0.18s ease !important; }',
-            '.social-icon-div { gap: ' + siGap + 'px; padding-bottom: 30px; }',
-            '.social-link { display: inline-flex; align-items: center; justify-content: center; }'
-        ];
-
-        if (si.background_style === 'circle' || si.background_style === 'rounded') {
-            rules.push('.social-link { background: rgba(128, 128, 128, 0.12); border-radius: ' +
-                (si.background_style === 'circle' ? '50%' : '12px') +
-                '; padding: 6px; width: ' + (siSize + 24) + 'px; height: ' + (siSize + 24) + 'px; }');
-        } else if (si.background_style === 'solid') {
-            rules.push('.social-link { background: #555; color: #fff !important; border-radius: 50%; padding: 6px; width: ' + (siSize + 24) + 'px; height: ' + (siSize + 24) + 'px; }');
-            rules.push('.social-link .social-icon { color: #fff !important; }');
-        }
-
-        if (si.color === 'custom') {
-            rules.push('.social-icon, .social-link .social-icon { color: ' + custom + ' !important; }');
-        }
-
-        if (si.color === 'brand' || si.background_style === 'solid') {
-            for (var brand in BRAND_COLORS) {
-                if (!BRAND_COLORS.hasOwnProperty(brand)) continue;
-                var hex = BRAND_COLORS[brand];
-                if (si.color === 'brand' && si.background_style !== 'solid') {
-                    rules.push('.social-icon.fa-' + brand + ' { color: ' + hex + ' !important; }');
-                }
-                if (si.background_style === 'solid') {
-                    rules.push('.social-link:has(.social-icon.fa-' + brand + ') { background: ' + hex + ' !important; }');
-                }
-            }
-        }
-
-        switch (si.hover) {
-            case 'lift':
-                rules.push('.social-link:hover { transform: translateY(-3px); }');
-                break;
-            case 'glow':
-                rules.push('.social-link:hover { box-shadow: 0 0 14px rgba(59, 130, 246, 0.5); }');
-                break;
-            case 'scale':
-                rules.push('.social-link:hover { transform: scale(1.15); }');
-                break;
-            case 'colorshift':
-                rules.push('.social-link:hover .social-icon { filter: hue-rotate(45deg) saturate(1.3); }');
-                break;
-        }
-
-        return rules.join('\n');
-    }
-
-    function hexToRgba(hex, alpha) {
-        var m = /^#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$/.exec(hex || '');
-        if (!m) return 'rgba(59,130,246,' + alpha + ')';
-        return 'rgba(' + parseInt(m[1], 16) + ',' + parseInt(m[2], 16) + ',' + parseInt(m[3], 16) + ',' + alpha + ')';
-    }
-
-    function buildOverrideCss(s) {
-        // Defensive defaults — if a hidden/inactive sub-panel ever
-        // fails to post its value, fall back to valid CSS so the
-        // browser doesn't silently drop the whole declaration.
-        var HEX = /^#[0-9a-fA-F]{6}$/;
-        var accent     = HEX.test(s.colors.primary)     ? s.colors.primary     : '#3b82f6';
-        var textColor  = HEX.test(s.colors.text)        ? s.colors.text        : '#111111';
-        var btnText    = HEX.test(s.colors.button_text) ? s.colors.button_text : '#ffffff';
-        var bgFallback = HEX.test(s.colors.background)  ? s.colors.background  : '#ffffff';
-        var solidVal   = HEX.test(s.background.solid)   ? s.background.solid   : bgFallback;
-        var gStart     = HEX.test(s.background.gradient_start) ? s.background.gradient_start : '#3b82f6';
-        var gEnd       = HEX.test(s.background.gradient_end)   ? s.background.gradient_end   : '#8b5cf6';
-        var gDir       = (s.background.gradient_direction && /^to (bottom|right|bottom right)$/.test(s.background.gradient_direction))
-                            ? s.background.gradient_direction : 'to bottom';
-
-        // Emit every background-* longhand explicitly. Shorthand lets
-        // stale longhand values from the prior saved override block
-        // stick around in the cascade — explicit overrides everything.
-        var bgCss;
-        if (s.background.type === 'gradient') {
-            bgCss = "background-image: linear-gradient(" + gDir + ", " + gStart + ", " + gEnd + ") !important;" +
-                    "background-color: transparent !important;" +
-                    "background-size: auto !important;" +
-                    "background-position: 0% 0% !important;" +
-                    "background-repeat: no-repeat !important;" +
-                    "background-attachment: fixed !important;";
-        } else if (s.background.type === 'image' && s.background.image_url) {
-            // Accept either http(s):// URLs or local /assets/... paths —
-            // both resolve in CSS url() against the iframe's document.
-            bgCss = "background-image: url('" + s.background.image_url.replace(/'/g, "\\'") + "') !important;" +
-                    "background-size: cover !important;" +
-                    "background-position: center !important;" +
-                    "background-repeat: no-repeat !important;" +
-                    "background-attachment: fixed !important;" +
-                    "background-color: " + bgFallback + " !important;";
-        } else {
-            bgCss = "background-image: none !important;" +
-                    "background-color: " + solidVal + " !important;" +
-                    "background-size: auto !important;" +
-                    "background-position: 0% 0% !important;" +
-                    "background-repeat: repeat !important;" +
-                    "background-attachment: scroll !important;";
-        }
-
-        var shapeRadius  = { pill: '999px', rounded: '10px', square: '0' }[s.buttons.shape] || '10px';
-        var avatarHidden = s.avatar.shape === 'off';
-        var avatarRadius = s.avatar.shape === 'rounded_square' ? '14px' : '50%';
-        // visibility keeps the avatar's layout slot reserved so the
-        // links below don't jump up when Off is selected.
-        var avatarCss = avatarHidden
-            ? '#avatar { visibility: hidden !important; }'
-            : '#avatar, .rounded-avatar, img.rounded-avatar { border-radius: ' + avatarRadius + ' !important; }';
-
-        var soft = hexToRgba(accent, 0.15);
-        var btnCss;
-        if (s.buttons.style === 'filled') {
-            btnCss = 'background-color: ' + accent + ' !important; background-image: none !important; color: ' + btnText + ' !important; border: 2px solid ' + accent + ' !important;';
-        } else if (s.buttons.style === 'outline') {
-            btnCss = 'background-color: transparent !important; background-image: none !important; color: ' + accent + ' !important; border: 2px solid ' + accent + ' !important;';
-        } else { // soft
-            btnCss = 'background-color: ' + soft + ' !important; background-image: none !important; color: ' + accent + ' !important; border: 2px solid transparent !important;';
-        }
-
-        var fontCss = s.typography.font
-            ? "body { font-family: '" + s.typography.font + "', -apple-system, BlinkMacSystemFont, sans-serif !important; }"
-            : '';
-
-        return [
-            ':root { --user-primary: ' + accent + '; --user-bg: ' + bgFallback + '; --user-text: ' + textColor + '; --user-button-text: ' + btnText + '; }',
-            'body { ' + bgCss + ' color: ' + textColor + ' !important; }',
-            '.header-name, .header-description, h1, h2, h3, h4, h5, h6, p { color: ' + textColor + ' !important; }',
-            '.button, .button-custom, .button-custom_website, a.button, .button-default { ' + btnCss + ' border-radius: ' + shapeRadius + ' !important; }',
-            avatarCss,
-            fontCss,
-            buildSocialIconCss(s.social_icons || {})
-        ].join('\n');
-    }
-
-    function syncPreview() {
-        if (!iframeReady) return;
+    function injectPreview(css, fontHref) {
         var doc;
         try { doc = iframe.contentDocument; } catch (e) { return; }
         if (!doc || !doc.head) return;
 
-        var state = readFormState();
-        if (window.__mmDebugPreview) {
-            console.log('[Appearance preview] social_icons state:', state.social_icons);
-        }
-
         // Disable the server-rendered saved-state override so the
         // preview block is the single source of appearance rules.
-        // Otherwise a prior background-image: url(...) !important in
-        // the saved block keeps winning against our linear-gradient()
-        // replacement (cascade is equal specificity + both !important;
-        // theoretically later-source wins, but empirically this fails
-        // — safer to silence the losing side completely).
         var saved = doc.getElementById('user-appearance-override');
         if (saved) saved.disabled = true;
 
@@ -311,25 +147,30 @@
             styleEl.id = 'user-appearance-preview';
             doc.head.appendChild(styleEl);
         }
-        styleEl.textContent = buildOverrideCss(state);
+        styleEl.textContent = css;
 
-        // Load Google Font for the selected family if any.
+        // Google Font for the selected family, when overridden.
         var fontLinkId = 'user-appearance-preview-font';
         var existing = doc.getElementById(fontLinkId);
-        if (state.typography.font) {
-            var href = 'https://fonts.googleapis.com/css2?family=' +
-                encodeURIComponent(state.typography.font).replace(/%20/g, '+') +
-                ':wght@400;500;600;700&display=swap';
+        if (fontHref) {
             if (!existing) {
                 existing = doc.createElement('link');
                 existing.id = fontLinkId;
                 existing.rel = 'stylesheet';
                 doc.head.appendChild(existing);
             }
-            if (existing.getAttribute('href') !== href) existing.setAttribute('href', href);
+            if (existing.getAttribute('href') !== fontHref) existing.setAttribute('href', fontHref);
         } else if (existing) {
             existing.remove();
         }
+    }
+
+    function syncPreview() {
+        if (!iframeReady || !previewCssUrl) return;
+        // Debounce — color pickers fire input continuously while
+        // dragging; one request per settled edit is plenty.
+        clearTimeout(previewTimer);
+        previewTimer = setTimeout(fetchPreviewCss, 180);
     }
 
     iframe.addEventListener('load', function () {

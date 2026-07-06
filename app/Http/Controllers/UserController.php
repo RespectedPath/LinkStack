@@ -638,8 +638,10 @@ class UserController extends Controller
             ->select('littlelink_name', 'littlelink_description', 'image', 'name')
             ->get();
 
-        // Appearance (same source AppearanceController::show uses)
-        $saved = AppearanceController::loadForUser($user);
+        // Appearance — controls hydrate from the theme manifest merged
+        // with the user's sparse overrides, so the knobs always show
+        // what the page actually renders (Phase 2, sparse model).
+        $saved = AppearanceController::effectiveForUser($user);
         $fonts = AppearanceController::GOOGLE_FONTS;
 
         // Social icons — links rows using the special "icon" button (94)
@@ -841,7 +843,15 @@ class UserController extends Controller
         $theme = $request->theme;
         $message = "";
 
-        User::where('id', $userId)->update(['theme' => $theme]);
+        // Switching themes clears appearance overrides — picking a
+        // theme means "give me that look," not "that look filtered
+        // through tweaks made against a different theme." Re-selecting
+        // the current theme leaves overrides alone.
+        $update = ['theme' => $theme];
+        if ($theme !== User::where('id', $userId)->value('theme')) {
+            $update['theme_customization'] = null;
+        }
+        User::where('id', $userId)->update($update);
 
 
 
