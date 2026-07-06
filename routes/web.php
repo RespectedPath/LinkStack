@@ -205,7 +205,8 @@ Route::post('/edit-icons', [UserController::class, 'editIcons'])->name('editIcon
 Route::get('/clearIcon/{id}', [UserController::class, 'clearIcon'])->name('clearIcon');
 Route::get('/studio/page/delprofilepicture', [UserController::class, 'delProfilePicture'])->name('delProfilePicture');
 Route::post('/studio/profile-picture', [UserController::class, 'editProfilePicture'])->name('editProfilePicture');
-Route::get('/studio/delete-user/{id}', [UserController::class, 'deleteUser'])->name('deleteUser')->middleware('verified');
+// Self-serve /studio/delete-user removed — see UserController note.
+// Account deletion is admin/deprovision-only.
 Route::post('/auth-as', [AdminController::class, 'authAs'])->name('authAs');
 
 // Catch all redirects

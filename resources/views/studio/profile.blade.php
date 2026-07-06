@@ -41,20 +41,10 @@
                       </form>
               @endif
               
-              <br><br><form  action="{{ route('editProfile') }}" method="post">
-                @csrf
-                  <div class="form-group col-lg-8">
-                    <h4>{{__('messages.Password')}}</h4>
-                    <input type="password" name="password" class="form-control" placeholder="At least 8 characters" required>
-                  </div>
-                  <button type="Change " class="mt-3 ml-3 btn btn-primary">{{__('messages.Change password')}}</button>
-                </form>
-              
-                @csrf
-                  <br><br><div class="form-group col-lg-8">
-                    <h4>Role</h4>
-                    <input type="text" class="form-control" value="{{ strtoupper($profile->role) }}" readonly>
-                  </div>
+              {{-- Password change removed: customers authenticate through
+                   Mail Minted (Supabase SSO), so a local LinkStack password
+                   reset would desync from / break the SSO identity. Role
+                   display removed too — irrelevant to normal customers. --}}
 
               {{-- ================= Integrations =================
                    Each card is a self-contained partial under
@@ -107,44 +97,14 @@
               </form>
               @endif
               
-              <br>
-              
-                        <br><button class="btn btn-danger"><a
-                            href="{{ url('/studio/profile/?delete') }}" style="color:#FFFFFF;"><i class="bi bi-exclamation-octagon-fill"></i>
-                            {{__('messages.Delete your account')}}</a></button>
+              {{-- Self-serve "Delete your account" removed: account
+                   lifecycle (create / deprovision) is owned by Mail Minted
+                   billing, and a local delete here would desync from that
+                   and break SSO. Deletion happens via the admin/deprovision
+                   API, which also purges uploads. --}}
                         </div>
               </section>
                         @endforeach
-              @endif
-              
-              @if(($_SERVER['QUERY_STRING'] ?? '') === 'delete')
-              <div class="d-flex justify-content-center align-items-center" style="height:100vh;">
-                <div class="text-center">
-                  <h2 class="text-decoration-underline">{{__('messages.You are about to delete')}}</h2>
-                  <p>{{__('messages.You are about to delete This action cannot be undone')}}</p>
-                  <div>
-                    <button class="redButton btn btn-danger" style="filter: grayscale(100%);" disabled onclick="window.location.href = '{{ url('/studio/delete-user/') . "/" . Auth::id() }}';"><i class="bi bi-exclamation-diamond-fill"></i></button>
-                    <button type="submit" class="btn btn-primary"><a style="color:#fff;" href="{{ url('/studio/profile') }}">{{__('messages.Cancel')}}</a></button>
-                  </div>
-                </div>
-              </div>
-              
-              <script>
-              var seconds = 10;
-              var interval = setInterval(function() {
-                document.querySelector(".redButton").innerHTML = --seconds;
-              
-                if (seconds <= 0)
-                  clearInterval(interval);
-              }, 1000);
-              
-              setTimeout(function(){
-                document.querySelector(".redButton").disabled = false;
-                document.querySelector(".redButton").innerHTML = '{{__('messages.Delete account')}}';
-                document.querySelector(".redButton").style.filter = "none";
-              }, 10000);
-              </script>
-
               @endif
 
                  </div>

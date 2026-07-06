@@ -1026,30 +1026,12 @@ class UserController extends Controller
     }
 
     //Delete existing user
-    public function deleteUser(request $request)
-    {
-
-        // echo $request->id;
-        // echo "<br>";
-        // echo Auth::id();
-        $id = $request->id;
-
-    if($id == Auth::id() and $id != "1") {
-
-        Link::where('user_id', $id)->delete();
-
-        $user = User::find($id);
-
-        Schema::disableForeignKeyConstraints();
-        $user->forceDelete();
-        Schema::enableForeignKeyConstraints();
-
-        // Remove the user's uploaded avatar + background on self-delete.
-        purge_user_uploads($id);
-    }
-
-        return redirect('/');
-    }
+    // Self-serve account deletion removed: account lifecycle is owned by
+    // Mail Minted billing (create on purchase, deprovision on cancel via
+    // the admin API, which purges uploads). A customer self-deleting their
+    // LinkStack row here would desync from billing and break SSO. The
+    // /studio/delete-user route is gone; admin deletion lives in
+    // AdminController::deleteUser.
 
     //Delete profile picture
     public function delProfilePicture()
