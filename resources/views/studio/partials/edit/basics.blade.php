@@ -203,51 +203,9 @@
 
     <div class="form-group col-lg-8">
         <label>{{__('messages.Page Description')}}</label>
-        <textarea class="form-control @if(env('ALLOW_USER_HTML') === true) ckeditor @endif" name="pageDescription" rows="3" maxlength="250">{{ $page->littlelink_description ?? '' }}</textarea>
+        <textarea class="form-control" name="pageDescription" rows="2" maxlength="250" placeholder="A short tagline shown under your name">{{ strip_tags($page->littlelink_description ?? '') }}</textarea>
         <small id="pageDescription-counter" class="text-muted d-block mt-1">0 / 250 characters</small>
     </div>
-    {{-- Constrain the rich-text editor to a sensible size for
-         a 1-3 sentence bio. CKEditor ignores rows="3" and
-         renders ~150px tall by default; pin it.
-
-         CKEditor 5 also ships its own theme and ignores OS
-         dark mode — by default it renders dark-grey text on
-         white, which becomes unreadable when the surrounding
-         dashboard is in dark mode. The prefers-color-scheme
-         block below adapts the editor surface, toolbar, and
-         button colours to match. WCAG contrast > 7:1 for
-         text in both modes. --}}
-    <style>
-        .ck-editor__editable_inline {
-            min-height: 80px !important;
-            max-height: 200px;
-            overflow-y: auto;
-            background: #ffffff !important;
-            color: #212529 !important;
-        }
-        @media (prefers-color-scheme: dark) {
-            .ck.ck-editor__main > .ck-editor__editable,
-            .ck-editor__editable_inline {
-                background: #1f2329 !important;
-                color: #e9ecef !important;
-            }
-            .ck.ck-toolbar {
-                background: #14171a !important;
-                border-color: #2a2e33 !important;
-            }
-            .ck.ck-toolbar .ck-button,
-            .ck.ck-toolbar .ck-button .ck-icon {
-                color: #e9ecef !important;
-            }
-            .ck.ck-toolbar .ck-button:hover,
-            .ck.ck-toolbar .ck-button.ck-on {
-                background: #2a2e33 !important;
-            }
-            .ck.ck-editor__main {
-                border-color: #2a2e33 !important;
-            }
-        }
-    </style>
 
     @if(auth()->user()->role == 'admin' || auth()->user()->role == 'vip')
         <div class="form-group col-lg-8">
@@ -280,82 +238,6 @@
     <button id="submit-btn" type="submit" class="mt-3 ml-3 btn btn-primary">{{__('messages.Save')}}</button>
 </form>
 
-@if(env('ALLOW_USER_HTML') === true)
-<script nonce="{{ csp_nonce() }}" src="{{ asset('assets/external-dependencies/ckeditor.js') }}"></script>
-<script nonce="{{ csp_nonce() }}">
-  ClassicEditor
-      .create(document.querySelector('.ckeditor'), {
-          // Minimal toolbar — only the formatting that
-          // survives editPage's strip_tags allowlist
-          // (<a><strong><i>). Anything else used to be
-          // offered in the toolbar, formatted in preview,
-          // then silently stripped on save.
-          toolbar: {
-              items: [
-                  'bold', 'italic', '|',
-                  'link', '|',
-                  'undo', 'redo',
-              ],
-              shouldNotGroupWhenFull: true
-          },
-          fontFamily: {
-              options: [
-                  'default',
-                  'Arial, Helvetica, sans-serif',
-                  'Courier New, Courier, monospace',
-                  'Georgia, serif',
-                  'Lucida Sans Unicode, Lucida Grande, sans-serif',
-                  'Tahoma, Geneva, sans-serif',
-                  'Times New Roman, Times, serif',
-                  'Trebuchet MS, Helvetica, sans-serif',
-                  'Verdana, Geneva, sans-serif'
-              ],
-              supportAllValues: true
-          },
-          fontSize: {
-              options: [10, 12, 14, 'default', 18, 20, 22],
-              supportAllValues: true
-          },
-          link: {
-              addTargetToExternalLinks: true, // Add this option to open external links in a new tab
-              defaultProtocol: 'http://',
-              decorators: {
-                  addTargetToExternalLinks: {
-                      mode: 'manual',
-                      label: 'Open in new tab',
-                      attributes: {
-                          target: '_blank',
-                          rel: 'noopener noreferrer'
-                      }
-                  }
-              }
-          }
-      })
-      .then(editor => {
-          // Live character counter for the description.
-          // Counts the plain-text content (HTML tags
-          // excluded) and warns visually once 90% used.
-          var counter = document.getElementById('pageDescription-counter');
-          var limit = 250;
-          var update = function () {
-              var text = (editor.getData() || '').replace(/<[^>]*>/g, '');
-              var len = text.length;
-              if (counter) {
-                  counter.textContent = len + ' / ' + limit + ' characters';
-                  counter.className = 'd-block mt-1 ' + (len > limit * 0.9 ? 'text-danger' : 'text-muted');
-              }
-              // Live preview: reflect the description in the preview iframe as you type.
-              if (window.mmPreviewDesc) window.mmPreviewDesc(editor.getData());
-          };
-          editor.model.document.on('change:data', update);
-          update();
-      })
-      .catch(error => {
-          console.error(error);
-      });
-</script>
-@endif
-
 <script nonce="{{ csp_nonce() }}">
 (function () {
     // Live preview (Phase 4): patch the shared preview iframe as the user
@@ -383,23 +265,34 @@
             h1.insertBefore(d.createTextNode(val), h1.firstChild);
         }
     };
-    // Description: mirror the server, which drops the HTML inside <p class="fadein">.
-    window.mmPreviewDesc = function (html) {
+    // Description is a plain-text tagline — set text, never HTML, so it can't
+    // inject markup and matches the escaped server render.
+    window.mmPreviewDesc = function (text) {
         var d = doc(); if (!d) return;
-        var p = d.querySelector('.description-parent p'); if (p) p.innerHTML = html;
+        var p = d.querySelector('.description-parent p'); if (p) p.textContent = text;
     };
 
     var nameInput = document.querySelector('input[name="name"]');
     if (nameInput) {
         nameInput.addEventListener('input', function () { window.mmPreviewName(this.value); });
     }
-    // Plain-textarea fallback when CKEditor isn't active (ALLOW_USER_HTML off).
+
+    // Description: live preview + character counter, both driven by the plain
+    // textarea's input event.
     var descArea = document.querySelector('textarea[name="pageDescription"]');
-    if (descArea && !descArea.classList.contains('ckeditor')) {
-        descArea.addEventListener('input', function () {
-            var d = doc(); if (!d) return;
-            var p = d.querySelector('.description-parent p'); if (p) p.textContent = this.value;
-        });
+    var counter  = document.getElementById('pageDescription-counter');
+    var LIMIT = 250;
+    function syncDesc() {
+        if (window.mmPreviewDesc) window.mmPreviewDesc(descArea.value);
+        if (counter) {
+            var len = descArea.value.length;
+            counter.textContent = len + ' / ' + LIMIT + ' characters';
+            counter.className = 'd-block mt-1 ' + (len > LIMIT * 0.9 ? 'text-danger' : 'text-muted');
+        }
+    }
+    if (descArea) {
+        descArea.addEventListener('input', syncDesc);
+        syncDesc();  // initialise the counter from the saved value
     }
 })();
 </script>

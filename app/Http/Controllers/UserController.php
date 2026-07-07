@@ -847,7 +847,10 @@ class UserController extends Controller
     
         $profilePhoto = $request->file('image');
         $pageName = $request->littlelink_name;
-        $pageDescription = purify_user_html($request->pageDescription);
+        // The page description is a plain-text tagline (the Basics editor is a
+        // plain textarea, not a rich-text editor). Strip any tags so no markup
+        // is ever stored or rendered, and trim stray whitespace.
+        $pageDescription = trim(strip_tags((string) $request->pageDescription));
         $name = $request->name;
         $checkmark = $request->checkmark;
         $sharebtn = $request->sharebtn;
