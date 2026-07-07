@@ -530,6 +530,13 @@
                                              treatment switch. --}}
                                         <div class="mm-control-group">
                                             <label class="mm-control-label">Style</label>
+                                            {{-- Same three styles as the global Appearance tab
+                                                 (Filled / Outline / Soft), so per-block button
+                                                 styling speaks the same language everywhere.
+                                                 Gradient / Glass / Neon / Ghost were removed —
+                                                 they had no global equivalent and clashed with the
+                                                 brand. generateCss() still handles a legacy preset
+                                                 on an older block so it keeps rendering. --}}
                                             <div class="mm-preset-grid" id="mmPresetGrid">
                                                 <button type="button" class="mm-preset" data-preset="filled">
                                                     <span class="mm-preset-swatch mm-swatch-filled">Aa</span>
@@ -537,27 +544,11 @@
                                                 </button>
                                                 <button type="button" class="mm-preset" data-preset="outlined">
                                                     <span class="mm-preset-swatch mm-swatch-outlined">Aa</span>
-                                                    <span class="mm-preset-name">Outlined</span>
-                                                </button>
-                                                <button type="button" class="mm-preset" data-preset="gradient">
-                                                    <span class="mm-preset-swatch mm-swatch-gradient">Aa</span>
-                                                    <span class="mm-preset-name">Gradient</span>
+                                                    <span class="mm-preset-name">Outline</span>
                                                 </button>
                                                 <button type="button" class="mm-preset" data-preset="soft">
                                                     <span class="mm-preset-swatch mm-swatch-soft">Aa</span>
                                                     <span class="mm-preset-name">Soft</span>
-                                                </button>
-                                                <button type="button" class="mm-preset" data-preset="glass">
-                                                    <span class="mm-preset-swatch mm-swatch-glass">Aa</span>
-                                                    <span class="mm-preset-name">Glass</span>
-                                                </button>
-                                                <button type="button" class="mm-preset" data-preset="neon">
-                                                    <span class="mm-preset-swatch mm-swatch-neon">Aa</span>
-                                                    <span class="mm-preset-name">Neon</span>
-                                                </button>
-                                                <button type="button" class="mm-preset" data-preset="ghost">
-                                                    <span class="mm-preset-swatch mm-swatch-ghost">Aa</span>
-                                                    <span class="mm-preset-name">Ghost</span>
                                                 </button>
                                             </div>
                                         </div>
@@ -1291,13 +1282,39 @@ $(function() {
             headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
         }).then(function (r) { return r.json(); }).then(function (j) {
             if (mine !== seq) return;      // superseded by a newer edit
-            if (!j || !j.html) return;     // button / social types: no swap here
-            var host = pdoc.createElement('div');
-            host.innerHTML = j.html;
-            var incoming = host.firstElementChild;
-            if (!incoming || !incoming.id) return;
-            var existing = pdoc.getElementById(incoming.id);
-            if (existing) existing.replaceWith(incoming);
+            if (j && j.html) {
+                // Content block: swap the freshly-rendered HTML in by id.
+                var host = pdoc.createElement('div');
+                host.innerHTML = j.html;
+                var incoming = host.firstElementChild;
+                if (incoming && incoming.id) {
+                    var existing = pdoc.getElementById(incoming.id);
+                    if (existing) existing.replaceWith(incoming);
+                }
+                return;
+            }
+            // Button / link block: the endpoint doesn't render these, but the
+            // button already lives in the preview — patch it in place. Its
+            // per-block styling is an inline style attribute (empty = follow
+            // theme), and its label is the trailing text node after the icon.
+            var linkid = (form.querySelector('[name="linkid"]') || {}).value;
+            if (!linkid) return;
+            var btn = pdoc.getElementById(String(linkid));
+            if (!btn) return;
+            var cssEl = document.getElementById('custom_css');
+            if (cssEl) btn.style.cssText = cssEl.value || '';
+            var titleEl = form.querySelector('input[name="title"]');
+            if (titleEl) {
+                var tn = null, i;
+                for (i = btn.childNodes.length - 1; i >= 0; i--) {
+                    if (btn.childNodes[i].nodeType === 3 && btn.childNodes[i].textContent.trim() !== '') { tn = btn.childNodes[i]; break; }
+                }
+                if (!tn) for (i = btn.childNodes.length - 1; i >= 0; i--) {
+                    if (btn.childNodes[i].nodeType === 3) { tn = btn.childNodes[i]; break; }
+                }
+                if (tn) tn.textContent = titleEl.value;
+                else btn.appendChild(pdoc.createTextNode(titleEl.value));
+            }
         }).catch(function () {});
     }
 
