@@ -58,10 +58,18 @@
                             alert('Could not save the new block order. Please try again.');
                             return;
                         }
-                        // Saved — refresh the live preview so the public
-                        // page reflects the new order.
+                        // Saved — refresh the live preview so it reflects the
+                        // new order. Use the iframe's own location.reload()
+                        // instead of reassigning src: reassigning tears the
+                        // document down and paints the frame's white
+                        // background for a beat (which reads as the background
+                        // "clearing", worst with an image background). reload()
+                        // keeps the current render up until the new one paints.
                         var frame = document.getElementById('appearance-preview-iframe');
-                        if (frame) frame.src += '';
+                        if (frame) {
+                            try { frame.contentWindow.location.reload(); }
+                            catch (e) { frame.src += ''; } // cross-origin fallback
+                        }
                     }).fail(function () {
                         alert('Could not save the new block order. Please try again.');
                     });

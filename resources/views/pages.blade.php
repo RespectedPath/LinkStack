@@ -143,6 +143,6 @@
 <script nonce="{{ csp_nonce() }}" src="{{ asset('assets/js/bootstrap.min.js') }}"></script>
 <script nonce="{{ csp_nonce() }}" src="{{ asset('assets/js/Sortable.min.js') }}"></script>
 <script nonce="{{ csp_nonce() }}" src="{{ asset('assets/js/jquery-block-ui.js') }}"></script>
-<script nonce="{{ csp_nonce() }}" src="{{ asset('assets/js/main-dashboard.js') }}"></script>
+<script nonce="{{ csp_nonce() }}" src="{{ asset('assets/js/main-dashboard.js') }}?v={{ filemtime(public_path('assets/js/main-dashboard.js')) }}"></script>
 
 </html>
