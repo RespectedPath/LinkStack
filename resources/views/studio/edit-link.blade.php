@@ -563,9 +563,10 @@
                                                 <label class="mm-control-label" for="mmPrimaryColor">Button color</label>
                                                 <input type="color" id="mmPrimaryColor" value="{{ $apPrimary }}" class="form-control form-control-color" style="width: 100%;">
                                             </div>
-                                            <div class="col-sm-4">
+                                            <div class="col-sm-4" id="mmTextColorWrap">
                                                 <label class="mm-control-label" for="mmTextColor">Text color</label>
                                                 <input type="color" id="mmTextColor" value="{{ $apText }}" class="form-control form-control-color" style="width: 100%;">
+                                                <small id="mmTextColorNote" class="text-muted" style="display:none;">This style colors the text with the button color.</small>
                                             </div>
                                             <div class="col-sm-4 mm-secondary-wrap">
                                                 <label class="mm-control-label" for="mmSecondaryColor">Gradient end</label>
@@ -1029,10 +1030,25 @@ function submitFormWithParam(paramValue) {
         $previewBtn.setAttribute('style', css + presentation);
     }
 
+    /* Text color only affects filled / gradient / glass (the presets whose
+       generateCss uses `t`); the others color the label with the button
+       color. Dim the Text color picker + show a note when it doesn't apply,
+       mirroring the global Appearance tab's "button text color" behaviour. */
+    function syncTextColorApplicability() {
+        var wrap = document.getElementById('mmTextColorWrap');
+        if (!wrap) return;
+        var usesText = (state.preset === 'filled' || state.preset === 'gradient' || state.preset === 'glass');
+        wrap.style.opacity = usesText ? '' : '0.45';
+        if ($textColor) $textColor.style.pointerEvents = usesText ? '' : 'none';
+        var note = document.getElementById('mmTextColorNote');
+        if (note) note.style.display = usesText ? 'none' : '';
+    }
+
     function syncAll() {
         applyToPreview();
         syncHiddenInputs();
         refreshResetState();
+        syncTextColorApplicability();
         // Preset / shape / hover changes are button clicks that don't fire a
         // form input event, so nudge the live main-preview patcher — it reads
         // the freshly-synced #custom_css (bubbles up to the form listener).
