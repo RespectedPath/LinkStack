@@ -465,6 +465,99 @@ class UserController extends Controller
         }
         return Redirect($redirectUrl)->with('success', $message);
     }
+
+    /**
+     * Render a single block from the block editor's CURRENT (unsaved) form
+     * state, so the studio's live preview can reflect edits as they're typed
+     * — congruent with the Basics/Appearance tabs. Nothing is persisted.
+     *
+     * Mirrors saveLink's field -> linkData -> (columns | type_params) mapping
+     * (the per-block handler.php is a pure function), then renders the block's
+     * display template the same way the public bio page does. Only custom-HTML
+     * block types render via blocks::{type}.display; button / social /
+     * predefined types render inline in buttons.blade and return null here
+     * (the caller keeps their existing in-editor sample).
+     */
+    public function blockPreview(Request $request)
+    {
+        $userId = Auth::id();
+        $typename = (string) $request->input('typename');
+        if ($typename === '') {
+            return response()->json(['html' => null]);
+        }
+
+        $linkType = LinkType::findByTypename($typename);
+        if (!$linkType || empty($linkType->custom_html)) {
+            return response()->json(['html' => null]);
+        }
+
+        $handlerPath = base_path("blocks/{$linkType->typename}/handler.php");
+        if (!file_exists($handlerPath)) {
+            return response()->json(['html' => null]);
+        }
+        include $handlerPath;
+        try {
+            $result = handleLinkType($request, $linkType);
+        } catch (\Throwable $e) {
+            // A half-typed form can trip a handler; just skip this frame.
+            return response()->json(['html' => null]);
+        }
+        $linkData = $result['linkData'] ?? [];
+
+        // Per-block appearance fields (present-only), matching saveLink.
+        foreach (['custom_css', 'custom_icon', 'appearance_preset',
+                  'appearance_primary', 'appearance_text', 'appearance_secondary',
+                  'appearance_shape', 'appearance_hover', 'appearance_advanced',
+                  'appearance_heading', 'appearance_color'] as $appKey) {
+            if ($request->has($appKey)) {
+                $linkData[$appKey] = $request->input($appKey);
+            }
+        }
+        if (array_key_exists('custom_css', $linkData)) {
+            $linkData['custom_css'] = mm_sanitize_block_css($linkData['custom_css']);
+        }
+        foreach (['appearance_heading', 'appearance_color'] as $appKey) {
+            if (array_key_exists($appKey, $linkData) && trim((string) $linkData[$appKey]) === '') {
+                unset($linkData[$appKey]);
+            }
+        }
+
+        // Split columns vs type_params, exactly like saveLink.
+        $linkColumns = Schema::getColumnListing('links');
+        $filtered = array_intersect_key($linkData, array_flip($linkColumns));
+        $customParams = array_diff_key($linkData, $filtered);
+        if (isset($linkType->custom_html))       $customParams['custom_html'] = $linkType->custom_html;
+        if (isset($linkType->ignore_container))  $customParams['ignore_container'] = $linkType->ignore_container;
+        if (isset($linkType->include_libraries)) $customParams['include_libraries'] = $linkType->include_libraries;
+        $filtered['type_params'] = json_encode($customParams);
+
+        // Temporary, UNSAVED link. Use the real id for an existing block so
+        // the rendered wrapper id matches the element already in the preview.
+        $link = new Link();
+        $link->forceFill($filtered);
+        $link->id = (int) ($request->input('linkid') ?: 0);
+        $link->user_id = $userId;
+        $link->type = $typename;
+        // Templates read type_params keys as properties (e.g. $link->alignment).
+        foreach ($customParams as $k => $v) {
+            $link->{$k} = $v;
+        }
+
+        if (function_exists('setBlockAssetContext')) {
+            setBlockAssetContext($typename);
+        }
+        try {
+            $html = view('blocks::' . $typename . '.display', [
+                'link' => $link,
+                'initial' => 0,
+                'userinfo' => User::find($userId),
+            ])->render();
+        } catch (\Throwable $e) {
+            return response()->json(['html' => null]);
+        }
+
+        return response()->json(['html' => $html]);
+    }
     
     public function sortLinks(Request $request)
     {

@@ -169,6 +169,7 @@ Route::post('/studio/publish', [UserController::class, 'publish'])->name('publis
 Route::post('/studio/discard', [UserController::class, 'discard'])->name('discard');
 Route::get('/studio/add-link', [UserController::class, 'AddUpdateLink'])->name('showButtons');
 Route::post('/studio/edit-link', [UserController::class, 'saveLink'])->name('addLink');
+Route::post('/studio/block-preview', [UserController::class, 'blockPreview'])->name('blockPreview');
 Route::get('/studio/edit-link/{id}', [UserController::class, 'AddUpdateLink'])->name('showLink')->middleware('link-id');
 Route::post('/studio/sort-link', [UserController::class, 'sortLinks'])->name('sortLinks');
 // Old studio pages now redirect into the matching tab of the unified

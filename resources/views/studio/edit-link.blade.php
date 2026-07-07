@@ -1258,4 +1258,52 @@ $(function() {
     }
 });
 </script>
+
+<script nonce="{{ csp_nonce() }}">
+(function () {
+    // Live block preview (embed mode): as the block editor form changes,
+    // render the block from its unsaved state and swap it into the studio's
+    // main phone preview — the same frame the Basics/Appearance tabs drive,
+    // so block edits are as live as everything else.
+    var form = document.getElementById('my-form');
+    if (!form) return;
+
+    // The main preview iframe lives in the PARENT document (the Blocks tab).
+    // Opened standalone there is no parent preview, so this safely no-ops.
+    function previewDoc() {
+        try {
+            var pf = window.parent && window.parent.document.getElementById('appearance-preview-iframe');
+            return pf && pf.contentDocument;
+        } catch (e) { return null; }
+    }
+
+    var url = @json(route('blockPreview'));
+    var timer = null, seq = 0;
+
+    function pushPreview() {
+        var pdoc = previewDoc();
+        if (!pdoc) return;
+        var mine = ++seq;
+        fetch(url, {
+            method: 'POST',
+            body: new FormData(form),
+            credentials: 'same-origin',
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+        }).then(function (r) { return r.json(); }).then(function (j) {
+            if (mine !== seq) return;      // superseded by a newer edit
+            if (!j || !j.html) return;     // button / social types: no swap here
+            var host = pdoc.createElement('div');
+            host.innerHTML = j.html;
+            var incoming = host.firstElementChild;
+            if (!incoming || !incoming.id) return;
+            var existing = pdoc.getElementById(incoming.id);
+            if (existing) existing.replaceWith(incoming);
+        }).catch(function () {});
+    }
+
+    function schedule() { clearTimeout(timer); timer = setTimeout(pushPreview, 300); }
+    form.addEventListener('input', schedule);
+    form.addEventListener('change', schedule);
+})();
+</script>
 @endpush

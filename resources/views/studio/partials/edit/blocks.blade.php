@@ -306,6 +306,10 @@ if(!function_exists('strp')){function strp($urlStrp){return str_replace(array('h
         panel.hidden = true;
         frame.src = 'about:blank';
         opened = false;
+        // Discard any live block-preview edits by reloading the main preview
+        // back to the saved draft.
+        var pf = document.getElementById('appearance-preview-iframe');
+        if (pf) { try { pf.contentWindow.location.reload(); } catch (e) { pf.src += ''; } }
     }
 
     // Intercept Add / Edit clicks inside the Blocks pane.
