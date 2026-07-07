@@ -22,14 +22,20 @@
 
 <!--#### BEGIN Meta Tags social media preview images  ####-->
   <!-- This shows a preview for title, description and avatar image of users profiles if shared on social media sites -->
+  @php
+    // Honour the published snapshot's avatar on the public page ($avatarOverride,
+    // set by maybePublishedView); fall back to the live avatar for the preview /
+    // editor render. Keeps an unpublished photo out of social-share previews.
+    $__metaAvatar = ($avatarOverride ?? null) ?: findAvatar($userinfo->id);
+  @endphp
 
     <!-- Facebook Meta Tags -->
     <meta property="og:url" content="{{ url('') }}/{{ "@" . $littlelink_name }}">
     <meta property="og:type" content="website">
     <meta property="og:title" content="{{ $userinfo->name }}">
     <meta property="og:description" content="{{ strip_tags($userinfo->littlelink_description) }}">
-    @if(file_exists(base_path(findAvatar($userinfo->id))))
-    <meta property="og:image" content="{{ url(findAvatar($userinfo->id)) }}">
+    @if(file_exists(base_path($__metaAvatar)))
+    <meta property="og:image" content="{{ url($__metaAvatar) }}">
     @elseif(file_exists(base_path("assets/linkstack/images/").findFile('avatar')))
     <meta property="og:image" content="{{ url("assets/linkstack/images/")."/".findFile('avatar') }}">
     @else
@@ -42,8 +48,8 @@
     <meta property="twitter:url" content="{{ url('') }}/{{ "@" . $littlelink_name }}">
     <meta name="twitter:title" content="{{ $userinfo->littlelink_name }}">
     <meta name="twitter:description" content="{{ strip_tags($userinfo->littlelink_description) }}">
-    @if(file_exists(base_path(findAvatar($userinfo->id))))
-    <meta name="twitter:image" content="{{ url(findAvatar($userinfo->id)) }}">
+    @if(file_exists(base_path($__metaAvatar)))
+    <meta name="twitter:image" content="{{ url($__metaAvatar) }}">
     @elseif(file_exists(base_path("assets/linkstack/images/").findFile('avatar')))
     <meta name="twitter:image" content="{{ url("assets/linkstack/images/")."/".findFile('avatar') }}">
     @else
