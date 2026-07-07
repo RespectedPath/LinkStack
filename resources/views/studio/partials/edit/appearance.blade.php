@@ -223,9 +223,27 @@
             @endforeach
           </div>
 
+          <style>
+            /* Button text color applies only to filled buttons; dim the
+               control + reveal its note when it can't do anything. */
+            #c-btn-text-wrap.is-inactive { opacity: 0.45; }
+            #c-btn-text-wrap.is-inactive input,
+            #c-btn-text-wrap.is-inactive button,
+            #c-btn-text-wrap.is-inactive .form-control { pointer-events: none; }
+            #c-btn-text-wrap:not(.is-inactive) #c-btn-text-note { display: none; }
+          </style>
           <div class="mt-3">
             @include('studio.partials.appearance-color', ['id' => 'c-primary',  'name' => 'colors[primary]',     'label' => 'Button color',      'help' => 'Fill (filled style) or border/text (outline, soft)', 'value' => $saved['colors']['primary'], 'form' => 'appearance-form', 'editedKeys' => 'colors.primary'])
-            @include('studio.partials.appearance-color', ['id' => 'c-btn-text', 'name' => 'colors[button_text]', 'label' => 'Button text color', 'help' => 'Text on filled buttons',                              'value' => $saved['colors']['button_text'], 'form' => 'appearance-form', 'editedKeys' => 'colors.button_text'])
+            {{-- Button text color only affects FILLED buttons; outline/soft
+                 draw their text in the button color (see AppearanceCss).
+                 Initial dim state is server-set (no flash); appearance.js
+                 keeps it in sync as the style radio changes. --}}
+            <div id="c-btn-text-wrap" @if($saved['buttons']['style'] !== 'filled') class="is-inactive" @endif>
+              @include('studio.partials.appearance-color', ['id' => 'c-btn-text', 'name' => 'colors[button_text]', 'label' => 'Button text color', 'help' => 'Text on filled buttons', 'value' => $saved['colors']['button_text'], 'form' => 'appearance-form', 'editedKeys' => 'colors.button_text'])
+              <p id="c-btn-text-note" class="text-muted small mt-1 mb-0">
+                Only affects <strong>filled</strong> buttons &mdash; outline &amp; soft buttons use the button color for their text.
+              </p>
+            </div>
           </div>
         </fieldset>
       </div>

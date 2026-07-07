@@ -70,6 +70,21 @@
         });
     }
 
+    // ---------- Button text color: only meaningful for filled buttons ----------
+    // Outline/soft buttons draw their text in the button (primary) color, so the
+    // "Button text color" control has no visible effect there. Dim it + show its
+    // note when the style isn't filled so it doesn't look broken. The value still
+    // submits (we don't disable it), so switching back to filled restores it.
+    var btnTextWrap = document.getElementById('c-btn-text-wrap');
+    if (btnTextWrap) {
+        wrap.querySelectorAll('input[name="buttons[style]"]').forEach(function (radio) {
+            radio.addEventListener('change', function () {
+                if (!radio.checked) return;
+                btnTextWrap.classList.toggle('is-inactive', radio.value !== 'filled');
+            });
+        });
+    }
+
     // ---------- Reset button → confirm + submit reset form ----------
 
     var resetBtn = document.getElementById('appearance-reset-btn');
