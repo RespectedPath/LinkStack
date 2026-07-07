@@ -163,8 +163,10 @@ Route::get('/studio/index', function(){return redirect(url('dashboard'));});
 // / links into one tabbed page. The old GET routes below redirect into
 // the matching tab (see further down); the POST endpoints are unchanged.
 Route::get('/studio/edit', [UserController::class, 'showEditor'])->name('showEditor');
-// Draft/publish: promote the draft (live DB) to the published snapshot.
+// Draft/publish: promote the draft (live DB) to the published snapshot,
+// or discard the draft back to what's published.
 Route::post('/studio/publish', [UserController::class, 'publish'])->name('publish');
+Route::post('/studio/discard', [UserController::class, 'discard'])->name('discard');
 Route::get('/studio/add-link', [UserController::class, 'AddUpdateLink'])->name('showButtons');
 Route::post('/studio/edit-link', [UserController::class, 'saveLink'])->name('addLink');
 Route::get('/studio/edit-link/{id}', [UserController::class, 'AddUpdateLink'])->name('showLink')->middleware('link-id');

@@ -215,11 +215,15 @@ class UserController extends Controller
         }
 
         [$userinfo, $information, $links] = \App\Services\PublishedPage::hydrate($snap);
+        $images = $snap['images'] ?? [];
         return view('linkstack.linkstack', [
             'userinfo' => $userinfo,
             'information' => $information,
             'links' => $links,
             'littlelink_name' => $littlelink_name,
+            // Published image copies so avatar/background honor draft/publish.
+            'avatarOverride' => $images['avatar'] ?? null,
+            'backgroundOverride' => $images['background'] ?? null,
         ]);
     }
 
@@ -800,6 +804,16 @@ class UserController extends Controller
         return redirect('/studio/edit')->with('success', 'Your page is now live.');
     }
 
+    /**
+     * Discard: revert the draft (live DB + images) back to the published
+     * snapshot. See DRAFT-PUBLISH-PLAN.md.
+     */
+    public function discard(request $request)
+    {
+        \App\Services\PublishedPage::discard(Auth::id());
+        return redirect('/studio/edit')->with('success', 'Your unpublished changes were discarded.');
+    }
+
     //Save littlelink page (name, description, logo)
     public function editPage(Request $request)
     {
@@ -950,6 +964,7 @@ class UserController extends Controller
             unlink(base_path($avatarName));
         }
 
+        \App\Services\PublishedPage::markImageDirty($userId);
         return back();
     }
 
@@ -1152,6 +1167,7 @@ class UserController extends Controller
     public function delProfilePicture()
     {
         $this->removeAvatarFileIfPresent(Auth::id());
+        \App\Services\PublishedPage::markImageDirty(Auth::id());
         return back();
     }
 
@@ -1201,6 +1217,7 @@ class UserController extends Controller
 
         $fileName = $userId . '_' . time() . '.' . $profilePhoto->extension();
         $profilePhoto->move(base_path('assets/img'), $fileName);
+        \App\Services\PublishedPage::markImageDirty($userId);
 
         return back()->with('success', 'Profile photo updated.');
     }

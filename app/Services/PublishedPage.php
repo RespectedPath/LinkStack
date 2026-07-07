@@ -30,6 +30,17 @@ class PublishedPage
     ];
 
     /**
+     * Stable, render-relevant columns captured per block (+ the joined
+     * button `name`). Excludes volatile columns the public page never
+     * renders — click_number, created_at, updated_at — so the snapshot
+     * is stable and discard's re-created rows round-trip to isDirty==false.
+     */
+    public const BLOCK_FIELDS = [
+        'id', 'user_id', 'button_id', 'link', 'title', 'type',
+        'type_params', 'order', 'up_link', 'custom_css', 'custom_icon', 'name',
+    ];
+
+    /**
      * The exact links query the public render uses — one place so
      * serialize() and the live render can't drift.
      */
@@ -55,18 +66,16 @@ class PublishedPage
             return null;
         }
 
-        $blocks = self::liveLinks($userId)->map(fn ($l) => (array) $l)->all();
+        $blocks = self::liveLinks($userId)
+            ->map(fn ($l) => array_intersect_key((array) $l, array_flip(self::BLOCK_FIELDS)))
+            ->all();
 
         return [
             'v'      => self::VERSION,
             'user'   => array_intersect_key($user->getAttributes(), array_flip(self::USER_FIELDS)),
             'blocks' => $blocks,
-            'images' => [
-                // Draft filenames now; Phase 3 copies these to a published
-                // location on publish so re-uploads can't disturb them.
-                'avatar'     => findAvatar($userId),
-                'background' => findBackground($userId),
-            ],
+            // 'images' is added by publishFor() (copies of the draft
+            // files at publish time) — not part of the draft snapshot.
         ];
     }
 
@@ -76,18 +85,33 @@ class PublishedPage
      */
     public static function hydrate(array $snapshot): array
     {
-        $userinfo = (object) ($snapshot['user'] ?? []);
+        // User MODELS (not stdClass) so undefined-property access returns
+        // null gracefully — the admin bar and other modules read fields
+        // the snapshot omits (adminUser, email_verified_at, …), which
+        // would raise "Undefined property" on a stdClass and break the
+        // page in debug mode. This matches the live render exactly (it
+        // passes User models too).
+        $userinfo = (new User())->forceFill($snapshot['user'] ?? []);
+        $userinfo->exists = true;
 
-        // $information: a 1-item collection of the head/title fields.
-        $information = collect([(object) [
-            'name'                   => $userinfo->name ?? null,
-            'littlelink_name'        => $userinfo->littlelink_name ?? null,
-            'littlelink_description' => $userinfo->littlelink_description ?? null,
-            'theme'                  => $userinfo->theme ?? null,
-        ]]);
+        $information = collect([(new User())->forceFill([
+            'name'                   => $userinfo->name,
+            'littlelink_name'        => $userinfo->littlelink_name,
+            'littlelink_description' => $userinfo->littlelink_description,
+            'theme'                  => $userinfo->theme,
+        ])]);
 
-        $links = collect($snapshot['blocks'] ?? [])->map(function ($b) {
-            $link = (object) $b;
+        // Null-default every links column so a display reading one the
+        // snapshot omits (click_number, timestamps) gets null, not a
+        // warning — matching the live query's full-column shape.
+        $linkDefaults = array_fill_keys([
+            'id', 'user_id', 'button_id', 'link', 'title', 'type',
+            'type_params', 'order', 'click_number', 'up_link',
+            'created_at', 'updated_at', 'custom_css', 'custom_icon', 'name',
+        ], null);
+
+        $links = collect($snapshot['blocks'] ?? [])->map(function ($b) use ($linkDefaults) {
+            $link = (object) array_merge($linkDefaults, (array) $b);
             // Same type_params decode+merge the controller does, so every
             // block display sees the properties it expects.
             if (!empty($link->type_params)) {
@@ -147,23 +171,153 @@ class PublishedPage
      */
     public static function isDirty($userId): bool
     {
-        $published = User::where('id', $userId)->value('published_snapshot');
-        if (empty($published)) {
+        $user = User::where('id', $userId)->first(['published_snapshot', 'has_unpublished_changes']);
+        if (!$user || empty($user->published_snapshot)) {
             return false;
         }
-        $publishedArr = json_decode($published, true);
+        // Image changes are flagged explicitly (they can't be diffed from
+        // the render payload); text/block changes are detected dynamically.
+        if ($user->has_unpublished_changes) {
+            return true;
+        }
+        $publishedArr = json_decode($user->published_snapshot, true);
         return self::renderKey(self::serialize($userId))
             !== self::renderKey(is_array($publishedArr) ? $publishedArr : null);
     }
 
-    /** Publish: snapshot the current draft as the published page. */
+    /** Publish: snapshot the current draft (incl. copying the draft
+     *  images to a published location) as the published page. */
     public static function publishFor($userId): void
     {
         $snapshot = self::serialize($userId);
+        if ($snapshot) {
+            $snapshot['images'] = self::publishImages($userId);
+        }
         User::where('id', $userId)->update([
             'published_snapshot'      => $snapshot ? json_encode($snapshot) : null,
             'has_unpublished_changes' => false,
         ]);
+    }
+
+    /** Flag an unpublished IMAGE change (called by the avatar/background
+     *  upload + remove handlers). No-op until the user is on the
+     *  snapshot model. */
+    public static function markImageDirty($userId): void
+    {
+        User::where('id', $userId)
+            ->whereNotNull('published_snapshot')
+            ->update(['has_unpublished_changes' => true]);
+    }
+
+    /**
+     * Discard: reverse-sync the live draft back to the published
+     * snapshot — restore user fields, delete blocks added since publish,
+     * recreate/restore the published blocks (click counts left intact),
+     * and restore the images. No-op if nothing is published.
+     */
+    public static function discard($userId): void
+    {
+        $user = User::where('id', $userId)->first(['published_snapshot']);
+        if (!$user || empty($user->published_snapshot)) {
+            return;
+        }
+        $snap = json_decode($user->published_snapshot, true);
+        if (!is_array($snap)) {
+            return;
+        }
+
+        // 1. Restore the drafted user fields.
+        $fields = array_intersect_key(
+            $snap['user'] ?? [],
+            array_flip(['name', 'littlelink_description', 'theme', 'theme_customization'])
+        );
+        User::where('id', $userId)->update($fields + ['has_unpublished_changes' => false]);
+
+        // 2. Reverse-sync blocks: drop draft blocks added since publish,
+        //    then upsert every published block (recreating deleted ones,
+        //    restoring content/order). click_number is not touched.
+        $blocks = collect($snap['blocks'] ?? []);
+        $keepIds = $blocks->pluck('id')->filter()->values()->all();
+        $del = DB::table('links')->where('user_id', $userId);
+        if (!empty($keepIds)) {
+            $del->whereNotIn('id', $keepIds);
+        }
+        $del->delete();
+
+        $cols = ['id', 'button_id', 'link', 'title', 'custom_css', 'custom_icon', 'type', 'type_params', 'order', 'up_link'];
+        foreach ($blocks as $b) {
+            $row = array_intersect_key((array) $b, array_flip($cols));
+            $row['user_id'] = $userId;
+            DB::table('links')->updateOrInsert(['id' => $b['id'] ?? null], $row);
+        }
+
+        // 3. Restore images from the published copies.
+        self::restoreImages($userId, $snap['images'] ?? []);
+    }
+
+    /**
+     * Copy the current draft avatar/background to a published location
+     * (assets/img/published/{uid}.ext, .../background-img/published/
+     * {uid}.ext) and return the snapshot 'images' block. Public render
+     * uses these copies; the editor/preview use the draft files, so a
+     * re-upload in draft can't disturb what's published.
+     */
+    private static function publishImages($userId): array
+    {
+        $out = ['avatar' => null, 'background' => null];
+
+        $draftAvatar = findAvatar($userId); // 'assets/img/{file}' or 'error.error'
+        if ($draftAvatar !== 'error.error' && is_file(base_path($draftAvatar))) {
+            $ext = strtolower(pathinfo($draftAvatar, PATHINFO_EXTENSION)) ?: 'jpg';
+            @mkdir(base_path('assets/img/published'), 0755, true);
+            foreach (glob(base_path('assets/img/published/' . $userId . '.*')) ?: [] as $old) {
+                @unlink($old);
+            }
+            $rel = 'assets/img/published/' . $userId . '.' . $ext;
+            @copy(base_path($draftAvatar), base_path($rel));
+            $out['avatar'] = $rel;
+        }
+
+        $draftBg = findBackground($userId); // '{file}' or 'error.error'
+        if ($draftBg !== 'error.error' && is_file(base_path('assets/img/background-img/' . $draftBg))) {
+            $ext = strtolower(pathinfo($draftBg, PATHINFO_EXTENSION)) ?: 'jpg';
+            @mkdir(base_path('assets/img/background-img/published'), 0755, true);
+            foreach (glob(base_path('assets/img/background-img/published/' . $userId . '.*')) ?: [] as $old) {
+                @unlink($old);
+            }
+            // Stored as the "filename" theme.blade appends to
+            // assets/img/background-img/.
+            $relFile = 'published/' . $userId . '.' . $ext;
+            @copy(base_path('assets/img/background-img/' . $draftBg), base_path('assets/img/background-img/' . $relFile));
+            $out['background'] = $relFile;
+        }
+
+        return $out;
+    }
+
+    /** Restore the draft image files from the published copies (discard). */
+    private static function restoreImages($userId, array $images): void
+    {
+        // Avatar: clear draft avatars, then copy the published one back.
+        foreach (glob(base_path('assets/img/' . $userId . '_*')) ?: [] as $f) {
+            @unlink($f);
+        }
+        if (!empty($images['avatar']) && is_file(base_path($images['avatar']))) {
+            $ext = strtolower(pathinfo($images['avatar'], PATHINFO_EXTENSION)) ?: 'jpg';
+            @copy(base_path($images['avatar']), base_path('assets/img/' . $userId . '_' . time() . '.' . $ext));
+        }
+
+        // Background: same.
+        foreach (glob(base_path('assets/img/background-img/' . $userId . '_*')) ?: [] as $f) {
+            @unlink($f);
+        }
+        if (!empty($images['background'])) {
+            $pub = base_path('assets/img/background-img/' . $images['background']);
+            if (is_file($pub)) {
+                $ext = strtolower(pathinfo($pub, PATHINFO_EXTENSION)) ?: 'jpg';
+                @copy($pub, base_path('assets/img/background-img/' . $userId . '_' . time() . '.' . $ext));
+            }
+        }
     }
 
     /**

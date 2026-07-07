@@ -70,6 +70,7 @@
         background: rgba(59, 130, 246, 0.08);
     }
     .mm-publish-status { display: inline-flex; align-items: center; gap: 4px; }
+    .mm-publish-actions { display: flex; gap: 8px; }
     .mm-publish-bar .btn[disabled] { opacity: 0.5; }
 </style>
 
@@ -90,12 +91,22 @@
                 <i class="bi bi-check-circle"></i> Your public page is up to date.
               @endif
             </span>
-            <form action="{{ route('publish') }}" method="post" class="mb-0">
-              @csrf
-              <button type="submit" class="btn btn-primary btn-sm" @if(empty($isDirty)) disabled @endif>
-                <i class="bi bi-cloud-arrow-up"></i> Publish
-              </button>
-            </form>
+            <div class="mm-publish-actions">
+              @if(!empty($isDirty))
+              <form action="{{ route('discard') }}" method="post" class="mb-0">
+                @csrf
+                <button type="submit" class="btn btn-outline-secondary btn-sm" data-confirm="Discard your unpublished changes and revert to your published page?">
+                  <i class="bi bi-arrow-counterclockwise"></i> Discard
+                </button>
+              </form>
+              @endif
+              <form action="{{ route('publish') }}" method="post" class="mb-0">
+                @csrf
+                <button type="submit" class="btn btn-primary btn-sm" @if(empty($isDirty)) disabled @endif>
+                  <i class="bi bi-cloud-arrow-up"></i> Publish
+                </button>
+              </form>
+            </div>
           </div>
 
           {{-- Shared flash + validation surface. Every tab's form

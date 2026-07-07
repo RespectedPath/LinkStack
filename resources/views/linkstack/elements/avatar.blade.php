@@ -1,6 +1,12 @@
         <!-- Your Image Here -->
-        @if(file_exists(base_path(findAvatar($userinfo->id))))
-        <img alt="avatar" id="avatar" class="rounded-avatar fadein" src="{{ url(findAvatar($userinfo->id)) }}" height="160" width="160" style="object-fit: cover;">
+        @php
+            // Draft/publish: the PUBLISHED avatar copy on the public
+            // render ($avatarOverride, set by maybePublishedView), else
+            // the live draft avatar. See DRAFT-PUBLISH-PLAN.md.
+            $__avatar = ($avatarOverride ?? null) ?: findAvatar($userinfo->id);
+        @endphp
+        @if(file_exists(base_path($__avatar)))
+        <img alt="avatar" id="avatar" class="rounded-avatar fadein" src="{{ url($__avatar) }}" height="160" width="160" style="object-fit: cover;">
         @elseif(file_exists(base_path("assets/linkstack/images/").findFile('avatar')))
         <img alt="avatar" id="avatar" class="fadein" src="{{ url("assets/linkstack/images/")."/".findFile('avatar') }}" height="160" width="160" style="object-fit: cover;">
         @else

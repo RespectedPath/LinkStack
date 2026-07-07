@@ -212,6 +212,7 @@ class AppearanceController extends Controller
         $user->theme_customization = json_encode($sparse, JSON_UNESCAPED_SLASHES);
         $user->save();
 
+        \App\Services\PublishedPage::markImageDirty($userId);
         return response()->json(['ok' => true, 'image_url' => $sparse['background']['image_url']]);
     }
 
@@ -233,6 +234,7 @@ class AppearanceController extends Controller
             $user->save();
         }
 
+        \App\Services\PublishedPage::markImageDirty(Auth::id());
         return response()->json(['ok' => true]);
     }
 
