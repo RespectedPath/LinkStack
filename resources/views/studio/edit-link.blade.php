@@ -495,23 +495,14 @@
                                         <p class="text-muted small mb-3">
                                             Your theme styles this block automatically &mdash; tweak the
                                             style, colors, shape, or icon only if you want this one block
-                                            to stand out. Changes preview live above.
+                                            to stand out. Changes preview live on the right.
                                         </p>
 
-                                        {{-- Live preview button on the page's own background.
-                                             The icon lives inside a wrapper span so the JS can
-                                             swap its innerHTML when the user picks a new icon —
-                                             that triggers FontAwesome's MutationObserver and the
-                                             new <i> gets converted to its <svg> glyph. --}}
+                                        {{-- The block's live preview is the studio's main phone
+                                             frame on the right (patched as you edit) — no separate
+                                             in-panel sample. Reset-to-theme lives here. --}}
                                         <div class="mm-preview-wrap">
-                                            <span class="mm-preview-label small text-muted">Preview</span>
-                                            <div class="mm-preview-stage" style="{{ $mmStageBg }}">
-                                                <button type="button" id="mmPreviewBtn" class="mm-preview-btn">
-                                                    <span id="mmPreviewIconWrap"></span>
-                                                    <span id="mmPreviewLabel">{{ $mmPreviewLabel }}</span>
-                                                </button>
-                                            </div>
-                                            <div class="d-flex align-items-center mt-2" style="gap: 10px;">
+                                            <div class="d-flex align-items-center" style="gap: 10px;">
                                                 <button type="button" id="mmResetTheme" class="btn btn-sm btn-outline-secondary">
                                                     <i class="bi bi-arrow-counterclockwise"></i> Reset to theme
                                                 </button>
@@ -530,13 +521,6 @@
                                              treatment switch. --}}
                                         <div class="mm-control-group">
                                             <label class="mm-control-label">Style</label>
-                                            {{-- Same three styles as the global Appearance tab
-                                                 (Filled / Outline / Soft), so per-block button
-                                                 styling speaks the same language everywhere.
-                                                 Gradient / Glass / Neon / Ghost were removed —
-                                                 they had no global equivalent and clashed with the
-                                                 brand. generateCss() still handles a legacy preset
-                                                 on an older block so it keeps rendering. --}}
                                             <div class="mm-preset-grid" id="mmPresetGrid">
                                                 <button type="button" class="mm-preset" data-preset="filled">
                                                     <span class="mm-preset-swatch mm-swatch-filled">Aa</span>
@@ -544,11 +528,27 @@
                                                 </button>
                                                 <button type="button" class="mm-preset" data-preset="outlined">
                                                     <span class="mm-preset-swatch mm-swatch-outlined">Aa</span>
-                                                    <span class="mm-preset-name">Outline</span>
+                                                    <span class="mm-preset-name">Outlined</span>
+                                                </button>
+                                                <button type="button" class="mm-preset" data-preset="gradient">
+                                                    <span class="mm-preset-swatch mm-swatch-gradient">Aa</span>
+                                                    <span class="mm-preset-name">Gradient</span>
                                                 </button>
                                                 <button type="button" class="mm-preset" data-preset="soft">
                                                     <span class="mm-preset-swatch mm-swatch-soft">Aa</span>
                                                     <span class="mm-preset-name">Soft</span>
+                                                </button>
+                                                <button type="button" class="mm-preset" data-preset="glass">
+                                                    <span class="mm-preset-swatch mm-swatch-glass">Aa</span>
+                                                    <span class="mm-preset-name">Glass</span>
+                                                </button>
+                                                <button type="button" class="mm-preset" data-preset="neon">
+                                                    <span class="mm-preset-swatch mm-swatch-neon">Aa</span>
+                                                    <span class="mm-preset-name">Neon</span>
+                                                </button>
+                                                <button type="button" class="mm-preset" data-preset="ghost">
+                                                    <span class="mm-preset-swatch mm-swatch-ghost">Aa</span>
+                                                    <span class="mm-preset-name">Ghost</span>
                                                 </button>
                                             </div>
                                         </div>
@@ -825,12 +825,15 @@ function submitFormWithParam(paramValue) {
    against the `links` table columns.
    ============================================================ */
 (function () {
-    var $previewBtn = document.getElementById('mmPreviewBtn');
-    if (!$previewBtn) return;  /* Appearance section only renders in edit mode */
+    /* The block's live preview is now the studio's main phone frame; the
+       in-panel sample button was removed. Gate on the Appearance section
+       (edit mode only) rather than the old sample button. */
+    var $appearance      = document.getElementById('appearance');
+    if (!$appearance) return;
 
     /* --------- DOM refs --------- */
-    var $appearance      = document.getElementById('appearance');
-    var $previewIconWrap = document.getElementById('mmPreviewIconWrap');
+    var $previewBtn      = document.getElementById('mmPreviewBtn');      // sample removed; may be null
+    var $previewIconWrap = document.getElementById('mmPreviewIconWrap'); // sample removed; may be null
     var $primaryColor    = document.getElementById('mmPrimaryColor');
     var $textColor       = document.getElementById('mmTextColor');
     var $secondaryColor  = document.getElementById('mmSecondaryColor');
@@ -1011,6 +1014,7 @@ function submitFormWithParam(paramValue) {
     }
 
     function applyToPreview() {
+        if (!$previewBtn) return;  // sample removed — the main phone preview shows it now
         // While the block follows the theme, show the theme's REAL
         // button treatment (baseline.css from the manifest) — the
         // generated preset CSS is an approximation that can look very
@@ -1029,6 +1033,10 @@ function submitFormWithParam(paramValue) {
         applyToPreview();
         syncHiddenInputs();
         refreshResetState();
+        // Preset / shape / hover changes are button clicks that don't fire a
+        // form input event, so nudge the live main-preview patcher — it reads
+        // the freshly-synced #custom_css (bubbles up to the form listener).
+        if ($cssInput) $cssInput.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
     /* The Reset button tells the truth about its usefulness: disabled
