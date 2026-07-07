@@ -399,6 +399,19 @@
                             $apHeading = $existingTP['appearance_heading'] ?? '';
                             $apColor   = $existingTP['appearance_color'] ?? '';
 
+                            // The icon picker only does anything on blocks that render
+                            // <i class="icon {custom_icon}"> — i.e. Custom Link buttons
+                            // (button name 'custom'). Favicon buttons (custom_website),
+                            // brand socials, fixed-icon blocks (vcard/phone/…) and the
+                            // rich blocks all ignore custom_icon, so showing the picker
+                            // there just stores an icon that never renders. Keep it for
+                            // the add flow (button not chosen yet) so new custom links
+                            // still get it.
+                            $mmIconButtonName = ($existingLink && $existingLink->button_id)
+                                ? optional(\App\Models\Button::find($existingLink->button_id))->name
+                                : null;
+                            $blockUsesCustomIcon = ((int) $LinkID === 0) || ($mmIconButtonName === 'custom');
+
                             // Theme baseline (Phase 5, THEME-APPEARANCE-PLAN.md):
                             // a block with no styling of its own hydrates the
                             // controls from the page's EFFECTIVE button look —
@@ -619,8 +632,11 @@
                                             </select>
                                         </div>
 
-                                        {{-- ===== Icon ===== --}}
-                                        <div class="mm-control-group">
+                                        {{-- ===== Icon — only for Custom Link blocks
+                                             ($blockUsesCustomIcon). Kept in the DOM but hidden
+                                             for others so the appearance JS still finds its
+                                             elements (no null-guards needed). ===== --}}
+                                        <div class="mm-control-group" @if(!$blockUsesCustomIcon) style="display:none" @endif>
                                             <label class="mm-control-label">Icon</label>
                                             {{-- Generic utility icons only. For branded socials
                                                  use the Social Icons page (top row) or the
