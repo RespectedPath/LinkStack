@@ -531,6 +531,10 @@
     // Render the stage's visible crop to a canvas and replace the file
     // input's File before letting the form submit.
     photoForm.addEventListener('submit', function (e) {
+        // Uploading the photo is an intentional navigation, not a loss of
+        // unsaved edits — clear the dirty flag so beforeunload doesn't nag.
+        // (Picking a file fires a change event that marks the page dirty.)
+        dirty = false;
         if (!photoState.hasNewFile) return; // nothing to transform; native submit catches missing-file via required
         e.preventDefault();
 
