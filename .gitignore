@@ -21,3 +21,15 @@ Homestead.yaml
 npm-debug.log
 yarn-error.log
 _ide_*
+
+# Internal reference docs — kept locally, not published to the public
+# AGPL source repo (plans, kickoff prompts, pre-deploy audit).
+/CUSTOM-FEATURES.md
+/LANDING-PAGE-PROMPT.md
+/PRE-DEPLOY-AUDIT.md
+/STUDIO-EDITOR-PROMPT.md
+/THEME-APPEARANCE-PLAN.md
+/THEME-LIBRARY-PROMPT.md
+/UI-IMPROVEMENTS.md
+/UI-PASS-PLAN.md
+/CSP-HARDENING-PLAN.md
