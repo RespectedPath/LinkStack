@@ -344,6 +344,8 @@
                   counter.textContent = len + ' / ' + limit + ' characters';
                   counter.className = 'd-block mt-1 ' + (len > limit * 0.9 ? 'text-danger' : 'text-muted');
               }
+              // Live preview: reflect the description in the preview iframe as you type.
+              if (window.mmPreviewDesc) window.mmPreviewDesc(editor.getData());
           };
           editor.model.document.on('change:data', update);
           update();
@@ -353,5 +355,53 @@
       });
 </script>
 @endif
+
+<script nonce="{{ csp_nonce() }}">
+(function () {
+    // Live preview (Phase 4): patch the shared preview iframe as the user
+    // edits Basics — name and description — so changes show instantly,
+    // before saving. The iframe renders the owner's DRAFT (?preview=1);
+    // a save reloads it to the persisted draft. Same-origin, so we can
+    // reach into it directly.
+    // Look the iframe up fresh each call: this partial is parsed before the
+    // live-preview partial (which holds the iframe) is included, so a capture
+    // at parse time would be null. It also survives the iframe reloading.
+    function doc() {
+        try {
+            var f = document.getElementById('appearance-preview-iframe');
+            return f && f.contentDocument;
+        } catch (e) { return null; }
+    }
+
+    // Name: update only the leading text node so the verified badge span survives.
+    window.mmPreviewName = function (val) {
+        var d = doc(); if (!d) return;
+        var h1 = d.querySelector('h1.dynamic-contrast'); if (!h1) return;
+        if (h1.firstChild && h1.firstChild.nodeType === 3) {
+            h1.firstChild.textContent = val;
+        } else {
+            h1.insertBefore(d.createTextNode(val), h1.firstChild);
+        }
+    };
+    // Description: mirror the server, which drops the HTML inside <p class="fadein">.
+    window.mmPreviewDesc = function (html) {
+        var d = doc(); if (!d) return;
+        var p = d.querySelector('.description-parent p'); if (p) p.innerHTML = html;
+    };
+
+    var nameInput = document.querySelector('input[name="name"]');
+    if (nameInput) {
+        nameInput.addEventListener('input', function () { window.mmPreviewName(this.value); });
+    }
+    // Plain-textarea fallback when CKEditor isn't active (ALLOW_USER_HTML off).
+    var descArea = document.querySelector('textarea[name="pageDescription"]');
+    if (descArea && !descArea.classList.contains('ckeditor')) {
+        descArea.addEventListener('input', function () {
+            var d = doc(); if (!d) return;
+            var p = d.querySelector('.description-parent p'); if (p) p.textContent = this.value;
+        });
+    }
+})();
+</script>
 </div>
 </section>
