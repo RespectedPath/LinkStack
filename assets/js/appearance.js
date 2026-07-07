@@ -306,7 +306,10 @@
             };
             img.onerror = function () {
                 URL.revokeObjectURL(url);
-                reject(new Error('Couldn\'t read image'));
+                // Most common cause: a cloud-drive "online-only" file whose
+                // bytes aren't on this device yet, so the picker hands us a
+                // handle we can't actually decode. Tell the user how to fix it.
+                reject(new Error('Couldn\'t read that image. If it\'s in a cloud drive (Google Drive, iCloud, OneDrive), download it to your device first, then upload.'));
             };
             img.src = url;
         });
@@ -316,6 +319,12 @@
         bgUploadBtn.addEventListener('click', function () {
             var f = bgFile.files && bgFile.files[0];
             if (!f) { bgSetStatus('Pick a file first.', 'err'); return; }
+            // A zero-byte selection is almost always a cloud-drive placeholder
+            // that hasn't synced down yet — catch it before we bother resizing.
+            if (f.size === 0) {
+                bgSetStatus('That file looks empty. If it\'s in a cloud drive (Google Drive, iCloud, OneDrive), download it to your device first, then upload.', 'err');
+                return;
+            }
             bgUploadBtn.disabled = true;
             bgSetStatus('Resizing…');
             resizeForBackground(f).then(function (resized) {
