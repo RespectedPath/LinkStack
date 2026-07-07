@@ -214,43 +214,23 @@
         // live, unsaved preview is needed.
     });
 
-    // Fire on every input / change so the preview matches the form in
-    // real time (colors change within a frame of dragging the picker).
-    // The first such event flips the iframe from the server render to
-    // the injected preview (syncPreview disables the server override).
-    // Events bubble from inputs across tabs to the shared wrap element
-    // (they don't bubble to the <form> element because they live
-    // outside it in the tab panes).
-    wrap.addEventListener('input',  syncPreview);
-    wrap.addEventListener('change', syncPreview);
+    // Fire on every input / change so the preview matches the form in real
+    // time (colors change within a frame of dragging the picker) AND
+    // debounce-save the form to the draft, so appearance edits persist
+    // without a manual Save. The first preview event flips the iframe from
+    // the server render to the injected preview. Events bubble from inputs
+    // across tabs to the shared wrap element (they don't bubble to the
+    // <form> because they live outside it in the tab panes).
+    function onAppearanceEdit() {
+        syncPreview();
+        if (window.mmAutoSaveForm) window.mmAutoSaveForm(form, 700);
+    }
+    wrap.addEventListener('input',  onAppearanceEdit);
+    wrap.addEventListener('change', onAppearanceEdit);
 
-    // ---------- Unsaved-changes warning ----------
-    //
-    // Mark dirty on any appearance edit; beforeunload then asks the browser
-    // to show its native "are you sure you want to leave" prompt — but only
-    // for a genuine navigation away (a nav link, closing the tab).
-    //
-    // Every <form> submit on this editor is an intentional, non-destructive
-    // action — appearance Save, reset, profile-photo upload, and the top
-    // bar's Publish and Discard. None of them lose the user's edits, so
-    // clear the flag on any submit before the ensuing navigation. Capture
-    // phase so it fires no matter where the form lives on the page (the
-    // Publish/Discard forms sit outside the appearance layout).
-
-    var dirty = false;
-    wrap.addEventListener('input',  function () { dirty = true; });
-    wrap.addEventListener('change', function () { dirty = true; });
-    document.addEventListener('submit', function () { dirty = false; }, true);
-
-    window.addEventListener('beforeunload', function (e) {
-        if (!dirty) return;
-        // Per the HTML spec, modern browsers display a generic message
-        // regardless of what we return; we just need to preventDefault
-        // and set returnValue for back-compat.
-        e.preventDefault();
-        e.returnValue = '';
-        return '';
-    });
+    // No unsaved-changes warning: edits auto-save to the draft as they're
+    // made, so there is nothing unsaved to lose. The "unpublished changes"
+    // state lives in the top Publish bar, not a browser prompt.
 
     // ---------- Tab state persisted in URL hash ----------
     //
@@ -366,8 +346,6 @@
                     return;
                 }
                 bgSetStatus('Uploaded, reloading…', 'ok');
-                // Skip the unsaved-changes warning on this intentional reload.
-                dirty = false;
                 location.reload();
             }).catch(function (e) {
                 bgSetStatus(e.message || 'Error.', 'err');
@@ -393,7 +371,6 @@
                     bgRemoveBtn.disabled = false;
                     return;
                 }
-                dirty = false;
                 location.reload();
             }).catch(function () {
                 bgSetStatus('Network error.', 'err');
@@ -537,10 +514,6 @@
     // Render the stage's visible crop to a canvas and replace the file
     // input's File before letting the form submit.
     photoForm.addEventListener('submit', function (e) {
-        // Uploading the photo is an intentional navigation, not a loss of
-        // unsaved edits — clear the dirty flag so beforeunload doesn't nag.
-        // (Picking a file fires a change event that marks the page dirty.)
-        dirty = false;
         if (!photoState.hasNewFile) return; // nothing to transform; native submit catches missing-file via required
         e.preventDefault();
 

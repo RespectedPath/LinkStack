@@ -842,6 +842,9 @@ class UserController extends Controller
         ]);
     
         if ($validator->fails()) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['ok' => false, 'errors' => $validator->errors()], 422);
+            }
             return redirect('/studio/edit#basics')->withErrors($validator)->withInput();
         }
     
@@ -904,6 +907,12 @@ class UserController extends Controller
             UserData::saveData($userId, 'links-new-tab', false);
         }
     
+        // Auto-save wants a fast, tiny reply, not a redirect it follows and
+        // downloads the whole editor page for.
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json(['ok' => true]);
+        }
+
         return Redirect('/studio/edit#basics');
     }
 

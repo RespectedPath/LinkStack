@@ -112,6 +112,13 @@ class AppearanceController extends Controller
         $user->theme_customization = empty($sparse) ? null : json_encode($sparse, JSON_UNESCAPED_SLASHES);
         $user->save();
 
+        // Auto-save (debounced fetch from the editor) wants a fast, tiny
+        // reply — not a redirect it has to follow and download the whole
+        // editor page for.
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json(['ok' => true]);
+        }
+
         return redirect('/studio/edit#appearance')->with('success', 'Appearance saved.');
     }
 

@@ -234,8 +234,6 @@
               <input name="tablinks" class="switch toggle-btn" type="checkbox" id="tablinks" <?php if(UserData::getData(Auth::user()->id, 'links-new-tab') != false){echo 'checked';} ?> />
               <label class="form-check-label" for="tablinks">{{__('messages.Enable')}}</label>
             </div>
-
-    <button id="submit-btn" type="submit" class="mt-3 ml-3 btn btn-primary">{{__('messages.Save')}}</button>
 </form>
 
 <script nonce="{{ csp_nonce() }}">
@@ -272,15 +270,25 @@
         var p = d.querySelector('.description-parent p'); if (p) p.textContent = text;
     };
 
-    var nameInput = document.querySelector('input[name="name"]');
+    // Auto-save: name + description persist to the draft as you type
+    // (debounced), no manual Save. basicsForm is the surrounding form.
+    var nameInput  = document.querySelector('input[name="name"]');
+    var descArea   = document.querySelector('textarea[name="pageDescription"]');
+    var basicsForm = (nameInput && nameInput.closest('form')) || (descArea && descArea.closest('form'));
+    function autoSaveBasics() {
+        if (window.mmAutoSaveForm && basicsForm) window.mmAutoSaveForm(basicsForm, 800);
+    }
+
     if (nameInput) {
-        nameInput.addEventListener('input', function () { window.mmPreviewName(this.value); });
+        nameInput.addEventListener('input', function () {
+            window.mmPreviewName(this.value);
+            autoSaveBasics();
+        });
     }
 
     // Description: live preview + character counter, both driven by the plain
     // textarea's input event.
-    var descArea = document.querySelector('textarea[name="pageDescription"]');
-    var counter  = document.getElementById('pageDescription-counter');
+    var counter = document.getElementById('pageDescription-counter');
     var LIMIT = 250;
     function syncDesc() {
         if (window.mmPreviewDesc) window.mmPreviewDesc(descArea.value);
@@ -291,8 +299,16 @@
         }
     }
     if (descArea) {
-        descArea.addEventListener('input', syncDesc);
+        descArea.addEventListener('input', function () { syncDesc(); autoSaveBasics(); });
         syncDesc();  // initialise the counter from the saved value
+    }
+
+    // Toggles (share button, open-in-new-tab, verified checkmark) live in
+    // the same form — auto-save them on change too. And a stray Enter or
+    // submit shouldn't reload the page; auto-save already persists.
+    if (basicsForm) {
+        basicsForm.addEventListener('change', autoSaveBasics);
+        basicsForm.addEventListener('submit', function (e) { e.preventDefault(); autoSaveBasics(); });
     }
 })();
 </script>

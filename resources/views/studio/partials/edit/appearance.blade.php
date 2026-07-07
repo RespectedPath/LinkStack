@@ -331,16 +331,13 @@
 
     </div> {{-- /.tab-content --}}
 
-    {{-- Main save form — nearly empty; inputs across tabs post
-         to it via their form="appearance-form" attribute. The
-         Save button lives here so it's always visible below
-         whichever tab the user is on. --}}
+    {{-- Appearance form — inputs across tabs post to it via their
+         form="appearance-form" attribute. Edits auto-save to the draft as
+         you make them (appearance.js debounce), so there's no manual Save
+         button; the Reset-to-theme action stays. --}}
     <form id="appearance-form" action="{{ route('saveAppearance') }}" method="post" class="appearance-save-form" data-preview-css-url="{{ route('previewAppearanceCss') }}">
       @csrf
       <div class="appearance-actions">
-        <button type="submit" class="btn btn-primary">
-          <i class="bi bi-save"></i> Save appearance
-        </button>
         <button type="button" class="btn btn-outline-secondary" id="appearance-reset-btn">
           <i class="bi bi-arrow-counterclockwise"></i> Reset to theme
         </button>

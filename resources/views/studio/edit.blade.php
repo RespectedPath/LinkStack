@@ -69,9 +69,18 @@
         border-color: var(--bs-primary, #3b82f6);
         background: rgba(59, 130, 246, 0.08);
     }
-    .mm-publish-status { display: inline-flex; align-items: center; gap: 4px; }
+    .mm-publish-status { display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; }
     .mm-publish-actions { display: flex; gap: 8px; }
     .mm-publish-bar .btn[disabled] { opacity: 0.5; }
+
+    /* Client-toggled dirty state: both status messages live in the DOM;
+       the --dirty class picks which shows and reveals the Discard form. */
+    .mm-publish-bar .mm-publish-status-dirty { display: none; }
+    .mm-publish-bar--dirty .mm-publish-status-dirty { display: inline; }
+    .mm-publish-bar--dirty .mm-publish-status-clean { display: none; }
+    .mm-publish-bar:not(.mm-publish-bar--dirty) .mm-discard-form { display: none; }
+    .mm-save-indicator { margin-left: 8px; opacity: 0.7; font-size: 0.85rem; font-style: italic; }
+    .mm-save-indicator--error { color: var(--bs-danger, #dc3545); opacity: 1; font-style: normal; }
 </style>
 
 <div class="container-fluid content-inner mt-n5 py-0">
@@ -80,29 +89,26 @@
       <div class="card rounded">
         <div class="card-body">
 
-          {{-- Draft/publish status bar. Edits save to your DRAFT and show
-               in the live preview; the public page only changes when you
-               Publish. CSP-safe: plain form POST, no inline JS. --}}
-          <div class="mm-publish-bar @if(!empty($isDirty)) mm-publish-bar--dirty @endif">
+          {{-- Draft/publish status bar. Your edits auto-save to your DRAFT
+               as you make them and show in the live preview; the public
+               page only changes when you Publish. The dirty state is
+               toggled client-side after each auto-save (script below). --}}
+          <div class="mm-publish-bar @if(!empty($isDirty)) mm-publish-bar--dirty @endif" id="mm-publish-bar">
             <span class="mm-publish-status">
-              @if(!empty($isDirty))
-                <i class="bi bi-dot"></i> You have <strong>unpublished changes</strong> &mdash; visible here, not yet on your public page.
-              @else
-                <i class="bi bi-check-circle"></i> Your public page is up to date.
-              @endif
+              <span class="mm-publish-status-dirty"><i class="bi bi-dot"></i> You have <strong>unpublished changes</strong> &mdash; visible here, not yet on your public page.</span>
+              <span class="mm-publish-status-clean"><i class="bi bi-check-circle"></i> Your public page is up to date.</span>
+              <span class="mm-save-indicator" id="mm-save-indicator" aria-live="polite"></span>
             </span>
             <div class="mm-publish-actions">
-              @if(!empty($isDirty))
-              <form action="{{ route('discard') }}" method="post" class="mb-0">
+              <form action="{{ route('discard') }}" method="post" class="mb-0 mm-discard-form">
                 @csrf
                 <button type="submit" class="btn btn-outline-secondary btn-sm" data-confirm="Discard your unpublished changes and revert to your published page?">
                   <i class="bi bi-arrow-counterclockwise"></i> Discard
                 </button>
               </form>
-              @endif
               <form action="{{ route('publish') }}" method="post" class="mb-0">
                 @csrf
-                <button type="submit" class="btn btn-primary btn-sm" @if(empty($isDirty)) disabled @endif>
+                <button type="submit" id="mm-publish-btn" class="btn btn-primary btn-sm" @if(empty($isDirty)) disabled @endif>
                   <i class="bi bi-cloud-arrow-up"></i> Publish
                 </button>
               </form>
@@ -203,6 +209,63 @@
 
     // Initial tab from the URL hash, default Basics.
     activate(location.hash.replace('#', '') || 'basics', false);
+})();
+</script>
+<script nonce="{{ csp_nonce() }}">
+(function () {
+    // ---- Draft auto-save wiring ----------------------------------------
+    // Tabs persist edits to the draft by calling window.mmAutoSaveForm();
+    // on success it flips the banner to "unpublished changes" and enables
+    // Publish. No manual Save step, no unsaved-changes warning.
+    var bar        = document.getElementById('mm-publish-bar');
+    var publishBtn = document.getElementById('mm-publish-btn');
+    var indicator  = document.getElementById('mm-save-indicator');
+    var indicatorTimer = null;
+
+    window.mmMarkDirty = function () {
+        if (bar) bar.classList.add('mm-publish-bar--dirty');
+        if (publishBtn) publishBtn.disabled = false;
+    };
+
+    window.mmSaveStatus = function (state) {
+        if (!indicator) return;
+        clearTimeout(indicatorTimer);
+        indicator.classList.toggle('mm-save-indicator--error', state === 'error');
+        if (state === 'saving') {
+            indicator.textContent = 'Saving…';
+        } else if (state === 'saved') {
+            indicator.textContent = 'Saved';
+            indicatorTimer = setTimeout(function () { indicator.textContent = ''; }, 1500);
+        } else if (state === 'error') {
+            indicator.textContent = "Couldn't save — check your connection";
+        } else {
+            indicator.textContent = '';
+        }
+    };
+
+    // Debounced per-form auto-save. POSTs the form to its own action; the
+    // server persists to the draft and (harmlessly) redirects, which we
+    // ignore. One in-flight timer per form.
+    var timers = new WeakMap();
+    window.mmAutoSaveForm = function (form, delay) {
+        if (!form) return;
+        clearTimeout(timers.get(form));
+        timers.set(form, setTimeout(function () {
+            window.mmSaveStatus('saving');
+            fetch(form.getAttribute('action'), {
+                method: 'POST',
+                body: new FormData(form),
+                credentials: 'same-origin',
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+            }).then(function (r) {
+                if (!r.ok) throw new Error('save failed ' + r.status);
+                window.mmMarkDirty();
+                window.mmSaveStatus('saved');
+            }).catch(function () {
+                window.mmSaveStatus('error');
+            });
+        }, delay || 700));
+    };
 })();
 </script>
 @endpush
