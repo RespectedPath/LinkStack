@@ -33,7 +33,7 @@
 
 @push('scripts')
 
-    <script>
+    <script nonce="{{ csp_nonce() }}">
 
         let itemsModal = {
             template: '#env-editor-modal',

@@ -10,7 +10,7 @@
 <input type='tel' name='link' value='{{str_replace("tel:", "", $link)}}' class='form-control' required />
 <span class='small text-muted'>{{__('messages.Enter your telephone number')}}</span>
 
-<script>
+<script nonce="{{ csp_nonce() }}">
 $(document).ready(function() {
     $('form').on('submit', function(e) {
         var linkInput = $(this).find('input[name="link"]');

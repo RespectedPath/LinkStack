@@ -9,7 +9,7 @@
      - appearance.css for the Appearance tab's controls + the shared
        .appearance-layout grid that splits tab content from preview. --}}
 @push('sidebar-stylesheets')
-<script defer src="{{ asset('assets/external-dependencies/fontawesome.js') }}" crossorigin="anonymous"></script>
+<script nonce="{{ csp_nonce() }}" defer src="{{ asset('assets/external-dependencies/fontawesome.js') }}" crossorigin="anonymous"></script>
 <link rel="stylesheet" href="{{ asset('assets/css/appearance.css') }}">
 @endpush
 
@@ -104,8 +104,8 @@
 {{-- appearance.js drives the Appearance tab (photo cropper, bg upload,
      swatch state, reset). Loaded once at body end. --}}
 @push('sidebar-scripts')
-<script src="{{ asset('assets/js/appearance.js') }}?v={{ filemtime(public_path('assets/js/appearance.js')) }}"></script>
-<script>
+<script nonce="{{ csp_nonce() }}" src="{{ asset('assets/js/appearance.js') }}?v={{ filemtime(public_path('assets/js/appearance.js')) }}"></script>
+<script nonce="{{ csp_nonce() }}">
 (function () {
     var VALID = ['basics', 'themes', 'appearance', 'social', 'blocks'];
     var tabs  = Array.prototype.slice.call(document.querySelectorAll('.mm-edit-tab'));

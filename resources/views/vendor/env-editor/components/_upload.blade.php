@@ -25,7 +25,7 @@
 
 @push('scripts')
 
-    <script>
+    <script nonce="{{ csp_nonce() }}">
         const fileUpload = {
             template: '#env-editor-uploadFile',
             data: () => {

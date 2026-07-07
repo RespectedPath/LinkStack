@@ -39,7 +39,7 @@
 {{-- Select2 for the searchable currency picker. Loaded from CDN;
      admin-only so CDN latency is not a concern. --}}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script nonce="{{ csp_nonce() }}" src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <select style="display:none" name="button" class="form-control"><option class="button button-default stripe_payment" value="default stripe_payment">Stripe payment</option></select>
 
@@ -139,7 +139,7 @@
      block — the storage shape and Stripe Checkout call already
      support arbitrary URLs. --}}
 
-<script>
+<script nonce="{{ csp_nonce() }}">
 (function () {
     // Toggle between fixed-price and tip-jar field groups based on
     // the mode radio selection.
@@ -170,7 +170,7 @@
     $curr.addEventListener('change', syncSymbols);
 
     // Initialize Select2 for searchable currency picker. Poll up to 2s
-    // because the Select2 <script> above is inserted alongside this
+    // because the Select2 script above is inserted alongside this
     // form via AJAX and may not have finished loading yet.
     (function tryInitSelect2(attempts) {
         if (window.jQuery && window.jQuery.fn && window.jQuery.fn.select2) {

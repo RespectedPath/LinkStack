@@ -25,7 +25,7 @@
   ?>
 
   <!-- Custom icons font-awesome -->
-  <script>{!! file_get_contents(base_path("assets/external-dependencies/fontawesome.js")) !!}</script>
+  <script nonce="{{ csp_nonce() }}">{!! file_get_contents(base_path("assets/external-dependencies/fontawesome.js")) !!}</script>
   <style>{!! str_replace('../', 'studio/', file_get_contents(base_path("assets/external-dependencies/fontawesome.css"))) !!}</style>
 
   @include('layouts.fonts') 

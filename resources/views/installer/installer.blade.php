@@ -57,7 +57,7 @@
         </div>
     </div>
     <input type="hidden" name="_token" value="{{csrf_token()}}">
-    <script type="text/javascript">
+    <script nonce="{{ csp_nonce() }}" type="text/javascript">
         document.getElementById("language-form").addEventListener("change", function() {
             this.submit();
         });
@@ -241,9 +241,9 @@
 <option value="No">{{__('messages.No')}}</option>
 <option value="Yes">{{__('messages.Yes')}}</option>
 </select>
-<script src="{{ asset('assets/external-dependencies/jquery-3.4.1.min.js') }}"></script>
-<script src="{{ asset('assets/external-dependencies/sweetalert2.min.js') }}"></script>
-<script>
+<script nonce="{{ csp_nonce() }}" src="{{ asset('assets/external-dependencies/jquery-3.4.1.min.js') }}"></script>
+<script nonce="{{ csp_nonce() }}" src="{{ asset('assets/external-dependencies/sweetalert2.min.js') }}"></script>
+<script nonce="{{ csp_nonce() }}">
 $("#select").change(function(){
     if($(this).val() == "Yes") {
         $('.container').hide();

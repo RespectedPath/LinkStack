@@ -168,7 +168,7 @@ function toggle($key){
 	<div class="mb-3 form-check form-switch toggle-btn"><input name="toggle" class="switch toggle-btn" type="checkbox" id="'.$key.'"'; if(EnvEditor::getKey($key) == 'false'){echo '/>';}else{echo 'checked>';} echo '<label for="'.$key.'" class="form-check-label">'.__('messages.Enable').'</label></div>
 	</div></div>
     <input type="hidden" name="_token" value="'.csrf_token().'">
-    <script type="text/javascript">
+    <script nonce="{{ csp_nonce() }}" type="text/javascript">
 document.getElementById("'.$key.'-form").addEventListener("change", function() { 
     this.submit(); 
 });
@@ -192,7 +192,7 @@ function toggle2($key){
 	<div class="mb-3 form-check form-switch toggle-btn"><input name="toggle" class="switch toggle-btn" type="checkbox" id="'.$key.'"'; if(EnvEditor::getKey($key) == 'auth'){echo '/>';}else{echo 'checked>';} echo '<label for="'.$key.'" class="form-check-label">'.__('messages.Enable').'</label></div>
 	</div></div>
     <input type="hidden" name="_token" value="'.csrf_token().'">
-    <script type="text/javascript">
+    <script nonce="{{ csp_nonce() }}" type="text/javascript">
 document.getElementById("'.$key.'-form").addEventListener("change", function() { 
     this.submit(); 
 });
@@ -272,7 +272,7 @@ foreach($users as $user){if($user->littlelink_name != $configValue2){echo '<opti
 
 </div></div>
 <input type="hidden" name="_token" value="{{csrf_token()}}">
-<script type="text/javascript">document.getElementById("home-url-form").addEventListener("change", function() { this.submit(); });</script>
+<script nonce="{{ csp_nonce() }}" type="text/javascript">document.getElementById("home-url-form").addEventListener("change", function() { this.submit(); });</script>
 </form>
 {{-- end home url --}}
 
@@ -343,7 +343,7 @@ foreach($users as $user){if($user->littlelink_name != $configValue2){echo '<opti
 <div class="mb-3 form-check form-switch toggle-btn"><input name="toggle" class="switch toggle-btn" type="checkbox" id="MAINTENANCE_MODE" <?php if(EnvEditor::getKey('MAINTENANCE_MODE') == 'true' or file_exists(base_path("storage/MAINTENANCE"))){echo 'checked>';}else{echo '/>';} ?><label for="MAINTENANCE_MODE" class="form-check-label">{{__('messages.Enable')}}</label></div>
 </div></div>
 <input type="hidden" name="_token" value="{{csrf_token()}}">
-<script type="text/javascript">
+<script nonce="{{ csp_nonce() }}" type="text/javascript">
 document.getElementById("MAINTENANCE_MODE-form").addEventListener("change", function() { 
     this.submit(); 
 });
@@ -463,7 +463,7 @@ document.getElementById("MAINTENANCE_MODE-form").addEventListener("change", func
 <div class="mb-3 form-check form-switch toggle-btn"><input name="toggle" class="switch toggle-btn" type="checkbox" id="toggle-debug" <?php if(EnvEditor::getKey('APP_DEBUG') == 'false'){echo '/>';}else{echo 'checked>';} ?> <label for="toggle-debug" class="form-check-label">{{__('messages.Enable')}}</label></div>
 </div></div>
 <input type="hidden" name="_token" value="{{csrf_token()}}">
-<script type="text/javascript">document.getElementById("debug-form").addEventListener("change", function() { this.submit(); });</script>
+<script nonce="{{ csp_nonce() }}" type="text/javascript">document.getElementById("debug-form").addEventListener("change", function() { this.submit(); });</script>
 </form>
 {{-- end debug settings --}}
 
@@ -499,7 +499,7 @@ document.getElementById("MAINTENANCE_MODE-form").addEventListener("change", func
         </div>
     </div>
     <input type="hidden" name="_token" value="{{csrf_token()}}">
-    <script type="text/javascript">
+    <script nonce="{{ csp_nonce() }}" type="text/javascript">
         document.getElementById("language-form").addEventListener("change", function() {
             this.submit();
         });
@@ -510,9 +510,9 @@ document.getElementById("MAINTENANCE_MODE-form").addEventListener("change", func
 
 <br><br><br><br><br>
 
-<script src="{{ asset('assets/external-dependencies/jquery-3.4.1.min.js') }}"></script>
+<script nonce="{{ csp_nonce() }}" src="{{ asset('assets/external-dependencies/jquery-3.4.1.min.js') }}"></script>
 
-<script type="text/javascript">
+<script nonce="{{ csp_nonce() }}" type="text/javascript">
 $(document).ready(function () {
 
     if (localStorage.getItem("my_app_name_here-quote-scroll") != null) {

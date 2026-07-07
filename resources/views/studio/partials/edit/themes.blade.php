@@ -59,7 +59,7 @@
           @csrf
           <input type="hidden" name="return_to" value="themes">
           <button type="submit" class="btn btn-sm btn-outline-secondary"
-                  onclick="return confirm('Reset your appearance back to the theme\'s own look? This clears every color, font, shape, and background you changed.')">
+                  data-confirm="Reset your appearance back to the theme's own look? This clears every color, font, shape, and background you changed.">
             <i class="bi bi-arrow-counterclockwise"></i> Reset to theme
           </button>
         </form>
@@ -132,7 +132,7 @@
               <div class="col-lg-3 theme-card-wrap" data-name="default theme" data-cat="basics">
                 <div class="card shadow-lg @if($isDefault) bg-primary @else bg-soft-primary @endif">
                   <div class="card-body pb-0">
-                    <a style="cursor:pointer;" onclick="mmSetTheme('default')">
+                    <a style="cursor:pointer;" data-mm-set-theme="default">
                       <div class="d-flex justify-content-between"><div>
                         <img draggable="false" class="bd-placeholder-img bd-placeholder-img-lg img-fluid" src="{{url('assets/linkstack/images/themes/default.png')}}">
                       </div></div>
@@ -154,7 +154,7 @@
               <div class="col-lg-3 theme-card-wrap" data-name="{{ strtolower($t['name']) }}" data-cat="{{ strtolower($cat) }}">
                 <div class="card shadow-lg @if($currentTheme == $t['slug']) bg-primary @else bg-soft-primary @endif">
                   <div class="card-body pb-0">
-                    <a style="cursor:pointer;" onclick="mmSetTheme('{{ $t['slug'] }}')">
+                    <a style="cursor:pointer;" data-mm-set-theme="{{ $t['slug'] }}">
                       <div class="d-flex justify-content-between"><div>
                         <img draggable="false" class="bd-placeholder-img bd-placeholder-img-lg img-fluid" src="{{url('themes/'.$t['slug'].'/preview.png')}}">
                       </div></div>
@@ -180,9 +180,15 @@
 </div>
 
 @push('sidebar-scripts')
-<script>
+<script nonce="{{ csp_nonce() }}">
   var mmThemeCustomized = @json($mmCustomized);
   var mmCurrentTheme = @json($isDefault ? 'default' : $currentTheme);
+  // Delegated (replaces inline onclick under CSP): theme cards carry
+  // data-mm-set-theme="<slug>".
+  document.addEventListener('click', function (e) {
+    var el = e.target.closest ? e.target.closest('[data-mm-set-theme]') : null;
+    if (el) mmSetTheme(el.getAttribute('data-mm-set-theme'));
+  });
   function mmSetTheme(themeName) {
     // Switching themes clears appearance overrides (editTheme does the
     // clearing server-side) — warn before losing work. Re-picking the

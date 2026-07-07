@@ -11,7 +11,7 @@
     (studio/admin pages use the layouts/sidebar layout).
 --}}
 @if(!empty($trackingId))
-<script async src="https://www.googletagmanager.com/gtag/js?id={{ $trackingId }}"></script>
+<script nonce="{{ csp_nonce() }}" async src="https://www.googletagmanager.com/gtag/js?id={{ $trackingId }}"></script>
 <script nonce="{{ csp_nonce() }}">
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}

@@ -60,7 +60,7 @@
     }
 </style>
 <!-- Custom icons font-awesome -->
-<script src="{{ asset('assets/external-dependencies/fontawesome.js') }}" crossorigin="anonymous"></script>
+<script nonce="{{ csp_nonce() }}" src="{{ asset('assets/external-dependencies/fontawesome.js') }}" crossorigin="anonymous"></script>
 @if (file_exists(base_path('backups/updater-backups/')) and is_dir(base_path('backups/updater-backups/')))
     @if (($_SERVER['QUERY_STRING'] ?? '') != '')
         <?php

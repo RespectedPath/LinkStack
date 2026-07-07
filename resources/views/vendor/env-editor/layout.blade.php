@@ -21,11 +21,11 @@
 <body>
 
 <span class="javascripts">
-    <script src="{{ asset('assets/external-dependencies/jquery.slim.min.js') }}"
+    <script nonce="{{ csp_nonce() }}" src="{{ asset('assets/external-dependencies/jquery.slim.min.js') }}"
             integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
             crossorigin="anonymous"></script>
-    <script src="{{ asset('assets/external-dependencies/vue.js') }}"></script>
-    <script src="{{ asset('assets/external-dependencies/bootstrap.bundle.min.js') }}"
+    <script nonce="{{ csp_nonce() }}" src="{{ asset('assets/external-dependencies/vue.js') }}"></script>
+    <script nonce="{{ csp_nonce() }}" src="{{ asset('assets/external-dependencies/bootstrap.bundle.min.js') }}"
             integrity="sha384-fQybjgWLrvvRgtW6bFlB7jaZrFsaBXjsOMm/tB9LTS58ONXgqbR9W8oWht/amnpF"
             crossorigin="anonymous"></script>
 

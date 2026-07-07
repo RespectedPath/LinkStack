@@ -20,7 +20,7 @@
      data-account="{{ auth()->user()->stripe_account_id ?? '' }}"
      class="mb-0"></div>
 
-<script>
+<script nonce="{{ csp_nonce() }}">
 (function () {
     var banner = document.getElementById('sp-connect-banner');
     if (!banner || banner.dataset.mmInit === '1') return;

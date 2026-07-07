@@ -136,9 +136,9 @@
 
 @endforeach
 
-<script src="{{ asset('assets/external-dependencies/jquery-1.12.4.min.js') }}"></script>
+<script nonce="{{ csp_nonce() }}" src="{{ asset('assets/external-dependencies/jquery-1.12.4.min.js') }}"></script>
 </section>
-<script>
+<script nonce="{{ csp_nonce() }}">
 $(window).on('load', function() {
     var placeholder = $('#ajax-container');
     var lazyElement = $('#my-lazy-element');
@@ -153,7 +153,7 @@ $(window).on('load', function() {
     });
 });
 </script>
-<script type="text/javascript">$("iframe").load(function() { $("iframe").contents().find("a").each(function(index) { $(this).on("click", function(event) { event.preventDefault(); event.stopPropagation(); }); }); });</script>
+<script nonce="{{ csp_nonce() }}" type="text/javascript">$("iframe").load(function() { $("iframe").contents().find("a").each(function(index) { $(this).on("click", function(event) { event.preventDefault(); event.stopPropagation(); }); }); });</script>
 
 @push('sidebar-scripts')
     <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -207,7 +207,7 @@ $(window).on('load', function() {
                         <div class="col-lg-3 theme-card-wrap" data-name="default theme" data-cat="basics">
                             <div class="card shadow-lg @if($page->theme == "" or $page->theme == "default") bg-primary @else bg-soft-primary @endif">
                                <div class="card-body pb-0">
-                                <a style="cursor:pointer;" onclick="setTheme('default')">
+                                <a style="cursor:pointer;" data-set-theme="default">
                                   <div class="d-flex justify-content-between"><div>
                                      <img draggable="false" class="bd-placeholder-img bd-placeholder-img-lg img-fluid" src="{{url('assets/linkstack/images/themes/default.png')}}">
                                   </div></div>
@@ -229,7 +229,7 @@ $(window).on('load', function() {
                         <div class="col-lg-3 theme-card-wrap" data-name="{{ strtolower($t['name']) }}" data-cat="{{ strtolower($cat) }}">
                             <div class="card shadow-lg @if($page->theme == $t['slug']) bg-primary @else bg-soft-primary @endif">
                                <div class="card-body pb-0">
-                                <a style="cursor:pointer;" onclick="setTheme('{{ $t['slug'] }}')">
+                                <a style="cursor:pointer;" data-set-theme="{{ $t['slug'] }}">
                                   <div class="d-flex justify-content-between"><div>
                                      <img draggable="false" class="bd-placeholder-img bd-placeholder-img-lg img-fluid" src="{{url('themes/'.$t['slug'].'/preview.png')}}">
                                   </div></div>
@@ -253,7 +253,13 @@ $(window).on('load', function() {
         </div>
     </div>
     </div>
-<script>
+<script nonce="{{ csp_nonce() }}">
+      // Delegated (replaces inline onclick under CSP): theme cards carry
+      // data-set-theme="<slug>".
+      document.addEventListener('click', function (e) {
+        var el = e.target.closest ? e.target.closest('[data-set-theme]') : null;
+        if (el) setTheme(el.getAttribute('data-set-theme'));
+      });
       function setTheme(themeName) {
         const selectElement = document.getElementById('theme-select');
         selectElement.querySelector('option').value = themeName;

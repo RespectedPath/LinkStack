@@ -82,7 +82,7 @@
                             } } ?>
                 </table>
         </div>
-        <a href="{{ url('update/theme') }}" onclick="updateicon()" class="btn btn-gray ms-3 mb-4">
+        <a href="{{ url('update/theme') }}" class="btn btn-gray ms-3 mb-4">
             <span id="updateicon"><i class="bi bi-arrow-repeat"></i></span> {{__('messages.Update all themes')}}
         </a>
       </div>
@@ -94,7 +94,7 @@ try{ if($GLOBALS['updateAv'] == true) echo '<p class="mt-3 ml-3 h2""><span class
 }catch(Exception $ex){}
 ?>
 
-<script>
+<script nonce="{{ csp_nonce() }}">
     $(function() {
         $('select[name=theme]').on('change', function() {
             var s = $(this).data('base-url') + "?t=" + $(this).val();

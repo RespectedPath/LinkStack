@@ -77,7 +77,7 @@
           <a href="{{ route('deleteLink', $icon->id) }}"
              class="chip-remove"
              title="Remove"
-             onclick="return confirm('Remove this social icon?');">&times;</a>
+             data-confirm="Remove this social icon?">&times;</a>
         </div>
       @endforeach
     </div>
@@ -201,7 +201,7 @@
 </style>
 
 @push('sidebar-scripts')
-<script>
+<script nonce="{{ csp_nonce() }}">
     (function () {
         var list = document.getElementById('sortable-icons');
         if (!list) return;

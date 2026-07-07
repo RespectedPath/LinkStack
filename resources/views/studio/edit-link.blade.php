@@ -3,7 +3,7 @@
 @section('content')
 
 @push('sidebar-stylesheets')
-<script src="{{ asset('assets/external-dependencies/fontawesome.js') }}" crossorigin="anonymous"></script>
+<script nonce="{{ csp_nonce() }}" src="{{ asset('assets/external-dependencies/fontawesome.js') }}" crossorigin="anonymous"></script>
 @if(!empty($embed))
 {{-- Embed mode: this page is loaded in an iframe panel inside the
      unified editor's Blocks tab. Strip the dashboard chrome (sidebar,
@@ -250,7 +250,7 @@
                    <div class="col-sm-12">
 
                     @push('sidebar-stylesheets')
-                    <script src="{{ asset('assets/js/jquery.min.js') }}"></script>
+                    <script nonce="{{ csp_nonce() }}" src="{{ asset('assets/js/jquery.min.js') }}"></script>
                     @endpush
 
                     @if($LinkID === 0)
@@ -343,7 +343,7 @@
                                         </div>
                                         <div class="modal-footer">
                                             <button type="button" class="btn btn-light" data-bs-dismiss="modal" data-dismiss="modal">{{__('messages.Cancel')}}</button>
-                                            <button type="button" class="btn btn-soft-primary" onclick="submitFormWithParam('add_more')">{{__('messages.Save and Add More')}}</button>
+                                            <button type="button" class="btn btn-soft-primary" data-submit-param="add_more">{{__('messages.Save and Add More')}}</button>
                                             <button type="submit" class="btn btn-primary">{{__('messages.Save')}}</button>
                                         </div>
                                     </form>
@@ -709,7 +709,7 @@
                                         <input type="hidden" name="appearance_heading"   id="appHeading"   value="{{ $apHeading }}">
                                         @endif
 
-                                        <script>window.MM_BLOCK_BASELINE = @json($mmBaseline);</script>
+                                        <script nonce="{{ csp_nonce() }}">window.MM_BLOCK_BASELINE = @json($mmBaseline);</script>
                                     </fieldset>
                                     @elseif($blockAppearanceMode === 'color')
                                     {{-- Text + heading blocks: one knob — text color.
@@ -729,7 +729,7 @@
                                         </div>
                                         <input type="hidden" name="appearance_color" id="appColor" value="{{ $apColor }}">
                                     </fieldset>
-                                    <script>
+                                    <script nonce="{{ csp_nonce() }}">
                                     (function () {
                                         var toggle = document.getElementById('mmColorCustom');
                                         var picker = document.getElementById('mmColorPicker');
@@ -781,7 +781,7 @@
                                     <div class="d-flex align-items-center pt-2">
                                         <a class="btn btn-danger me-3" href="{{ url('studio/links') }}">{{__('messages.Cancel')}}</a>
                                         <button type="submit" class="btn btn-primary me-3">{{__('messages.Save')}}</button>
-                                        <button type="button" class="btn btn-soft-primary me-3" onclick="submitFormWithParam('add_more')">{{__('messages.Save and Add More')}}</button>
+                                        <button type="button" class="btn btn-soft-primary me-3" data-submit-param="add_more">{{__('messages.Save and Add More')}}</button>
                                     </div>
                                 </form>
                             </div>
@@ -796,7 +796,13 @@
       </div>
     </div>
 
-<script>
+<script nonce="{{ csp_nonce() }}">
+// Delegated (replaces inline onclick under CSP): "Save and add more"
+// buttons carry data-submit-param.
+document.addEventListener('click', function (e) {
+    var el = e.target.closest ? e.target.closest('[data-submit-param]') : null;
+    if (el) submitFormWithParam(el.getAttribute('data-submit-param'));
+});
 function submitFormWithParam(paramValue) {
     var form = document.getElementById("my-form");
     var paramField = document.createElement("input");
@@ -811,7 +817,7 @@ function submitFormWithParam(paramValue) {
 @endsection
 
 @push("sidebar-scripts")
-<script>
+<script nonce="{{ csp_nonce() }}">
 /* ============================================================
    Appearance section — visual controls
    ============================================================
@@ -1219,7 +1225,7 @@ function submitFormWithParam(paramValue) {
 })();
 </script>
 
-<script>
+<script nonce="{{ csp_nonce() }}">
 $(function() {
     var linkId      = $("input[name='linkid']").val();
     var initialType = $("input[name='typename']").val();

@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="{{ asset('assets/linkstack/css/brands.css') }}">
   <link rel="stylesheet" href="{{ asset('assets/linkstack/css/hover-min.css') }}">
   <link rel="stylesheet" href="{{ asset('assets/linkstack/css/animate.css') }}">
-  <script src="{{ asset('assets/external-dependencies/fontawesome.js') }}" crossorigin="anonymous"></script>
+  <script nonce="{{ csp_nonce() }}" src="{{ asset('assets/external-dependencies/fontawesome.js') }}" crossorigin="anonymous"></script>
   @if(file_exists(base_path("assets/linkstack/images/").findFile('favicon')))
   <link rel="icon" type="image/png" href="{{ asset('assets/linkstack/images/'.findFile('favicon')) }}">
   @else

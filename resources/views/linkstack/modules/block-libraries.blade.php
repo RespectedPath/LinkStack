@@ -20,7 +20,7 @@
         @case('jquery')
             @once
                 @push('linkstack-head')
-                    <script src="{{ asset('assets/external-dependencies/jquery-3.4.1.min.js') }}"></script>
+                    <script nonce="{{ csp_nonce() }}" src="{{ asset('assets/external-dependencies/jquery-3.4.1.min.js') }}"></script>
                 @endpush
             @endonce
         @break
@@ -28,7 +28,7 @@
         @case('sweetalert')
             @once
                 @push('linkstack-head')
-                    <script src="{{ asset('assets/external-dependencies/sweetalert2.min.js') }}"></script>
+                    <script nonce="{{ csp_nonce() }}" src="{{ asset('assets/external-dependencies/sweetalert2.min.js') }}"></script>
                 @endpush
             @endonce
         @break
@@ -39,7 +39,7 @@
 
 @php /* For debugging purposes, you can add a script to the end of the body that logs the inclusion of each library: */ @endphp
 {{-- @push('linkstack-body-end')
-    <script>
+    <script nonce="{{ csp_nonce() }}">
         function logAssetInclusion(library) {
             console.log(library + ' has been included.');
         }

@@ -22,7 +22,7 @@
     <p><strong>{{ $message }}</strong></p>
     <p class="muted">You can close this window.</p>
   </div>
-  <script>
+  <script nonce="{{ csp_nonce() }}">
     (function () {
       // A script-opened popup can close itself even when COOP severed
       // the opener reference during the Stripe round-trip. Let the

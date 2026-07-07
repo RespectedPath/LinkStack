@@ -2,7 +2,7 @@
 
 @section('content')
 
-<script src="{{ asset('resources/ckeditor/ckeditor.js') }}"></script>
+<script nonce="{{ csp_nonce() }}" src="{{ asset('resources/ckeditor/ckeditor.js') }}"></script>
 
 <div class="conatiner-fluid content-inner mt-n5 py-0">
   <div class="row">   

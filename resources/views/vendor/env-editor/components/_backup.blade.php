@@ -63,7 +63,7 @@
 
 @push('scripts')
 
-    <script>
+    <script nonce="{{ csp_nonce() }}">
         const backUps = {
             template: '#env-editor-backups',
             data: () => {

@@ -38,7 +38,7 @@
                         
                         <a href="{{ url('') }}/admin/new-user">+ {{__('messages.Add new user')}}</a>
                         
-                        <script type="text/javascript">
+                        <script nonce="{{ csp_nonce() }}" type="text/javascript">
                           // Function to confirm and delete users
                           var confirmIt = function(e) {
                               e.preventDefault();
@@ -98,7 +98,7 @@
                           attachClickEventListeners('user-email', handleUserClick);
                           attachClickEventListeners('user-block', handleUserClick);
                       </script>
-{{-- <script type="text/javascript">
+{{-- <script nonce="{{ csp_nonce() }}" type="text/javascript">
 // Get the delete button div
 var deleteButtonDiv = document.getElementById('select-active');
 
@@ -171,13 +171,13 @@ deleteButton.addEventListener('click', deleteSelectedUsers);
   </div>
 
 @push('sidebar-stylesheets')
-<script defer src="{{url('assets/js/cdn.min.js')}}"></script>
-<script src="{{url('vendor/livewire/livewire/dist/livewire.js')}}"></script>
+<script nonce="{{ csp_nonce() }}" defer src="{{url('assets/js/cdn.min.js')}}"></script>
+<script nonce="{{ csp_nonce() }}" src="{{url('vendor/livewire/livewire/dist/livewire.js')}}"></script>
 @endpush
 
 @push('sidebar-scripts')
 <livewire:scripts />
-<script src="{{url('assets/js/livewire-sortable.js')}}"></script>
+<script nonce="{{ csp_nonce() }}" src="{{url('assets/js/livewire-sortable.js')}}"></script>
 @endpush
 
 @endsection

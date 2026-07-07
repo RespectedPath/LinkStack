@@ -40,7 +40,7 @@
 @push('scripts')
 
 
-    <script>
+    <script nonce="{{ csp_nonce() }}">
         const itemsWrapper = {
                 template: '#env-editor-main-tab',
                 data: () => {

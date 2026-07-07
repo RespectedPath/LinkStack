@@ -186,9 +186,9 @@
                   @endif
                   
                   @push("sidebar-scripts")
-                  <script src="{{ asset('assets/external-dependencies/jquery-1.11.1.min.js') }}"></script>
-                  <script src="{{ asset('assets/external-dependencies/bootstrap.min.js') }}"></script>
-                  <script>
+                  <script nonce="{{ csp_nonce() }}" src="{{ asset('assets/external-dependencies/jquery-1.11.1.min.js') }}"></script>
+                  <script nonce="{{ csp_nonce() }}" src="{{ asset('assets/external-dependencies/bootstrap.min.js') }}"></script>
+                  <script nonce="{{ csp_nonce() }}">
                   //$('#myTab a').click(function(e) {
                   // e.preventDefault();
                   // $(this).tab('show');
@@ -220,7 +220,7 @@
                     $('html, body').animate({scrollTop:280}, '300');
                   });
                   </script>
-                  <script src="{{ asset('assets/external-dependencies/bootstrap.min.js') }}"></script>
+                  <script nonce="{{ csp_nonce() }}" src="{{ asset('assets/external-dependencies/bootstrap.min.js') }}"></script>
                   @endpush
 
                  </div>

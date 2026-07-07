@@ -13,13 +13,13 @@
             <button type="submit" class="mt-3 ml-3 btn btn-info">{{__('messages.Save')}}</button>
           </form>
   
-  <script src="{{ asset('assets/external-dependencies/ace.js') }}" type="text/javascript" charset="utf-8"></script>
-  <script>
+  <script nonce="{{ csp_nonce() }}" src="{{ asset('assets/external-dependencies/ace.js') }}" type="text/javascript" charset="utf-8"></script>
+  <script nonce="{{ csp_nonce() }}">
   var editor = ace.edit("editor2");
   editor.setTheme("ace/theme/xcode");
   editor.getSession().setMode("ace/mode/ruby");
   </script>
-  <script>
+  <script nonce="{{ csp_nonce() }}">
   editor.getSession().on('change', function(e) {
   $('textarea[name=altConfig]').val(editor.getSession().getValue());
   });

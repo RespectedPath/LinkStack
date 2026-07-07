@@ -281,8 +281,8 @@
 </form>
 
 @if(env('ALLOW_USER_HTML') === true)
-<script src="{{ asset('assets/external-dependencies/ckeditor.js') }}"></script>
-<script>
+<script nonce="{{ csp_nonce() }}" src="{{ asset('assets/external-dependencies/ckeditor.js') }}"></script>
+<script nonce="{{ csp_nonce() }}">
   ClassicEditor
       .create(document.querySelector('.ckeditor'), {
           // Minimal toolbar — only the formatting that

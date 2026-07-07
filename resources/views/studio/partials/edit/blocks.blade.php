@@ -136,7 +136,7 @@ if(!function_exists('strp')){function strp($urlStrp){return str_replace(array('h
                             <div class='col-12 p-2' style="max-width:300px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;" title="{{ $link->title }}">
                                 <span class='h6'>
                                     @if($button->name == "custom_website")
-                                    <span class="bg-soft-secondary" style="border: 1px solid #d0d4d7 !important;border-radius:5px;width:25px!important;height:25px!important;"><img style="margin-bottom:3px;margin-left:4px;margin-right:4px;max-width:15px;max-height:15px;" alt="button-icon" class="icon hvr-icon" src="@if(file_exists(base_path("assets/favicon/icons/").localIcon($link->id))){{url('assets/favicon/icons/'.localIcon($link->id))}}@else{{getFavIcon($link->id)}}@endif" onerror="this.onerror=null; this.src='{{asset('assets/linkstack/icons/website.svg')}}';"></span>
+                                    <span class="bg-soft-secondary" style="border: 1px solid #d0d4d7 !important;border-radius:5px;width:25px!important;height:25px!important;"><img style="margin-bottom:3px;margin-left:4px;margin-right:4px;max-width:15px;max-height:15px;" alt="button-icon" class="icon hvr-icon" src="@if(file_exists(base_path("assets/favicon/icons/").localIcon($link->id))){{url('assets/favicon/icons/'.localIcon($link->id))}}@else{{getFavIcon($link->id)}}@endif" data-fallback="{{asset('assets/linkstack/icons/website.svg')}}"></span>
                                     @elseif($button->name == "space")
                                     <span class="bg-soft-secondary" style="border: 1px solid #d0d4d7 !important;border-radius:5px;width:25px!important;height:25px!important;"><i style="margin-left:2.83px;margin-right:-1px;color:#fff;" class='bi bi-distribute-vertical'>&nbsp;</i></span>
                                     @elseif($button->name == "heading")
@@ -185,7 +185,7 @@ if(!function_exists('strp')){function strp($urlStrp){return str_replace(array('h
                                 <span><i class="bi bi-bar-chart-line"></i> {{ $link->click_number }} {{__('messages.Clicks')}}</span>
                                 @endif
 
-                                <a style="float: right;" href="{{ route('deleteLink', $link->id ) }}" onclick="return confirm('{{ __('messages.confirm_delete', ['title' => addslashes($link->title)]) }}')" class="btn btn-sm me-1 btn-icon btn-danger" data-bs-toggle="tooltip" data-bs-placement="top" aria-label="Delete" data-bs-placement="top" data-original-title="{{__('messages.Delete')}}">
+                                <a style="float: right;" href="{{ route('deleteLink', $link->id ) }}" data-confirm="{{ __('messages.confirm_delete', ['title' => $link->title]) }}" class="btn btn-sm me-1 btn-icon btn-danger" data-bs-toggle="tooltip" data-bs-placement="top" aria-label="Delete" data-bs-placement="top" data-original-title="{{__('messages.Delete')}}">
                                     <span class="btn-inner">
                                        <svg class="icon-20" width="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor">
                                           <path d="M19.3248 9.46826C19.3248 9.46826 18.7818 16.2033 18.4668 19.0403C18.3168 20.3953 17.4798 21.1893 16.1088 21.2143C13.4998 21.2613 10.8878 21.2643 8.27979 21.2093C6.96079 21.1823 6.13779 20.3783 5.99079 19.0473C5.67379 16.1853 5.13379 9.46826 5.13379 9.46826" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
@@ -217,7 +217,7 @@ if(!function_exists('strp')){function strp($urlStrp){return str_replace(array('h
                 @endif
             </div>
 
-            <script type="text/javascript">
+            <script nonce="{{ csp_nonce() }}" type="text/javascript">
                 const linksTableOrders = "{{ implode(' | ', $links->pluck('id')->toArray()) }}"
                 // Save endpoint for drag-to-reorder (main-dashboard.js).
                 window.mmSortLinkUrl = "{{ route('sortLinks') }}";
@@ -273,7 +273,7 @@ if(!function_exists('strp')){function strp($urlStrp){return str_replace(array('h
 </style>
 
 @push('sidebar-scripts')
-<script>
+<script nonce="{{ csp_nonce() }}">
 (function () {
     var panel = document.getElementById('mm-block-editor');
     var frame = document.getElementById('mm-block-frame');

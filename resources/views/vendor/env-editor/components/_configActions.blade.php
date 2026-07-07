@@ -9,7 +9,7 @@
 
 @push('scripts')
 
-    <script>
+    <script nonce="{{ csp_nonce() }}">
 
         let configActions = {
             template: '#env-editor-config-actions',

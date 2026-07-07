@@ -69,35 +69,35 @@ class Headers
             "style-src 'self' 'unsafe-inline' https:",
             "img-src 'self' data: https:",
             "font-src 'self' data: https:",
-            "frame-src https:",
+            // 'self' so the studio can frame its own bio pages (the live
+            // preview iframe — same-origin, http in local dev); https for
+            // the media-embed blocks (youtube/spotify/twitch/…).
+            "frame-src 'self' https:",
             "connect-src 'self' https:",
         ]);
 
-        // The public bio page (UserController@littlelink / littlelinkhome)
-        // is the only surface we ENFORCE script-src on today; it's the
-        // stored-XSS target and all its inline scripts are nonced. It
-        // stays frameable (no frame-ancestors) so customers can embed it.
+        // script-src is ENFORCED where every inline script is nonced and
+        // every inline handler refactored: the public bio page (Phase 1)
+        // and the studio / dashboard / admin (Phase 2). The bio page is
+        // the stored-XSS target; the studio is the authenticated surface.
         $action = optional($request->route())->getActionName();
         $isBioPage = is_string($action) && str_contains($action, 'littlelink');
-
         $isAuthArea = $request->is('studio', 'studio/*', 'dashboard', 'dashboard/*', 'admin', 'admin/*');
 
-        if ($isBioPage) {
-            $response->headers->set(
-                'Content-Security-Policy',
-                $baseCsp . '; ' . $scriptCsp . '; report-uri /csp-report'
-            );
-        } else {
-            // Everywhere else: keep the enforced baseline (+ clickjacking
-            // on the authenticated surface), and ship script-src as
-            // REPORT-ONLY so Phase 2 can measure the studio without
-            // breaking it.
-            $enforced = $baseCsp;
+        if ($isBioPage || $isAuthArea) {
+            $csp = $baseCsp . '; ' . $scriptCsp;
             if ($isAuthArea) {
+                // Clickjacking protection on the authenticated surface;
+                // bio pages stay frameable so customers can embed them.
                 $response->headers->set('X-Frame-Options', 'SAMEORIGIN');
-                $enforced .= "; frame-ancestors 'self'";
+                $csp .= "; frame-ancestors 'self'";
             }
-            $response->headers->set('Content-Security-Policy', $enforced);
+            $response->headers->set('Content-Security-Policy', $csp . '; report-uri /csp-report');
+        } else {
+            // Not yet hardened (auth, home, installer, errors): baseline
+            // enforced, script-src Report-Only so violations are visible
+            // without breaking those pages.
+            $response->headers->set('Content-Security-Policy', $baseCsp);
             $response->headers->set(
                 'Content-Security-Policy-Report-Only',
                 $scriptCsp . '; report-uri /csp-report'

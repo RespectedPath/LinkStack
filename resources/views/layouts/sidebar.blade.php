@@ -11,7 +11,7 @@ $usrhandl = Auth::user()->littlelink_name;
       <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
       <title>{{env('APP_NAME')}}</title>
 
-      <script src="{{asset('assets/js/detect-dark-mode.js')}}"></script>
+      <script nonce="{{ csp_nonce() }}" src="{{asset('assets/js/detect-dark-mode.js')}}"></script>
       
       <base href="{{url()->current()}}" />
 
@@ -362,7 +362,7 @@ $usrhandl = Auth::user()->littlelink_name;
             </a>
         </div>
         @push('sidebar-scripts')
-        <script>
+        <script nonce="{{ csp_nonce() }}">
         (function () {
             var sel = document.querySelector('.mm-theme-select');
             if (!sel) return;
@@ -758,7 +758,7 @@ $usrhandl = Auth::user()->littlelink_name;
       </div>
       </div>
 
-      <script>
+      <script nonce="{{ csp_nonce() }}">
         document.addEventListener("DOMContentLoaded", function() {
             var downloadButton = document.getElementById("downloadButton");
             var generatedImage = document.getElementById("generatedImage");
@@ -783,44 +783,44 @@ $usrhandl = Auth::user()->littlelink_name;
         </script>
 
     <!-- Library Bundle Script -->
-    <script src="{{asset('assets/js/core/libs.min.js')}}"></script>
+    <script nonce="{{ csp_nonce() }}" src="{{asset('assets/js/core/libs.min.js')}}"></script>
     
     <!-- External Library Bundle Script -->
-    <script src="{{asset('assets/js/core/external.min.js')}}"></script>
+    <script nonce="{{ csp_nonce() }}" src="{{asset('assets/js/core/external.min.js')}}"></script>
     
     <!-- Widgetchart Script -->
-    <script src="{{asset('assets/js/charts/widgetcharts.js')}}"></script>
+    <script nonce="{{ csp_nonce() }}" src="{{asset('assets/js/charts/widgetcharts.js')}}"></script>
     
     <!-- mapchart Script -->
-    <script src="{{asset('assets/js/charts/vectore-chart.js')}}"></script>
-    <script src="{{asset('assets/js/charts/dashboard.js')}}" ></script>
+    <script nonce="{{ csp_nonce() }}" src="{{asset('assets/js/charts/vectore-chart.js')}}"></script>
+    <script nonce="{{ csp_nonce() }}" src="{{asset('assets/js/charts/dashboard.js')}}" ></script>
     
     <!-- fslightbox Script -->
-    <script src="{{asset('assets/js/plugins/fslightbox.js')}}"></script>
+    <script nonce="{{ csp_nonce() }}" src="{{asset('assets/js/plugins/fslightbox.js')}}"></script>
     
     <!-- Settings Script -->
-    <script src="{{asset('assets/js/plugins/setting.js')}}"></script>
+    <script nonce="{{ csp_nonce() }}" src="{{asset('assets/js/plugins/setting.js')}}"></script>
     
     <!-- Slider-tab Script -->
-    <script src="{{asset('assets/js/plugins/slider-tabs.js')}}"></script>
+    <script nonce="{{ csp_nonce() }}" src="{{asset('assets/js/plugins/slider-tabs.js')}}"></script>
     
     <!-- Form Wizard Script -->
-    <script src="{{asset('assets/js/plugins/form-wizard.js')}}"></script>
+    <script nonce="{{ csp_nonce() }}" src="{{asset('assets/js/plugins/form-wizard.js')}}"></script>
     
     <!-- AOS Animation Plugin-->
-    <script src="{{asset('assets/vendor/aos/dist/aos.js')}}"></script>
+    <script nonce="{{ csp_nonce() }}" src="{{asset('assets/vendor/aos/dist/aos.js')}}"></script>
     
     <!-- App Script -->
-    <script src="{{asset('assets/js/hope-ui.js')}}" defer></script>
+    <script nonce="{{ csp_nonce() }}" src="{{asset('assets/js/hope-ui.js')}}" defer></script>
     
     <!-- Flatpickr Script -->
-    <script src="{{asset('assets/vendor/flatpickr/dist/flatpickr.min.js')}}"></script>
-    <script src="{{asset('assets/js/plugins/flatpickr.js')}}" defer></script>
+    <script nonce="{{ csp_nonce() }}" src="{{asset('assets/vendor/flatpickr/dist/flatpickr.min.js')}}"></script>
+    <script nonce="{{ csp_nonce() }}" src="{{asset('assets/js/plugins/flatpickr.js')}}" defer></script>
     
-    <script src="{{asset('assets/js/plugins/prism.mini.js')}}"></script>
+    <script nonce="{{ csp_nonce() }}" src="{{asset('assets/js/plugins/prism.mini.js')}}"></script>
 
     <!-- Share Button -->
-    <script>
+    <script nonce="{{ csp_nonce() }}">
       // Get a reference to all buttons with the class "share-button"
       const shareButtons = document.querySelectorAll('.share-button');
       
@@ -855,11 +855,42 @@ $usrhandl = Auth::user()->littlelink_name;
       });
       </script>
 
-<script src="{{ asset('assets/js/popper.js') }}"></script>
-<script src="{{ asset('assets/js/bootstrap.min.js') }}"></script>
-<script src="{{ asset('assets/js/Sortable.min.js') }}"></script>
-<script src="{{ asset('assets/js/jquery-block-ui.js') }}"></script>
-<script src="{{ asset('assets/js/main-dashboard.js') }}"></script>
+<script nonce="{{ csp_nonce() }}" src="{{ asset('assets/js/popper.js') }}"></script>
+<script nonce="{{ csp_nonce() }}" src="{{ asset('assets/js/bootstrap.min.js') }}"></script>
+<script nonce="{{ csp_nonce() }}" src="{{ asset('assets/js/Sortable.min.js') }}"></script>
+<script nonce="{{ csp_nonce() }}" src="{{ asset('assets/js/jquery-block-ui.js') }}"></script>
+<script nonce="{{ csp_nonce() }}" src="{{ asset('assets/js/main-dashboard.js') }}"></script>
+
+<script nonce="{{ csp_nonce() }}">
+    // Delegated replacements for inline on*= attributes — a strict
+    // script-src CSP blocks inline event handlers, so these live once in
+    // the studio layout and cover every studio page (incl. the
+    // block-editor iframe, which also extends this layout).
+    (function () {
+        // Confirm-gated clicks: an element with data-confirm="msg" cancels
+        // its default action (navigation or form submit) if the user
+        // declines. Capture phase so it runs before the element's own
+        // handlers; stop propagation only when cancelling.
+        document.addEventListener('click', function (e) {
+            var el = e.target.closest ? e.target.closest('[data-confirm]') : null;
+            if (el && !window.confirm(el.getAttribute('data-confirm'))) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+            }
+        }, true);
+
+        // Favicon fallback: <img data-fallback="url"> swaps to the
+        // fallback when its src errors. Capture phase because <img> error
+        // events don't bubble.
+        document.addEventListener('error', function (e) {
+            var t = e.target;
+            if (t && t.tagName === 'IMG' && t.dataset && t.dataset.fallback && t.getAttribute('src') !== t.dataset.fallback) {
+                t.src = t.dataset.fallback;
+                t.removeAttribute('data-fallback');
+            }
+        }, true);
+    })();
+</script>
 
 @stack('sidebar-scripts')
 

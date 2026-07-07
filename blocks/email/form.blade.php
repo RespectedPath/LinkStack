@@ -10,7 +10,7 @@
 <input type='email' name='link' value='{{str_replace("mailto:", "", $link)}}' class='form-control' required />
 <span class='small text-muted'>{{__('messages.Enter your E-Mail')}}</span>
 
-<script>
+<script nonce="{{ csp_nonce() }}">
 $(document).ready(function() {
     $('form').on('submit', function(e) {
         var linkInput = $(this).find('input[name="link"]');

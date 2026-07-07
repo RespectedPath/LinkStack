@@ -1,5 +1,5 @@
-<script>{!! file_get_contents(base_path("assets/js/jquery.min.js")) !!}</script>
-<script>
+<script nonce="{{ csp_nonce() }}">{!! file_get_contents(base_path("assets/js/jquery.min.js")) !!}</script>
+<script nonce="{{ csp_nonce() }}">
     $(document).ready(function () {
       var submitBtn = $('#submit-btn');
       

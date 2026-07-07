@@ -10,8 +10,8 @@
   <a class="btn btn-danger confirmation" href="#" id="restoreDefaultsBtn">{{__('messages.Restore defaults')}}</a>
 </form>
 
-<script src="{{ asset('assets/external-dependencies/ace.js') }}" type="text/javascript" charset="utf-8"></script>
-<script>
+<script nonce="{{ csp_nonce() }}" src="{{ asset('assets/external-dependencies/ace.js') }}" type="text/javascript" charset="utf-8"></script>
+<script nonce="{{ csp_nonce() }}">
   var editor = ace.edit("editor");
 
   editor.getSession().on('change', function(e) {

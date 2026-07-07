@@ -48,7 +48,7 @@
       <link rel="icon" type="image/svg+xml" href="{{ asset('assets/linkstack/images/logo.svg') }}">
       @endif
       
-      <script src="{{asset('assets/js/detect-dark-mode.js')}}"></script>
+      <script nonce="{{ csp_nonce() }}" src="{{asset('assets/js/detect-dark-mode.js')}}"></script>
 
       <!-- Library / Plugin Css Build -->
       <link rel="stylesheet" href="{{asset('assets/css/core/libs.min.css')}}" />
@@ -243,41 +243,41 @@
         <!-- Footer Section End -->
 
     <!-- Library Bundle Script -->
-    <script src="{{asset('assets/js/core/libs.min.js')}}"></script>
+    <script nonce="{{ csp_nonce() }}" src="{{asset('assets/js/core/libs.min.js')}}"></script>
     
     <!-- External Library Bundle Script -->
-    <script src="{{asset('assets/js/core/external.min.js')}}"></script>
+    <script nonce="{{ csp_nonce() }}" src="{{asset('assets/js/core/external.min.js')}}"></script>
     
     <!-- Widgetchart Script -->
-    <script src="{{asset('assets/js/charts/widgetcharts.js')}}"></script>
+    <script nonce="{{ csp_nonce() }}" src="{{asset('assets/js/charts/widgetcharts.js')}}"></script>
     
     <!-- mapchart Script -->
-    <script src="{{asset('assets/js/charts/vectore-chart.js')}}"></script>
-    <script src="{{asset('assets/js/charts/dashboard.js')}}" ></script>
+    <script nonce="{{ csp_nonce() }}" src="{{asset('assets/js/charts/vectore-chart.js')}}"></script>
+    <script nonce="{{ csp_nonce() }}" src="{{asset('assets/js/charts/dashboard.js')}}" ></script>
     
     <!-- fslightbox Script -->
-    <script src="{{asset('assets/js/plugins/fslightbox.js')}}"></script>
+    <script nonce="{{ csp_nonce() }}" src="{{asset('assets/js/plugins/fslightbox.js')}}"></script>
     
     <!-- Settings Script -->
-    <script src="{{asset('assets/js/plugins/setting.js')}}"></script>
+    <script nonce="{{ csp_nonce() }}" src="{{asset('assets/js/plugins/setting.js')}}"></script>
     
     <!-- Slider-tab Script -->
-    <script src="{{asset('assets/js/plugins/slider-tabs.js')}}"></script>
+    <script nonce="{{ csp_nonce() }}" src="{{asset('assets/js/plugins/slider-tabs.js')}}"></script>
     
     <!-- Form Wizard Script -->
-    <script src="{{asset('assets/js/plugins/form-wizard.js')}}"></script>
+    <script nonce="{{ csp_nonce() }}" src="{{asset('assets/js/plugins/form-wizard.js')}}"></script>
     
     <!-- AOS Animation Plugin-->
-    <script src="{{asset('assets/vendor/aos/dist/aos.js')}}"></script>
+    <script nonce="{{ csp_nonce() }}" src="{{asset('assets/vendor/aos/dist/aos.js')}}"></script>
     
     <!-- App Script -->
-    <script src="{{asset('assets/js/hope-ui.js')}}" defer></script>
+    <script nonce="{{ csp_nonce() }}" src="{{asset('assets/js/hope-ui.js')}}" defer></script>
     
     <!-- Flatpickr Script -->
-    <script src="{{asset('assets/vendor/flatpickr/dist/flatpickr.min.js')}}"></script>
-    <script src="{{asset('assets/js/plugins/flatpickr.js')}}" defer></script>
+    <script nonce="{{ csp_nonce() }}" src="{{asset('assets/vendor/flatpickr/dist/flatpickr.min.js')}}"></script>
+    <script nonce="{{ csp_nonce() }}" src="{{asset('assets/js/plugins/flatpickr.js')}}" defer></script>
     
-    <script src="{{asset('assets/js/plugins/prism.mini.js')}}"></script>
+    <script nonce="{{ csp_nonce() }}" src="{{asset('assets/js/plugins/prism.mini.js')}}"></script>
     
   </body>
 </html>

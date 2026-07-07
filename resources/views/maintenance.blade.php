@@ -19,7 +19,7 @@
   @endif
 
   <!-- Custom icons font-awesome -->
-  <script src="{{ asset('assets/external-dependencies/fontawesome.js') }}" crossorigin="anonymous"></script>
+  <script nonce="{{ csp_nonce() }}" src="{{ asset('assets/external-dependencies/fontawesome.js') }}" crossorigin="anonymous"></script>
 <link rel="stylesheet" href="{{ asset('assets/external-dependencies/fontawesome.css') }}" />
 
   @include('layouts.fonts') 

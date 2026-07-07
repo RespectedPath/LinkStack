@@ -72,7 +72,7 @@
                 Pick a photo, then drag inside the circle to reposition. JPG, PNG, or WebP &mdash; up to 2&nbsp;MB.
               </small>
               @if(file_exists(base_path(findAvatar(Auth::id()))))
-                <a href="{{ route('delProfilePicture') }}" class="small text-danger mt-1 d-inline-block" onclick="return confirm('Delete your profile photo?');">
+                <a href="{{ route('delProfilePicture') }}" class="small text-danger mt-1 d-inline-block" data-confirm="Delete your profile photo?">
                   <i class="bi bi-trash"></i> Remove current photo
                 </a>
               @endif

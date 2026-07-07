@@ -7,7 +7,7 @@
     {{trans('env-editor::env-editor.menuTitle')}}
 @endpush
 
-<script src="{{ asset('assets/external-dependencies/fontawesome.js') }}" crossorigin="anonymous"></script>
+<script nonce="{{ csp_nonce() }}" src="{{ asset('assets/external-dependencies/fontawesome.js') }}" crossorigin="anonymous"></script>
 
 @section('content')
     <div id="env-editor">
@@ -53,7 +53,7 @@
 @include('env-editor::components._backup')
 @include('env-editor::components._configActions')
 @push('scripts')
-    <script>
+    <script nonce="{{ csp_nonce() }}">
         window.envEventBus = new Vue();
         const envAlert = ($type, $text) => {
             let alert =
