@@ -67,7 +67,12 @@ class Headers
         $scriptCsp = implode('; ', [
             "script-src 'self' 'nonce-{$nonce}' https://www.googletagmanager.com",
             "style-src 'self' 'unsafe-inline' https:",
-            "img-src 'self' data: https:",
+            // blob: lets the editor load a user-picked file into an <img>
+            // for client-side resize/crop before upload (appearance.js —
+            // background + avatar). Same-origin, page-created; not a script
+            // vector. Without it those object-URL loads fail ("Couldn't
+            // read image").
+            "img-src 'self' data: blob: https:",
             "font-src 'self' data: https:",
             // 'self' so the studio can frame its own bio pages (the live
             // preview iframe — same-origin, http in local dev); https for
