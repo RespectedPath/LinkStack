@@ -50,6 +50,27 @@
        shell includes fills the right cell. Reuses .appearance-layout
        (1fr 1fr, stacks <=992px) so the split matches the old pages. */
     .mm-edit-content { min-width: 0; }
+
+    /* Draft/publish status bar */
+    .mm-publish-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        padding: 10px 14px;
+        margin-bottom: 16px;
+        border: 1px solid rgba(128, 128, 128, 0.25);
+        border-radius: 8px;
+        background: rgba(128, 128, 128, 0.06);
+        font-size: 0.92rem;
+    }
+    .mm-publish-bar--dirty {
+        border-color: var(--bs-primary, #3b82f6);
+        background: rgba(59, 130, 246, 0.08);
+    }
+    .mm-publish-status { display: inline-flex; align-items: center; gap: 4px; }
+    .mm-publish-bar .btn[disabled] { opacity: 0.5; }
 </style>
 
 <div class="container-fluid content-inner mt-n5 py-0">
@@ -57,6 +78,25 @@
     <div class="col-12">
       <div class="card rounded">
         <div class="card-body">
+
+          {{-- Draft/publish status bar. Edits save to your DRAFT and show
+               in the live preview; the public page only changes when you
+               Publish. CSP-safe: plain form POST, no inline JS. --}}
+          <div class="mm-publish-bar @if(!empty($isDirty)) mm-publish-bar--dirty @endif">
+            <span class="mm-publish-status">
+              @if(!empty($isDirty))
+                <i class="bi bi-dot"></i> You have <strong>unpublished changes</strong> &mdash; visible here, not yet on your public page.
+              @else
+                <i class="bi bi-check-circle"></i> Your public page is up to date.
+              @endif
+            </span>
+            <form action="{{ route('publish') }}" method="post" class="mb-0">
+              @csrf
+              <button type="submit" class="btn btn-primary btn-sm" @if(empty($isDirty)) disabled @endif>
+                <i class="bi bi-cloud-arrow-up"></i> Publish
+              </button>
+            </form>
+          </div>
 
           {{-- Shared flash + validation surface. Every tab's form
                redirects back here (old GET routes now point at this

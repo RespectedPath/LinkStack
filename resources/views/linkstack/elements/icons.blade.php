@@ -1,14 +1,15 @@
 <?php use App\Models\UserData; ?>
 
         @php
-            // Order by the `order` column (drag-to-reorder writes here)
-            // then by id as a tiebreaker for any rows that share an order.
-            $icons = DB::table('links')
-                ->where('user_id', $userinfo->id)
-                ->where('button_id', 94)
-                ->orderBy('order', 'asc')
-                ->orderBy('id', 'asc')
-                ->get();
+            // Social icons are drawn from the render's $links (the
+            // button-94 "icon" rows), NOT a fresh DB query — so
+            // draft/publish is honored: the public page shows the
+            // PUBLISHED social row, not the live draft. Same ordering as
+            // before: `order`, then `id` as a tiebreaker.
+            $icons = collect($links ?? [])
+                ->filter(fn ($l) => (($l->button_id ?? null) == 94) || (($l->name ?? null) === 'icon'))
+                ->sortBy(fn ($l) => sprintf('%011d%011d', (int) ($l->order ?? 0), (int) ($l->id ?? 0)))
+                ->values();
         @endphp
         @if(count($icons) > 0)
         <div class="row fadein social-icon-div">

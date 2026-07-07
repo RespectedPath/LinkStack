@@ -95,7 +95,15 @@ class UserController extends Controller
         if (empty($id)) {
             return abort(404);
         }
-     
+
+        // Draft/publish: public visitors get the PUBLISHED snapshot; the
+        // owner's ?preview=1 and users with no snapshot yet fall through
+        // to the live (draft) render below. See DRAFT-PUBLISH-PLAN.md.
+        $published = $this->maybePublishedView($id, $request, $littlelink_name);
+        if ($published !== null) {
+            return $published;
+        }
+
         $userinfo = User::select('id', 'name', 'littlelink_name', 'littlelink_description', 'theme', 'role', 'block', 'google_analytics_id', 'theme_customization')->where('id', $id)->first();
         $information = User::select('name', 'littlelink_name', 'littlelink_description', 'theme')->where('id', $id)->get();
         
@@ -143,7 +151,13 @@ class UserController extends Controller
         if (empty($id)) {
             return abort(404);
         }
-     
+
+        // Draft/publish (see littlelink() + DRAFT-PUBLISH-PLAN.md).
+        $published = $this->maybePublishedView($id, $request, $littlelink_name);
+        if ($published !== null) {
+            return $published;
+        }
+
         $userinfo = User::select('id', 'name', 'littlelink_name', 'littlelink_description', 'theme', 'role', 'block', 'google_analytics_id', 'theme_customization')->where('id', $id)->first();
         $information = User::select('name', 'littlelink_name', 'littlelink_description', 'theme')->where('id', $id)->get();
 
@@ -170,6 +184,43 @@ class UserController extends Controller
         }
 
         return view('linkstack.linkstack', ['userinfo' => $userinfo, 'information' => $information, 'links' => $links, 'littlelink_name' => $littlelink_name]);
+    }
+
+    /**
+     * Draft/publish decision for a bio page. Returns the PUBLISHED-
+     * snapshot view for public visitors, or null to let the caller fall
+     * through to its live (draft) render. The `block` (admin-disabled)
+     * flag is a live property and 404s immediately. Only the
+     * authenticated owner may see the live draft via ?preview=1 — any
+     * other ?preview=1 gets the published snapshot, so drafts can't leak.
+     */
+    private function maybePublishedView($id, request $request, $littlelink_name)
+    {
+        $owner = User::select('id', 'block', 'published_snapshot')->where('id', $id)->first();
+        if (!$owner) {
+            return null; // nonexistent — let the live path handle it
+        }
+        if ($owner->block == 'yes') {
+            abort(404); // page disabled by admin — immediate, not drafted
+        }
+
+        $isOwnerPreview = $request->boolean('preview') && Auth::check() && Auth::id() == $owner->id;
+        if ($isOwnerPreview || empty($owner->published_snapshot)) {
+            return null; // owner previewing the draft, or never published -> render live
+        }
+
+        $snap = json_decode($owner->published_snapshot, true);
+        if (!is_array($snap)) {
+            return null; // malformed snapshot -> fail safe to the live render
+        }
+
+        [$userinfo, $information, $links] = \App\Services\PublishedPage::hydrate($snap);
+        return view('linkstack.linkstack', [
+            'userinfo' => $userinfo,
+            'information' => $information,
+            'links' => $links,
+            'littlelink_name' => $littlelink_name,
+        ]);
     }
 
     //Redirect to user page
@@ -694,6 +745,15 @@ class UserController extends Controller
     public function showEditor()
     {
         $userId = Auth::id();
+
+        // Draft/publish: onboard this user to the snapshot model if the
+        // backfill missed them (or they're brand new), so their public
+        // page is snapshot-backed and edits become draft. No-op once set.
+        \App\Services\PublishedPage::ensureSnapshot($userId);
+        // Drives the "unpublished changes" banner: does the draft differ
+        // from what's published?
+        $isDirty = \App\Services\PublishedPage::isDirty($userId);
+
         $user   = User::find($userId);
 
         // Basics
@@ -726,8 +786,18 @@ class UserController extends Controller
             ->paginate(99999);
 
         return view('studio.edit', compact(
-            'user', 'pages', 'saved', 'sparseAppearance', 'fonts', 'configuredIcons', 'pagePage', 'links'
+            'user', 'pages', 'saved', 'sparseAppearance', 'fonts', 'configuredIcons', 'pagePage', 'links', 'isDirty'
         ));
+    }
+
+    /**
+     * Publish: promote the current draft (live DB) to the published
+     * snapshot the public /@handle renders from. See DRAFT-PUBLISH-PLAN.
+     */
+    public function publish(request $request)
+    {
+        \App\Services\PublishedPage::publishFor(Auth::id());
+        return redirect('/studio/edit')->with('success', 'Your page is now live.');
     }
 
     //Save littlelink page (name, description, logo)
