@@ -1339,6 +1339,25 @@ $(function() {
                 if (tn) tn.textContent = titleEl.value;
                 else btn.appendChild(pdoc.createTextNode(titleEl.value));
             }
+            // Icon: custom blocks render <i class="icon hvr-icon {custom_icon}">.
+            // Update the glyph in place ( <i> is font-based, so a class swap
+            // repaints it; if FontAwesome converted it to <svg>, swap in a
+            // fresh <i> instead). Skip <img> icons (custom_website favicons,
+            // which are URL-derived and can't be live-swapped).
+            var iconField = document.getElementById('custom_icon');
+            if (iconField) {
+                var iconEl = btn.querySelector('.icon');
+                if (iconEl && iconEl.tagName !== 'IMG') {
+                    var want = 'icon hvr-icon ' + (iconField.value || '');
+                    if (iconEl.tagName === 'I') {
+                        if (iconEl.className !== want) iconEl.className = want;
+                    } else {
+                        var ni = pdoc.createElement('i');
+                        ni.className = want;
+                        iconEl.replaceWith(ni);
+                    }
+                }
+            }
         }).catch(function () {});
     }
 
