@@ -226,15 +226,21 @@
 
     // ---------- Unsaved-changes warning ----------
     //
-    // Mark dirty on any edit; clear the flag when the user submits the
-    // save form or the reset form. beforeunload then asks the browser
-    // to show its native "are you sure you want to leave" prompt.
+    // Mark dirty on any appearance edit; beforeunload then asks the browser
+    // to show its native "are you sure you want to leave" prompt — but only
+    // for a genuine navigation away (a nav link, closing the tab).
+    //
+    // Every <form> submit on this editor is an intentional, non-destructive
+    // action — appearance Save, reset, profile-photo upload, and the top
+    // bar's Publish and Discard. None of them lose the user's edits, so
+    // clear the flag on any submit before the ensuing navigation. Capture
+    // phase so it fires no matter where the form lives on the page (the
+    // Publish/Discard forms sit outside the appearance layout).
 
     var dirty = false;
     wrap.addEventListener('input',  function () { dirty = true; });
     wrap.addEventListener('change', function () { dirty = true; });
-    form.addEventListener('submit', function () { dirty = false; });
-    if (resetForm) resetForm.addEventListener('submit', function () { dirty = false; });
+    document.addEventListener('submit', function () { dirty = false; }, true);
 
     window.addEventListener('beforeunload', function (e) {
         if (!dirty) return;
