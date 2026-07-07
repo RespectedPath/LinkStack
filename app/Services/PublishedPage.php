@@ -269,7 +269,7 @@ class PublishedPage
         $draftAvatar = findAvatar($userId); // 'assets/img/{file}' or 'error.error'
         if ($draftAvatar !== 'error.error' && is_file(base_path($draftAvatar))) {
             $ext = strtolower(pathinfo($draftAvatar, PATHINFO_EXTENSION)) ?: 'jpg';
-            @mkdir(base_path('assets/img/published'), 0755, true);
+            if (!is_dir(base_path('assets/img/published'))) @mkdir(base_path('assets/img/published'), 0755, true);
             foreach (glob(base_path('assets/img/published/' . $userId . '.*')) ?: [] as $old) {
                 @unlink($old);
             }
@@ -281,7 +281,7 @@ class PublishedPage
         $draftBg = findBackground($userId); // '{file}' or 'error.error'
         if ($draftBg !== 'error.error' && is_file(base_path('assets/img/background-img/' . $draftBg))) {
             $ext = strtolower(pathinfo($draftBg, PATHINFO_EXTENSION)) ?: 'jpg';
-            @mkdir(base_path('assets/img/background-img/published'), 0755, true);
+            if (!is_dir(base_path('assets/img/background-img/published'))) @mkdir(base_path('assets/img/background-img/published'), 0755, true);
             foreach (glob(base_path('assets/img/background-img/published/' . $userId . '.*')) ?: [] as $old) {
                 @unlink($old);
             }
