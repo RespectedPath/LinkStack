@@ -1274,6 +1274,19 @@ function submitFormWithParam(paramValue) {
 </script>
 
 <script nonce="{{ csp_nonce() }}">
+(function () {
+// Capture THIS page's CSP nonce (per-request). The block-type forms are
+// fetched from a *separate* request with a *different* nonce, so their
+// inline <script> nonces don't match this page's enforced script-src and
+// the browser silently blocks them. We re-inject those scripts with this
+// page's nonce so they actually run. The nonce content-attribute is hidden
+// from the DOM for security, but the .nonce property stays readable.
+var PAGE_NONCE = (document.currentScript && document.currentScript.nonce) || '';
+if (!PAGE_NONCE) {
+    var allScripts = document.getElementsByTagName('script');
+    for (var si = 0; si < allScripts.length; si++) { if (allScripts[si].nonce) { PAGE_NONCE = allScripts[si].nonce; break; } }
+}
+
 $(function() {
     var linkId      = $("input[name='linkid']").val();
     var initialType = $("input[name='typename']").val();
@@ -1298,13 +1311,47 @@ $(function() {
         $('#addBlockModal').modal('show');
     });
 
+    // innerHTML never executes injected <script> tags, and the partial's
+    // own nonce is rejected by this page's CSP — so re-create each script
+    // with PAGE_NONCE. This is what makes block-form JS (mode toggles,
+    // pickers, validation) run in the editor at all.
+    function runInjectedScripts(container) {
+        var scripts = Array.prototype.slice.call(container.querySelectorAll('script'));
+        scripts.forEach(function (old) {
+            var s = document.createElement('script');
+            for (var i = 0; i < old.attributes.length; i++) {
+                var a = old.attributes[i];
+                if (a.name.toLowerCase() !== 'nonce') { s.setAttribute(a.name, a.value); }
+            }
+            if (PAGE_NONCE) { s.setAttribute('nonce', PAGE_NONCE); }
+            if (old.src) { s.src = old.src; } else { s.textContent = old.textContent; }
+            old.parentNode.replaceChild(s, old);
+        });
+    }
+
     function LoadLinkTypeParams(typeId, currentLinkId) {
         var baseURL = <?php echo "\"" . url('') . "\""; ?>;
-        $("#link_params").html('<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>')
-                         .load(baseURL + '/studio/linkparamform_part/' + typeId + '/' + currentLinkId);
-        setTimeout(function() { document.dispatchEvent(new Event('contentLoaded')); }, 300);
+        var container = document.getElementById('link_params');
+        if (!container) { return; }
+        container.innerHTML = '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>';
+        // fetch + manual injection (not jQuery .load) so we control script
+        // execution and can stamp the correct nonce onto them.
+        fetch(baseURL + '/studio/linkparamform_part/' + typeId + '/' + currentLinkId, {
+            credentials: 'same-origin',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(function (r) { return r.text(); })
+        .then(function (html) {
+            container.innerHTML = html;
+            runInjectedScripts(container);
+            document.dispatchEvent(new Event('contentLoaded'));
+        })
+        .catch(function () {
+            container.innerHTML = '<div class="alert alert-danger" role="alert">Couldn\'t load this block\'s options. Please try again.</div>';
+        });
     }
 });
+})();
 </script>
 
 <script nonce="{{ csp_nonce() }}">
