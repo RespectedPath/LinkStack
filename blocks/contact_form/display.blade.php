@@ -2,7 +2,7 @@
 
 <div class="button-entrance contact-form-wrapper" style="--delay: {{ $initial ?? 1 }}s" id="contact-form-{{ $link->id }}">
     {!! block_appearance_style($link, ['id' => 'contact-form-' . $link->id, 'button' => ['.cf-submit'], 'heading' => ['.cf-heading'], 'summary_id' => 'block-' . $link->id]) !!}
-    <h3 class="cf-heading">{{ $link->title }}</h3>
+    @include('blocks::partials.block-heading', ['link' => $link, 'headingClass' => 'cf-heading'])
 
     @if(session('contact_form_success') === (int) $link->id)
         <div class="cf-banner cf-success" role="status">

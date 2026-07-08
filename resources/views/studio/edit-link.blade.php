@@ -414,20 +414,21 @@
                             $apColor   = $existingTP['appearance_color'] ?? '';
 
                             // The icon picker only does anything on blocks that render
-                            // <i class="... {custom_icon}"> — Custom Link buttons (button
-                            // name 'custom') and the Stripe payment block (renders it on
-                            // the CTA / multi-option prompt). Favicon buttons
-                            // (custom_website), brand socials, fixed-icon blocks
-                            // (vcard/phone/…) and the other rich blocks ignore
-                            // custom_icon, so the picker there would just store an icon
-                            // that never renders. Keep it for the add flow (button not
-                            // chosen yet) so new custom links still get it.
+                            // the icon: Custom Link buttons (button name 'custom') and
+                            // the rich blocks (contact_form / newsletter_signup /
+                            // stripe_payment), which render it on their heading via
+                            // blocks::partials.block-heading. Favicon buttons
+                            // (custom_website), brand socials and fixed-icon blocks
+                            // (vcard/phone/…) ignore custom_icon, so the picker there
+                            // would just store an icon that never renders. Keep it for
+                            // the add flow (button not chosen yet) so new custom links
+                            // still get it.
                             $mmIconButtonName = ($existingLink && $existingLink->button_id)
                                 ? optional(\App\Models\Button::find($existingLink->button_id))->name
                                 : null;
                             $blockUsesCustomIcon = ((int) $LinkID === 0)
                                 || ($mmIconButtonName === 'custom')
-                                || ($typename === 'stripe_payment');
+                                || in_array($typename, $mmRichButtonTypes, true);
 
                             // Theme baseline (Phase 5, THEME-APPEARANCE-PLAN.md):
                             // a block with no styling of its own hydrates the

@@ -9,7 +9,7 @@
 --}}
 <div class="button-entrance newsletter-wrapper" style="--delay: {{ $initial ?? 1 }}s" id="newsletter-signup-{{ $link->id }}">
     {!! block_appearance_style($link, ['id' => 'newsletter-signup-' . $link->id, 'button' => ['.ns-submit'], 'heading' => ['.ns-heading'], 'summary_id' => 'block-' . $link->id]) !!}
-    <h3 class="ns-heading">{{ $link->title }}</h3>
+    @include('blocks::partials.block-heading', ['link' => $link, 'headingClass' => 'ns-heading'])
 
     @if(session('newsletter_success') === (int) $link->id)
         <div class="ns-banner ns-success" role="status">

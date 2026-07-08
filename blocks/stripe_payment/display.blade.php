@@ -35,18 +35,13 @@
 
     $zeroDecimal = in_array($currencyCode, stripe_payment_zero_decimal_currencies(), true);
     $step        = $zeroDecimal ? '1' : '0.01';
-
-    // Optional FontAwesome icon from the block's icon picker (custom_icon
-    // column, e.g. "fas fa-mug-hot"). Rendered on the CTA button, or as a
-    // prefix on the multi-option prompt. Blank string when none is chosen.
-    $icon = trim((string) ($link->custom_icon ?? ''));
 @endphp
 
 <div class="button-entrance stripe-payment-wrapper" style="--delay: {{ $initial ?? 1 }}s" id="stripe-payment-{{ $link->id }}">
     {{-- Cancel deliberately excluded: a secondary action shouldn't
          take the accent recolor. --}}
     {!! block_appearance_style($link, ['id' => 'stripe-payment-' . $link->id, 'button' => ['.sp-option', '.sp-submit', '.sp-tip-confirm'], 'heading' => ['.sp-heading'], 'summary_id' => 'block-' . $link->id]) !!}
-    <h3 class="sp-heading">{{ $link->title }}</h3>
+    @include('blocks::partials.block-heading', ['link' => $link, 'headingClass' => 'sp-heading'])
 
     @if(session('stripe_payment_error') === (int) $link->id)
         <div class="sp-banner sp-error" role="alert">
@@ -57,7 +52,6 @@
     @if($mode === 'tip_jar')
         {{-- TIP JAR: one button reveals an inline amount form --}}
         <button type="button" class="button button-default sp-submit sp-tip-open" data-target="sp-tip-form-{{ $link->id }}">
-            @if($icon)<i class="{{ $icon }} sp-icon" aria-hidden="true"></i>@endif
             <span class="sp-cta">{{ $link->link ?: 'Leave a tip' }}</span>
         </button>
 
@@ -96,7 +90,7 @@
         {{-- FIXED PRICE, MULTIPLE OPTIONS: segmented button group --}}
         <form class="sp-form sp-options-form" method="POST" action="{{ route('stripePaymentCheckout', ['id' => $link->id]) }}">
             @csrf
-            @if($link->link)<p class="sp-lead">@if($icon)<i class="{{ $icon }} sp-icon" aria-hidden="true"></i>@endif{{ $link->link }}</p>@endif
+            @if($link->link)<p class="sp-lead">{{ $link->link }}</p>@endif
             <div class="sp-option-group">
                 @foreach($options as $i => $opt)
                     @php
@@ -125,7 +119,6 @@
         <form class="sp-form" method="POST" action="{{ route('stripePaymentCheckout', ['id' => $link->id]) }}">
             @csrf
             <button type="submit" class="button button-default sp-submit">
-                @if($icon)<i class="{{ $icon }} sp-icon" aria-hidden="true"></i>@endif
                 <span class="sp-cta">{{ $link->link ?: 'Pay now' }}</span>
                 <span class="sp-amount">{{ $symbol }}{{ $singleAmount }} {{ $currencyUp }}</span>
             </button>
