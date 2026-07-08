@@ -49,7 +49,7 @@
 
 <label for='link' class='form-label'>Button label</label>
 <input type='text' name='link' value='{{ $link ?? '' }}' class='form-control' maxlength="50" placeholder="Pay now" required />
-<span class='small text-muted'>Text on the main button. For multiple price options this appears above the option buttons; for a tip jar this is the button visitors click to open the amount input.</span><br>
+<span class='small text-muted'>Text on the payment button for a single price or a tip jar. (With multiple preset amounts, each option shows its own button instead.)</span><br>
 
 {{-- Mode selector --}}
 <label class='form-label' style='margin-top:20px;'>Payment mode</label>
@@ -64,7 +64,7 @@
 
 {{-- Fixed-price fields --}}
 <div id="sp-fixed-fields" class="mt-3" @if($currentMode !== 'fixed_price') style="display:none" @endif>
-    <p class="text-muted small">Configure up to three preset amounts. Visitors see one button per option. Only option 1 is required.</p>
+    <p class="text-muted small">For a single price, just set <strong>Option 1 amount</strong> &mdash; the button uses the <strong>Button label</strong> above. To offer choices, add 2&ndash;3 amounts (visitors see one button each); labels are optional and only used to name those choices.</p>
 
     @for($i = 1; $i <= 3; $i++)
       @php
@@ -73,11 +73,11 @@
       @endphp
       <div class="row mt-2">
         <div class="col-md-6">
-          <label for="option_{{ $i }}_label" class="form-label">Option {{ $i }} label @if($i === 1)<span class="text-muted">(required)</span>@else<span class="text-muted">(optional)</span>@endif</label>
-          <input type="text" name="option_{{ $i }}_label" id="option_{{ $i }}_label" value="{{ $prevLabel }}" class="form-control" maxlength="50" placeholder="{{ ['Basic','Standard','Premium'][$i-1] }}" @if($i === 1) @endif>
+          <label for="option_{{ $i }}_label" class="form-label">Option {{ $i }} label <span class="text-muted">(optional)</span></label>
+          <input type="text" name="option_{{ $i }}_label" id="option_{{ $i }}_label" value="{{ $prevLabel }}" class="form-control" maxlength="50" placeholder="{{ ['Basic','Standard','Premium'][$i-1] }}">
         </div>
         <div class="col-md-6">
-          <label for="option_{{ $i }}_amount" class="form-label">Option {{ $i }} amount</label>
+          <label for="option_{{ $i }}_amount" class="form-label">Option {{ $i }} amount @if($i === 1)<span class="text-muted">(required)</span>@endif</label>
           <div class="input-group">
             <span class="input-group-text sp-currency-symbol">{{ stripe_payment_currency_symbol($currencyCode) }}</span>
             <input type="number" name="option_{{ $i }}_amount" id="option_{{ $i }}_amount" value="{{ $fmt($prevAmount) }}" class="form-control" min="0.01" step="0.01" placeholder="5.00">

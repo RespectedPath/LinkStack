@@ -96,7 +96,7 @@
                         $optAmount = stripe_payment_format_smallest_unit((int) ($opt['amount_cents'] ?? 0), $currencyCode);
                     @endphp
                     <button type="submit" name="option_index" value="{{ $i }}" class="button button-default sp-option">
-                        <span class="sp-option-label">{{ $opt['label'] ?? 'Option ' . ($i + 1) }}</span>
+                        <span class="sp-option-label">{{ !empty($opt['label']) ? $opt['label'] : 'Option ' . ($i + 1) }}</span>
                         <span class="sp-option-amount">{{ $symbol }}{{ $optAmount }} {{ $currencyUp }}</span>
                     </button>
                 @endforeach

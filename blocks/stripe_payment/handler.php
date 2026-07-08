@@ -67,8 +67,10 @@ function handleLinkType($request, $linkType)
         'success_url'         => ['nullable', 'url', 'max:500'],
         'cancel_url'          => ['nullable', 'url', 'max:500'],
 
-        // fixed_price: at minimum option 1 is required; 2 and 3 are optional.
-        'option_1_label'  => ['required_if:mode,fixed_price', 'nullable', 'string', 'max:50'],
+        // fixed_price: option 1's AMOUNT is required; its label is optional
+        // (a single-price button shows the "Button label" above it, not the
+        // option label). Options 2 and 3 are fully optional.
+        'option_1_label'  => ['nullable', 'string', 'max:50'],
         'option_1_amount' => ['required_if:mode,fixed_price', 'nullable', 'numeric', 'min:0.01', 'max:999999.99'],
         'option_2_label'  => ['nullable', 'string', 'max:50'],
         'option_2_amount' => ['nullable', 'numeric', 'min:0.01', 'max:999999.99'],
@@ -108,7 +110,10 @@ function handleLinkType($request, $linkType)
         for ($i = 1; $i <= 3; $i++) {
             $label  = trim((string) $request->input("option_{$i}_label", ''));
             $amount = $request->input("option_{$i}_amount");
-            if ($label === '' || $amount === null || $amount === '') {
+            // An option needs an AMOUNT; the label is optional (a single
+            // price uses the Button label, and multi-option buttons fall
+            // back to "Option N" when a label is left blank).
+            if ($amount === null || $amount === '') {
                 continue;
             }
             $options[] = [
