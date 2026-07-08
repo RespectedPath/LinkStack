@@ -507,3 +507,41 @@ if (!function_exists('csp_nonce')) {
       return (string) request()->attributes->get('csp_nonce', '');
   }
 }
+
+/**
+ * Signed render-time token for the contact form's timing check. A real
+ * visitor takes a few seconds to fill the form; bots post instantly.
+ * Format: "<unix_ts>.<hmac>" — the HMAC (keyed by the app key) stops a bot
+ * forging an older timestamp to look like it waited.
+ */
+if (!function_exists('cf_form_token')) {
+  function cf_form_token(): string
+  {
+      $ts  = (string) time();
+      $sig = hash_hmac('sha256', $ts, (string) config('app.key'));
+      return $ts . '.' . $sig;
+  }
+}
+
+/**
+ * Validate a contact-form timing token and return the seconds elapsed since
+ * it was issued, or null if it is missing or forged. The caller rejects
+ * implausibly fast submissions (see ContactFormController::submit).
+ */
+if (!function_exists('cf_token_elapsed')) {
+  function cf_token_elapsed(?string $token): ?int
+  {
+      if (!is_string($token) || !str_contains($token, '.')) {
+          return null;
+      }
+      [$ts, $sig] = explode('.', $token, 2);
+      if ($ts === '' || !ctype_digit($ts)) {
+          return null;
+      }
+      $expected = hash_hmac('sha256', $ts, (string) config('app.key'));
+      if (!hash_equals($expected, (string) $sig)) {
+          return null;
+      }
+      return time() - (int) $ts;
+  }
+}

@@ -37,6 +37,18 @@ class ContactFormController extends Controller
                 ->withFragment("contact-form-$id");
         }
 
+        // Timing check: a real visitor takes a few seconds to fill the form;
+        // a bot posts instantly. A valid render token that arrived implausibly
+        // fast is treated like the honeypot — pretend success, send nothing.
+        // A missing/forged token is NOT blocked here (a stale cached page can
+        // lack it); the honeypot + per-IP rate limit still cover that case.
+        $elapsed = cf_token_elapsed($request->input('cf_ts'));
+        if ($elapsed !== null && $elapsed < 3) {
+            return back()
+                ->with('contact_form_success', (int) $id)
+                ->withFragment("contact-form-$id");
+        }
+
         $data = $request->validate([
             'name'    => ['required', 'string', 'max:100'],
             'email'   => ['required', 'email', 'max:255'],

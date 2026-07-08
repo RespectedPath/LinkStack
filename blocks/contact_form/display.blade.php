@@ -22,6 +22,10 @@
         {{-- Honeypot: inline-hidden so bots still see it but humans never do, even if styles.css fails to load --}}
         <input type="text" name="website" tabindex="-1" autocomplete="off" value="" aria-hidden="true" style="position:absolute !important;left:-10000px !important;top:-10000px !important;width:1px !important;height:1px !important;opacity:0 !important;pointer-events:none !important;">
 
+        {{-- Signed render-time token — the server rejects submissions that
+             arrive implausibly fast (bots post instantly). --}}
+        <input type="hidden" name="cf_ts" value="{{ cf_form_token() }}">
+
         <label for="cf-name-{{ $link->id }}" class="cf-label">Full name</label>
         <input type="text" id="cf-name-{{ $link->id }}" name="name" class="cf-input @error('name') cf-input-error @enderror" value="{{ old('name') }}" maxlength="100" required autocomplete="name">
         @error('name') <span class="cf-field-error">{{ $message }}</span> @enderror
