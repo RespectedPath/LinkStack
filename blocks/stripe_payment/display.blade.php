@@ -90,6 +90,7 @@
         {{-- FIXED PRICE, MULTIPLE OPTIONS: segmented button group --}}
         <form class="sp-form sp-options-form" method="POST" action="{{ route('stripePaymentCheckout', ['id' => $link->id]) }}">
             @csrf
+            @if($link->link)<p class="sp-lead">{{ $link->link }}</p>@endif
             <div class="sp-option-group">
                 @foreach($options as $i => $opt)
                     @php

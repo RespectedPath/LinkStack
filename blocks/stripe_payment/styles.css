@@ -19,6 +19,15 @@
     text-align: center;
 }
 
+/* Button-label prompt shown above a multi-option group. */
+.stripe-payment-wrapper .sp-lead {
+    margin: 0 0 10px 0;
+    font-size: 0.95rem;
+    font-weight: 500;
+    opacity: 0.85;
+    text-align: center;
+}
+
 .stripe-payment-wrapper .sp-form {
     display: block;
 }

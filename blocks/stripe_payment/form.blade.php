@@ -49,7 +49,7 @@
 
 <label for='link' class='form-label'>Button label</label>
 <input type='text' name='link' value='{{ $link ?? '' }}' class='form-control' maxlength="50" placeholder="Pay now" required />
-<span class='small text-muted'>Text on the payment button for a single price or a tip jar. (With multiple preset amounts, each option shows its own button instead.)</span><br>
+<span class='small text-muted'>The call to action shown to visitors. For a single price or a tip jar it's the text on the button; with multiple preset amounts it appears as a prompt just above the option buttons.</span><br>
 
 {{-- Mode selector --}}
 <label class='form-label' style='margin-top:20px;'>Payment mode</label>
@@ -80,7 +80,7 @@
           <label for="option_{{ $i }}_amount" class="form-label">Option {{ $i }} amount @if($i === 1)<span class="text-muted">(required)</span>@endif</label>
           <div class="input-group">
             <span class="input-group-text sp-currency-symbol">{{ stripe_payment_currency_symbol($currencyCode) }}</span>
-            <input type="number" name="option_{{ $i }}_amount" id="option_{{ $i }}_amount" value="{{ $fmt($prevAmount) }}" class="form-control" min="0.01" step="0.01" placeholder="5.00">
+            <input type="number" name="option_{{ $i }}_amount" id="option_{{ $i }}_amount" value="{{ $fmt($prevAmount) }}" class="form-control" min="0.01" step="0.01" placeholder="e.g. 5.00">
           </div>
         </div>
       </div>
@@ -96,7 +96,7 @@
             <label for="min_amount" class="form-label">Minimum amount <span class="text-muted">(optional)</span></label>
             <div class="input-group">
                 <span class="input-group-text sp-currency-symbol">{{ stripe_payment_currency_symbol($currencyCode) }}</span>
-                <input type="number" name="min_amount" id="min_amount" value="{{ $fmt($min_amount_cents ?? null) }}" class="form-control" min="0.01" step="0.01" placeholder="1.00">
+                <input type="number" name="min_amount" id="min_amount" value="{{ $fmt($min_amount_cents ?? null) }}" class="form-control" min="0.01" step="0.01" placeholder="e.g. 1.00">
             </div>
             <span class="small text-muted">Defaults to {{ stripe_payment_currency_symbol($currencyCode) }}1.00 if blank.</span>
         </div>
@@ -104,7 +104,7 @@
             <label for="suggested_amount" class="form-label">Suggested amount <span class="text-muted">(optional)</span></label>
             <div class="input-group">
                 <span class="input-group-text sp-currency-symbol">{{ stripe_payment_currency_symbol($currencyCode) }}</span>
-                <input type="number" name="suggested_amount" id="suggested_amount" value="{{ $fmt($suggested_amount_cents ?? null) }}" class="form-control" min="0.01" step="0.01" placeholder="5.00">
+                <input type="number" name="suggested_amount" id="suggested_amount" value="{{ $fmt($suggested_amount_cents ?? null) }}" class="form-control" min="0.01" step="0.01" placeholder="e.g. 5.00">
             </div>
             <span class="small text-muted">Pre-fills the visitor's input — remains editable.</span>
         </div>
@@ -143,19 +143,29 @@
 (function () {
     // Toggle between fixed-price and tip-jar field groups based on
     // the mode radio selection.
-    var fixed = document.getElementById('sp-fixed-fields');
-    var tip   = document.getElementById('sp-tip-fields');
+    var fixed   = document.getElementById('sp-fixed-fields');
+    var tip     = document.getElementById('sp-tip-fields');
+    var opt1amt = document.getElementById('option_1_amount');
+
+    // Show the fields for the chosen mode and mark Option 1's amount
+    // required only while fixed-price is active. Doing this client-side
+    // means an empty amount is caught by the browser before submit — so
+    // the user never round-trips to the server and loses their entries.
+    // (option_1_amount must NOT stay required while hidden, or the
+    // tip-jar form can't submit.)
+    function applyMode(mode) {
+        var isFixed = (mode !== 'tip_jar');
+        fixed.style.display = isFixed ? '' : 'none';
+        tip.style.display   = isFixed ? 'none' : '';
+        if (opt1amt) { opt1amt.required = isFixed; }
+    }
     document.querySelectorAll('.sp-mode-radio').forEach(function (r) {
         r.addEventListener('change', function () {
-            if (r.value === 'fixed_price' && r.checked) {
-                fixed.style.display = '';
-                tip.style.display   = 'none';
-            } else if (r.value === 'tip_jar' && r.checked) {
-                fixed.style.display = 'none';
-                tip.style.display   = '';
-            }
+            if (r.checked) { applyMode(r.value); }
         });
     });
+    var checkedMode = document.querySelector('.sp-mode-radio:checked');
+    applyMode(checkedMode ? checkedMode.value : 'fixed_price');
 
     // Live-update the currency-symbol prefix spans when the dropdown changes.
     var symbols = @json(array_combine(

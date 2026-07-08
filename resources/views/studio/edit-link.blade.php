@@ -832,7 +832,10 @@ function submitFormWithParam(paramValue) {
     paramField.setAttribute("name", "param");
     paramField.setAttribute("value", paramValue);
     form.appendChild(paramField);
-    form.submit();
+    // requestSubmit() (not submit()) runs HTML5 constraint validation first,
+    // so a missing required field is caught in-browser and the half-filled
+    // form is preserved — matching the primary Save button's behaviour.
+    if (form.requestSubmit) { form.requestSubmit(); } else { form.submit(); }
 }
 </script>
 
