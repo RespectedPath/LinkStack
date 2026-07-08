@@ -253,6 +253,20 @@
                     <script nonce="{{ csp_nonce() }}" src="{{ asset('assets/js/jquery.min.js') }}"></script>
                     @endpush
 
+                    {{-- Save-validation errors. saveLink redirects back here with
+                         these on a failed submit; without surfacing them a block
+                         that fails validation (e.g. a Stripe block missing a
+                         required field) silently doesn't save, which reads as
+                         "my block didn't show up". --}}
+                    @if($errors->any())
+                    <div class="alert alert-danger" role="alert">
+                        <strong>Couldn't save this block.</strong> Please fix the following and try again:
+                        <ul class="mb-0 mt-1">
+                            @foreach($errors->all() as $err)<li>{{ $err }}</li>@endforeach
+                        </ul>
+                    </div>
+                    @endif
+
                     @if($LinkID === 0)
                         {{-- ====================================================
                              ADD MODE: page is a grid of block-type tiles.

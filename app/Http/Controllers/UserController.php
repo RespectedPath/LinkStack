@@ -307,9 +307,17 @@ class UserController extends Controller
                 // Validate the request
                 $validator = Validator::make($request->all(), $rules);
 
-                // Check if validation fails
+                // Check if validation fails. Redirect explicitly back to the
+                // block editor (not back(), which can resolve to /dashboard and
+                // swallow the errors) so the user actually sees WHY the block
+                // didn't save — otherwise a failed save looks like the block
+                // silently never appeared.
                 if ($validator->fails()) {
-                    return back()->withErrors($validator)->withInput();
+                    $embed  = $request->boolean('embed') ? '?embed=1' : '';
+                    $target = empty($request->linkid)
+                        ? url('studio/add-link' . $embed)
+                        : url('studio/edit-link/' . (int) $request->linkid . $embed);
+                    return redirect($target)->withErrors($validator)->withInput();
                 }
 
                 $linkData['button_id'] = $linkData['button_id'] ?? 1; // Set 'button_id' unless overwritten by handleLinkType
