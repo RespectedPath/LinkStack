@@ -66,7 +66,7 @@
 </head>
 <body>
     <div class="container">
-        <h2>New message from your LinkStack contact form</h2>
+        <h2>New message from your Mail Minted contact form</h2>
 
         <div class="field">
             <span class="label">From</span>
@@ -79,7 +79,7 @@
         </div>
 
         <div class="footer">
-            Sent via your LinkStack page (block ID {{ $link->id }}).
+            Sent via your Mail Minted page (block ID {{ $link->id }}).
             Reply directly to this e-mail to respond to {{ $formData['name'] }}.
         </div>
     </div>

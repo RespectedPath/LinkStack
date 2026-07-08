@@ -9,7 +9,7 @@
 <span class='small text-muted'>Submissions are delivered to this address</span><br>
 
 <label for='subject' class='form-label'>Custom e-mail subject <span class='text-muted'>(optional)</span></label>
-<input type='text' name='subject' value='{{ $subject ?? '' }}' class='form-control' maxlength="150" placeholder="New message from your LinkStack contact form" />
+<input type='text' name='subject' value='{{ $subject ?? '' }}' class='form-control' maxlength="150" placeholder="New message from your Mail Minted contact form" />
 <span class='small text-muted'>Leave blank to use the default subject line</span>
 
 @include('studio.partials.block-collapsed-toggle')

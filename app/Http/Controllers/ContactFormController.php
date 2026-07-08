@@ -62,7 +62,7 @@ class ContactFormController extends Controller
         $customSubject = trim((string) ($params['subject'] ?? ''));
         $subject = $customSubject !== ''
             ? $customSubject
-            : 'New message from your LinkStack contact form';
+            : 'New message from your Mail Minted contact form';
 
         try {
             Mail::to($link->link)->send(new ContactFormMail($data, $subject, $link));
