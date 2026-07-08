@@ -28,6 +28,19 @@
     text-align: center;
 }
 
+/* Optional picker icon. On the CTA button it sits above the label (the
+   button is a centered column); on the multi-option prompt it's an inline
+   prefix. Scoped here so it doesn't inherit the global .icon positioning. */
+.stripe-payment-wrapper .sp-icon {
+    font-size: 1.25rem;
+    line-height: 1;
+}
+.stripe-payment-wrapper .sp-lead .sp-icon {
+    font-size: 1em;
+    margin-right: 0.4em;
+    vertical-align: -0.05em;
+}
+
 .stripe-payment-wrapper .sp-form {
     display: block;
 }
