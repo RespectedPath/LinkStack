@@ -860,6 +860,7 @@ $usrhandl = Auth::user()->littlelink_name;
 <script nonce="{{ csp_nonce() }}" src="{{ asset('assets/js/Sortable.min.js') }}"></script>
 <script nonce="{{ csp_nonce() }}" src="{{ asset('assets/js/jquery-block-ui.js') }}"></script>
 <script nonce="{{ csp_nonce() }}" src="{{ asset('assets/js/main-dashboard.js') }}?v={{ filemtime(public_path('assets/js/main-dashboard.js')) }}"></script>
+<script nonce="{{ csp_nonce() }}" src="{{ asset('assets/js/mm-confirm.js') }}?v={{ filemtime(public_path('assets/js/mm-confirm.js')) }}"></script>
 
 <script nonce="{{ csp_nonce() }}">
     // Delegated replacements for inline on*= attributes — a strict
@@ -867,16 +868,33 @@ $usrhandl = Auth::user()->littlelink_name;
     // the studio layout and cover every studio page (incl. the
     // block-editor iframe, which also extends this layout).
     (function () {
-        // Confirm-gated clicks: an element with data-confirm="msg" cancels
-        // its default action (navigation or form submit) if the user
-        // declines. Capture phase so it runs before the element's own
-        // handlers; stop propagation only when cancelling.
+        // Confirm-gated clicks: an element with data-confirm="msg" holds
+        // its default action (navigation, submit, or the element's own
+        // listeners) behind an INLINE yes/cancel strip — not
+        // window.confirm(), which Chrome silently suppresses after a few
+        // dismissals, leaving guarded buttons "doing nothing" for the
+        // rest of the tab. Capture phase so it runs before the element's
+        // own handlers; a one-shot flag lets the confirmed re-click pass.
         document.addEventListener('click', function (e) {
             var el = e.target.closest ? e.target.closest('[data-confirm]') : null;
-            if (el && !window.confirm(el.getAttribute('data-confirm'))) {
-                e.preventDefault();
-                e.stopImmediatePropagation();
+            if (!el) return;
+            if (el.dataset.mmConfirmed === '1') {
+                delete el.dataset.mmConfirmed;
+                return; // confirmed re-fire — let it through
             }
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            if (!window.mmConfirm) { // script failed to load — degrade to native
+                if (window.confirm(el.getAttribute('data-confirm'))) {
+                    el.dataset.mmConfirmed = '1';
+                    el.click();
+                }
+                return;
+            }
+            window.mmConfirm(el, el.getAttribute('data-confirm'), function () {
+                el.dataset.mmConfirmed = '1';
+                el.click();
+            });
         }, true);
 
         // Favicon fallback: <img data-fallback="url"> swaps to the

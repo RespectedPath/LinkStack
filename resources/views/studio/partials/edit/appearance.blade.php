@@ -162,7 +162,7 @@
                     <i class="bi bi-brush"></i> Your theme's background
                   </span>
                 @else
-                  <button type="button" id="bg-remove-btn" class="btn btn-sm btn-outline-danger">
+                  <button type="button" id="bg-remove-btn" class="btn btn-sm btn-outline-danger" data-confirm="Remove the current background image?">
                     <i class="bi bi-trash"></i> Remove &mdash; back to theme
                   </button>
                 @endif
@@ -339,7 +339,7 @@
     <form id="appearance-form" action="{{ route('saveAppearance') }}" method="post" class="appearance-save-form" data-preview-css-url="{{ route('previewAppearanceCss') }}">
       @csrf
       <div class="appearance-actions">
-        <button type="button" class="btn btn-outline-secondary" id="appearance-reset-btn">
+        <button type="button" class="btn btn-outline-secondary" id="appearance-reset-btn" data-confirm="Reset your appearance back to the theme's own look? This clears every color, font, shape, and background you changed.">
           <i class="bi bi-arrow-counterclockwise"></i> Reset to theme
         </button>
       </div>

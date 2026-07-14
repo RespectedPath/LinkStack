@@ -186,19 +186,29 @@
   // data-mm-set-theme="<slug>".
   document.addEventListener('click', function (e) {
     var el = e.target.closest ? e.target.closest('[data-mm-set-theme]') : null;
-    if (el) mmSetTheme(el.getAttribute('data-mm-set-theme'));
+    if (el) mmSetTheme(el.getAttribute('data-mm-set-theme'), el);
   });
-  function mmSetTheme(themeName) {
+  function mmSetTheme(themeName, cardEl) {
+    var proceed = function () {
+      var sel = document.getElementById('mm-theme-select');
+      sel.querySelector('option').value = themeName;
+      sel.form.submit();
+    };
     // Switching themes clears appearance overrides (editTheme does the
     // clearing server-side) — warn before losing work. Re-picking the
-    // current theme changes nothing, so no confirm.
-    if (mmThemeCustomized && themeName !== mmCurrentTheme &&
-        !confirm('Switching themes resets the appearance changes you made on your current theme, including an uploaded background photo. Styles you set on individual blocks are kept. Continue?')) {
+    // current theme changes nothing, so no confirm. Inline strip, not
+    // window.confirm: Chrome suppresses native dialogs after a few
+    // dismissals and the click would silently do nothing.
+    if (mmThemeCustomized && themeName !== mmCurrentTheme) {
+      var msg = 'Switching themes resets the appearance changes you made on your current theme, including an uploaded background photo. Styles you set on individual blocks are kept. Continue?';
+      if (window.mmConfirm && cardEl) {
+        window.mmConfirm(cardEl, msg, proceed, 'Switch theme');
+      } else if (confirm(msg)) { // fallback if the helper failed to load
+        proceed();
+      }
       return;
     }
-    var sel = document.getElementById('mm-theme-select');
-    sel.querySelector('option').value = themeName;
-    sel.form.submit();
+    proceed();
   }
   (function () {
     var input = document.getElementById('mm-theme-search');

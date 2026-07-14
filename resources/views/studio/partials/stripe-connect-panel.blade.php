@@ -48,7 +48,7 @@
                 '<div class="flex-grow-1">' +
                   '<div class="small">Stripe is connected — payments pay out to your account' +
                     (account ? ' (<code>' + esc(account) + '</code>)' : '') + '. This covers every payment block on your page.</div>' +
-                  '<button type="button" id="sp-disconnect" class="btn btn-sm btn-outline-danger mt-2">' +
+                  '<button type="button" id="sp-disconnect" class="btn btn-sm btn-outline-danger mt-2" data-confirm="Disconnect this Stripe account? Payment blocks will stop working until you reconnect.">' +
                     '<i class="bi bi-x-circle"></i> Disconnect</button>' +
                 '</div>' +
               '</div>' +
@@ -116,7 +116,9 @@
     }
 
     function doDisconnect() {
-        if (!confirm('Disconnect this Stripe account? Payment blocks will stop working until you reconnect.')) return;
+        // Confirm handled by the button's data-confirm attribute (inline
+        // strip via the sidebar layout's delegated handler) — reaching
+        // here means the user already confirmed.
         fetch(DISCONNECT_URL, {
             method: 'POST',
             headers: {

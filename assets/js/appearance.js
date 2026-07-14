@@ -87,13 +87,15 @@
 
     // ---------- Reset button → confirm + submit reset form ----------
 
+    // The confirm step lives on the button's data-confirm attribute —
+    // the sidebar layout's delegated handler gates the click behind an
+    // INLINE strip (never window.confirm, which Chrome can suppress).
+    // By the time this listener runs, the user already said yes.
     var resetBtn = document.getElementById('appearance-reset-btn');
     var resetForm = document.getElementById('appearance-reset-form');
     if (resetBtn && resetForm) {
         resetBtn.addEventListener('click', function () {
-            if (confirm("Reset your appearance back to the theme's own look? This clears every color, font, shape, and background you changed.")) {
-                resetForm.submit();
-            }
+            resetForm.submit();
         });
     }
 
@@ -339,7 +341,9 @@
 
     if (bgRemoveBtn) {
         bgRemoveBtn.addEventListener('click', function () {
-            if (!confirm('Remove the current background image?')) return;
+            // Confirm handled by the button's data-confirm attribute
+            // (inline strip via the sidebar layout) — reaching here
+            // means the user already confirmed.
             bgRemoveBtn.disabled = true;
             var fd = new FormData();
             fd.append('_token', readCsrf());
