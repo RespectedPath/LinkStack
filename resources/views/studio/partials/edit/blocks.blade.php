@@ -51,16 +51,23 @@ if(!function_exists('strp')){function strp($urlStrp){return str_replace(array('h
 @endphp
 
 <style>
-/* Type chip pinned to the row's top-right corner — out of the title's
-   text flow so it reads as a label on the box, not part of the name. */
+/* Chip cluster pinned to the row's top-right corner — out of the
+   title's text flow so it reads as labels on the box, not part of the
+   name. Holds the type chip plus (when the block carries styling of
+   its own) the mint "Customized" state chip. */
 #links-table-body > [data-id] { position: relative; }
-.mm-block-type-badge {
+.mm-block-badges {
     position: absolute;
     top: 8px;
     right: 10px;
-    /* the badge is a direct child of a Bootstrap .row, whose
+    /* the cluster is a direct child of a Bootstrap .row, whose
        `.row > *` rule forces width:100% — shrink-wrap it instead */
     width: auto !important;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.mm-block-type-badge {
     font-size: 0.62rem;
     font-weight: 600;
     letter-spacing: 0.02em;
@@ -120,8 +127,23 @@ if(!function_exists('strp')){function strp($urlStrp){return str_replace(array('h
                         if ($mmTypeLabel === null || $link->type === 'predefined') {
                             $mmTypeLabel = ucwords(str_replace(['default ', '_'], ['', ' '], (string) $buttonName)) ?: 'Link';
                         }
+
+                        // "Customized" chip: styling is stored sparsely
+                        // (Phase 5/6), so the mere presence of custom_css
+                        // (button channel) or appearance_heading /
+                        // appearance_color (color channels in type_params)
+                        // means this block has diverged from the theme.
+                        $mmRowTP = json_decode($link->type_params ?? '', true) ?: [];
+                        $mmBlockCustomized = trim((string) $link->custom_css) !== ''
+                            || trim((string) ($mmRowTP['appearance_heading'] ?? '')) !== ''
+                            || trim((string) ($mmRowTP['appearance_color'] ?? '')) !== '';
                     @endphp
-                    <span class="badge mm-block-type-badge">{{ $mmTypeLabel }}</span>
+                    <span class="mm-block-badges">
+                        @if($mmBlockCustomized)
+                        <span class="badge bg-soft-primary mm-edited-badge" title="This block has its own styling on top of your theme — open Edit to change it or reset it to the theme">Customized</span>
+                        @endif
+                        <span class="badge mm-block-type-badge">{{ $mmTypeLabel }}</span>
+                    </span>
                     <div class="d-flex ">
 
                         <div class='col-auto p-2 my-auto mr-2' title="{{ $link->link }}">
