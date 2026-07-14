@@ -1127,7 +1127,7 @@ class UserController extends Controller
             $zip = new ZipArchive;
             if ($zip->open($tmpPath) !== true) {
                 @unlink($tmpPath);
-                return Redirect('/studio/edit#themes')->with('error', 'Could not read the theme archive.');
+                return Redirect('/studio/edit#appearance')->with('error', 'Could not read the theme archive.');
             }
 
             // Zip Slip guard: reject the archive if ANY entry would land
@@ -1147,7 +1147,7 @@ class UserController extends Controller
                 if ($entry[0] === '/' || preg_match('#(^|/)\.\.(/|$)#', $entry)) {
                     $zip->close();
                     @unlink($tmpPath);
-                    return Redirect('/studio/edit#themes')
+                    return Redirect('/studio/edit#appearance')
                         ->with('error', 'Theme archive contains unsafe file paths and was rejected.');
                 }
             }
@@ -1192,7 +1192,7 @@ class UserController extends Controller
         // Both the customer theme-select and the admin zip-upload land on
         // the unified editor's Themes tab, where the chosen/new theme is
         // immediately visible in the grid. (item 12a)
-        return Redirect('/studio/edit#themes')->with("success", $message);
+        return Redirect('/studio/edit#appearance')->with("success", $message);
     }
 
     //Show user (name, email, password)

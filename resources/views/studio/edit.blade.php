@@ -133,7 +133,6 @@
           {{-- ===== Top-level tabs ===== --}}
           <nav class="mm-edit-tabs" role="tablist" aria-label="Page editor sections">
             <button type="button" class="mm-edit-tab" data-mm-tab="basics"     role="tab"><i class="bi bi-person-vcard"></i> Basics</button>
-            <button type="button" class="mm-edit-tab" data-mm-tab="themes"     role="tab"><i class="bi bi-brush"></i> Themes</button>
             <button type="button" class="mm-edit-tab" data-mm-tab="appearance" role="tab"><i class="bi bi-palette-fill"></i> Appearance</button>
             <button type="button" class="mm-edit-tab" data-mm-tab="social"     role="tab"><i class="bi bi-share-fill"></i> Social</button>
             <button type="button" class="mm-edit-tab" data-mm-tab="blocks"     role="tab"><i class="bi bi-link-45deg"></i> Blocks</button>
@@ -143,8 +142,14 @@
           <div class="appearance-layout">
             <div class="mm-edit-content">
               <div class="mm-pane" id="pane-basics"     role="tabpanel">@include('studio.partials.edit.basics')</div>
-              <div class="mm-pane" id="pane-themes"     role="tabpanel">@include('studio.partials.edit.themes')</div>
-              <div class="mm-pane" id="pane-appearance" role="tabpanel">@include('studio.partials.edit.appearance')</div>
+              {{-- One styling home (Linktree layout): the theme gallery sits at
+                   the top of the Appearance pane, the fine-tuning controls below.
+                   The old standalone Themes tab is gone; #themes deep-links are
+                   aliased to this pane in the tab JS. --}}
+              <div class="mm-pane" id="pane-appearance" role="tabpanel">
+                @include('studio.partials.edit.themes')
+                @include('studio.partials.edit.appearance')
+              </div>
               <div class="mm-pane" id="pane-social"     role="tabpanel">@include('studio.partials.edit.social')</div>
               <div class="mm-pane" id="pane-blocks"     role="tabpanel">@include('studio.partials.edit.blocks')</div>
             </div>
@@ -164,12 +169,15 @@
 <script nonce="{{ csp_nonce() }}" src="{{ asset('assets/js/appearance.js') }}?v={{ filemtime(public_path('assets/js/appearance.js')) }}"></script>
 <script nonce="{{ csp_nonce() }}">
 (function () {
-    var VALID = ['basics', 'themes', 'appearance', 'social', 'blocks'];
+    var VALID = ['basics', 'appearance', 'social', 'blocks'];
     var tabs  = Array.prototype.slice.call(document.querySelectorAll('.mm-edit-tab'));
     var panes = {};
     VALID.forEach(function (t) { panes[t] = document.getElementById('pane-' + t); });
 
     function activate(name, push) {
+        // The theme gallery merged into the Appearance pane; old #themes
+        // bookmarks, redirects, and in-page links land there.
+        if (name === 'themes') name = 'appearance';
         if (VALID.indexOf(name) === -1) name = 'basics';
         tabs.forEach(function (btn) {
             var on = btn.getAttribute('data-mm-tab') === name;

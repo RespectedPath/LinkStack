@@ -181,12 +181,13 @@ Route::post('/studio/social-icons/reorder', [UserController::class, 'reorderSoci
 // Theme SELECTION moved into the unified editor's Themes tab (item 12a).
 // /studio/theme now serves ONLY the admin theme-zip management surface:
 // admins render the page (which carries "Manage themes"); everyone else
-// is redirected to the editor's Themes tab. The POST (editTheme) still
-// handles both customer theme-select and admin upload.
+// is redirected to the editor's Appearance tab (which hosts the theme
+// gallery). The POST (editTheme) still handles both customer
+// theme-select and admin upload.
 Route::get('/studio/theme', function () {
     return (auth()->check() && auth()->user()->role === 'admin')
         ? app(UserController::class)->showTheme(request())
-        : redirect('/studio/edit#themes');
+        : redirect('/studio/edit#appearance');
 })->name('showTheme');
 Route::post('/studio/theme', [UserController::class, 'editTheme'])->name('editTheme');
 Route::get('/deleteLink/{id}', [UserController::class, 'deleteLink'])->name('deleteLink')->middleware('link-id');

@@ -127,10 +127,9 @@ class AppearanceController extends Controller
         $user = User::find(Auth::id());
         $user->theme_customization = null;
         $user->save();
-        // Reset lives on both the Appearance tab and the Themes tab
-        // (next to the Customized badge) — land back where it was used.
-        $tab = $request->input('return_to') === 'themes' ? 'themes' : 'appearance';
-        return redirect('/studio/edit#' . $tab)->with('success', 'Appearance reset to your theme.');
+        // The theme gallery and the appearance controls share one pane
+        // now — reset always lands on it.
+        return redirect('/studio/edit#appearance')->with('success', 'Appearance reset to your theme.');
     }
 
     /**

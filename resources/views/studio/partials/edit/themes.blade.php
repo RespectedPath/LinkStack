@@ -1,10 +1,10 @@
 {{--
-    Themes tab — customer-facing theme picker, ported from the standalone
-    /studio/theme page into the unified editor (UI-IMPROVEMENTS item 12a).
+    Theme gallery — customer-facing theme picker. Lives at the TOP of the
+    Appearance pane (one styling home: theme first, fine-tuning below).
     Shows the current theme + a "Browse themes" button that opens a
     fullscreen modal grid (search + category sections). Picking a card
-    submits to the existing editTheme route, which now redirects back to
-    /studio/edit#themes.
+    submits to the existing editTheme route, which redirects back to
+    /studio/edit#appearance.
 
     IDs are prefixed `mm-theme-*` to avoid colliding with anything else on
     the unified editor page. The admin-only "Manage themes" (theme-zip
@@ -40,7 +40,7 @@
   <h3 class="mb-4 card-header"><i class="bi bi-brush"></i> Themes</h3>
   <p class="text-muted small">
     A theme sets your page's overall look — colors, fonts, and background.
-    You can fine-tune anything afterward on the Appearance tab.
+    You can fine-tune everything in the sections below.
   </p>
 
   <div class="d-flex align-items-center gap-3 mb-3" style="flex-wrap: wrap;">
@@ -57,7 +57,6 @@
       @if($mmCustomized)
         <form action="{{ route('resetAppearance') }}" method="post" class="mt-2">
           @csrf
-          <input type="hidden" name="return_to" value="themes">
           <button type="submit" class="btn btn-sm btn-outline-secondary"
                   data-confirm="Reset your appearance back to the theme's own look? This clears every color, font, shape, and background you changed.">
             <i class="bi bi-arrow-counterclockwise"></i> Reset to theme
