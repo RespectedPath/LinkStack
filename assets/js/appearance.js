@@ -300,10 +300,22 @@
                 canvas.width = w;
                 canvas.height = h;
                 canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                canvas.toBlob(function (blob) {
-                    if (!blob) return reject(new Error('Render failed'));
-                    resolve(new File([blob], 'background.jpg', { type: 'image/jpeg' }));
-                }, 'image/jpeg', 0.82);
+                // Dense, fine-grained photos can top the server's 2MB cap
+                // even at 1920px q0.82 (~3MB worst case) — step the quality
+                // down until the encode fits, so "we resize it for you"
+                // holds for EVERY photo, not just smooth ones. q0.5 noise
+                // at 1920px is ~1.2MB, so the floor always lands under cap.
+                var SIZE_CAP = 1900 * 1024; // margin under the server's 2MB rule
+                var qualities = [0.82, 0.7, 0.6, 0.5];
+                (function encodeAt(qi) {
+                    canvas.toBlob(function (blob) {
+                        if (!blob) return reject(new Error('Render failed'));
+                        if (blob.size > SIZE_CAP && qi + 1 < qualities.length) {
+                            return encodeAt(qi + 1);
+                        }
+                        resolve(new File([blob], 'background.jpg', { type: 'image/jpeg' }));
+                    }, 'image/jpeg', qualities[qi]);
+                })(0);
             };
             img.onerror = function () {
                 URL.revokeObjectURL(url);
