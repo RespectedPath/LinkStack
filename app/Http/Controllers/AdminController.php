@@ -328,11 +328,23 @@ class AdminController extends Controller
   //Save user edit
   public function editUser(request $request)
   {
+    // The two uploads had NO rules at all — any file, any size. Same
+    // safety net as the customer paths (the admin page resizes in the
+    // browser first, so a >2MB arrival means that was bypassed).
     $request->validate([
       "name" => "",
       "email" => "",
       "password" => "",
       "littlelink_name" => "",
+      "image"      => ["nullable", "image", "mimes:jpeg,jpg,png,webp", "max:2048"],
+      "background" => ["nullable", "image", "mimes:jpeg,jpg,png,webp", "max:2048"],
+    ], [
+      "image.image"      => __("messages.The selected file must be an image"),
+      "image.mimes"      => __("messages.The image must be") . " JPEG, JPG, PNG, webP.",
+      "image.max"        => __("messages.The image size should not exceed 2MB"),
+      "background.image" => __("messages.The selected file must be an image"),
+      "background.mimes" => __("messages.The image must be") . " JPEG, JPG, PNG, webP.",
+      "background.max"   => __("messages.The image size should not exceed 2MB"),
     ]);
 
     $id = $request->id;
@@ -376,22 +388,28 @@ class AdminController extends Controller
       $profilePhoto->move(base_path("assets/img"), $id . "_" . time() . ".png");
     }
     if (!empty($customBackground)) {
-      $directory = base_path("assets/img/background-img/");
-      $files = scandir($directory);
-      $pathinfo = "error.error";
-      foreach ($files as $file) {
-        if (strpos($file, $id . ".") !== false) {
-          $pathinfo = $id . "." . pathinfo($file, PATHINFO_EXTENSION);
-        }
-      }
-      if (file_exists(base_path("assets/img/background-img/") . $pathinfo)) {
-        File::delete(base_path("assets/img/background-img/") . $pathinfo);
-      }
+      // Both-or-neither invariant (same as the customer uploader): the
+      // bio renderer keys off FILE existence, the Appearance UI off the
+      // sparse blob — writing only the file left the customer's own
+      // Background pill claiming "theme's own" with no Remove button.
+      // Clean every old file (legacy {id}.ext and {id}_time.ext names),
+      // write the new one, and record the override in the blob.
+      \App\Http\Controllers\AppearanceController::removeBackgroundFileIfPresent($id);
 
-      $customBackground->move(
-        base_path("assets/img/background-img/"),
-        $id . "_" . time() . "." . $request->file("background")->extension(),
-      );
+      $fileName = $id . "_" . time() . "." . $customBackground->extension();
+      $customBackground->move(base_path("assets/img/background-img/"), $fileName);
+
+      $targetUser = User::find($id);
+      if ($targetUser) {
+        $sparse = \App\Http\Controllers\AppearanceController::sparseForUser($targetUser);
+        $sparse["background"] = [
+          "type"      => "image",
+          "image_url" => "/assets/img/background-img/" . $fileName,
+        ];
+        $targetUser->theme_customization = json_encode($sparse, JSON_UNESCAPED_SLASHES);
+        $targetUser->save();
+      }
+      \App\Services\PublishedPage::markImageDirty($id);
     }
 
     return redirect("admin/users/all");

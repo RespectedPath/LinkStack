@@ -266,10 +266,20 @@ class AppearanceController extends Controller
     {
         $dir = base_path('assets/img/background-img');
         if (!is_dir($dir)) return;
-        $prefix = $userId . '_';
+        // Two naming eras: {id}_{time}.{ext} (current uploads) and the
+        // stock-LinkStack {id}.{ext} the old admin uploader wrote. Both
+        // must go, or a legacy-named file survives a theme switch /
+        // reset and keeps rendering (the bio page checks file
+        // existence). The dot variant can't over-match: "12." never
+        // prefixes user 123's files.
+        $prefixes = [$userId . '_', $userId . '.'];
         foreach (scandir($dir) ?: [] as $entry) {
             if ($entry === '.' || $entry === '..') continue;
-            if (strpos($entry, $prefix) !== 0) continue;
+            $matches = false;
+            foreach ($prefixes as $p) {
+                if (strpos($entry, $p) === 0) { $matches = true; break; }
+            }
+            if (!$matches) continue;
             $full = $dir . '/' . $entry;
             if (is_file($full)) {
                 @unlink($full);

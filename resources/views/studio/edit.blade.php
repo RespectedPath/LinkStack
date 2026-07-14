@@ -166,6 +166,7 @@
 {{-- appearance.js drives the Appearance tab (photo cropper, bg upload,
      swatch state, reset). Loaded once at body end. --}}
 @push('sidebar-scripts')
+<script nonce="{{ csp_nonce() }}" src="{{ asset('assets/js/mm-image-resize.js') }}?v={{ filemtime(public_path('assets/js/mm-image-resize.js')) }}"></script>
 <script nonce="{{ csp_nonce() }}" src="{{ asset('assets/js/appearance.js') }}?v={{ filemtime(public_path('assets/js/appearance.js')) }}"></script>
 <script nonce="{{ csp_nonce() }}">
 (function () {

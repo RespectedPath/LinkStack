@@ -77,6 +77,23 @@ class AppearanceThemeTest extends TestCase
         $this->assertCount(0, $this->backgroundFiles($user->id), 'switching themes must delete the uploaded background file');
     }
 
+    public function test_theme_switch_also_removes_legacy_named_background_files(): void
+    {
+        // The stock admin uploader wrote {id}.{ext} (no underscore) —
+        // those must not survive a switch either, or the old photo
+        // keeps rendering (the bio page checks file existence).
+        $user = $this->makeUser(['id' => $this->nextId++, 'theme' => 'themeA']);
+        $dir = base_path('assets/img/background-img');
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0755, true);
+        }
+        file_put_contents($dir . '/' . $user->id . '.png', 'legacy-bytes');
+
+        $this->actingAs($user)->post('/studio/theme', ['theme' => 'themeB']);
+
+        $this->assertCount(0, glob($dir . '/' . $user->id . '*') ?: [], 'legacy-named background must be deleted on switch');
+    }
+
     public function test_repicking_the_same_theme_keeps_overrides_and_file(): void
     {
         $user = $this->makeUserWithBackground(['theme' => 'themeA']);

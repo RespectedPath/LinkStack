@@ -286,46 +286,10 @@
     }
 
     function resizeForBackground(file) {
-        return new Promise(function (resolve, reject) {
-            var MAX_DIM = 1920;
-            var url = URL.createObjectURL(file);
-            var img = new Image();
-            img.onload = function () {
-                URL.revokeObjectURL(url);
-                var longest = Math.max(img.naturalWidth, img.naturalHeight);
-                var ratio = Math.min(1, MAX_DIM / longest);
-                var w = Math.round(img.naturalWidth * ratio);
-                var h = Math.round(img.naturalHeight * ratio);
-                var canvas = document.createElement('canvas');
-                canvas.width = w;
-                canvas.height = h;
-                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                // Dense, fine-grained photos can top the server's 2MB cap
-                // even at 1920px q0.82 (~3MB worst case) — step the quality
-                // down until the encode fits, so "we resize it for you"
-                // holds for EVERY photo, not just smooth ones. q0.5 noise
-                // at 1920px is ~1.2MB, so the floor always lands under cap.
-                var SIZE_CAP = 1900 * 1024; // margin under the server's 2MB rule
-                var qualities = [0.82, 0.7, 0.6, 0.5];
-                (function encodeAt(qi) {
-                    canvas.toBlob(function (blob) {
-                        if (!blob) return reject(new Error('Render failed'));
-                        if (blob.size > SIZE_CAP && qi + 1 < qualities.length) {
-                            return encodeAt(qi + 1);
-                        }
-                        resolve(new File([blob], 'background.jpg', { type: 'image/jpeg' }));
-                    }, 'image/jpeg', qualities[qi]);
-                })(0);
-            };
-            img.onerror = function () {
-                URL.revokeObjectURL(url);
-                // Most common cause: a cloud-drive "online-only" file whose
-                // bytes aren't on this device yet, so the picker hands us a
-                // handle we can't actually decode. Tell the user how to fix it.
-                reject(new Error('Couldn\'t read that image. If it\'s in a cloud drive (Google Drive, iCloud, OneDrive), download it to your device first, then upload.'));
-            };
-            img.src = url;
-        });
+        // Shared util (mm-image-resize.js): 1920px dimension cap + JPEG
+        // quality stepping so the encode always fits the server's 2MB
+        // rule. Loaded by the shell before this file.
+        return window.mmResizeImage(file, { maxDim: 1920, name: 'background.jpg' });
     }
 
     if (bgUploadBtn && bgFile) {

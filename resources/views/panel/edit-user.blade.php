@@ -17,7 +17,7 @@
                           <div class="card-body p-0 p-md-3">
                   
                         @foreach($user as $user)
-                        <form action="{{ route('editUser', $user->id) }}" enctype="multipart/form-data" method="post">
+                        <form action="{{ route('editUser', $user->id) }}" enctype="multipart/form-data" method="post" id="mm-admin-user-form">
                           @csrf
                               <div class="form-group col-lg-8">
                               <label>{{__('messages.Name')}}</label>
@@ -127,8 +127,49 @@
                               </select>
                             </div>
                             @endforeach
+                            <div id="mm-admin-upload-status" class="small text-danger ml-3"></div>
                             <button type="submit" class="mt-3 ml-3 btn btn-primary">{{__('messages.Save')}}</button>
                           </form>
+
+                          {{-- Same resize promise the customer uploaders keep
+                               (shared mm-image-resize.js): picked photos are
+                               shrunk in-browser before the multipart post, so
+                               big originals can't bounce off the server's 2MB
+                               cap; unreadable files (cloud stubs, HEIC) are
+                               blocked with an actionable message instead of
+                               posting raw. --}}
+                          <script nonce="{{ csp_nonce() }}" src="{{ asset('assets/js/mm-image-resize.js') }}?v={{ filemtime(public_path('assets/js/mm-image-resize.js')) }}"></script>
+                          <script nonce="{{ csp_nonce() }}">
+                          (function () {
+                              var form = document.getElementById('mm-admin-user-form');
+                              if (!form || !window.mmResizeImage) return;
+                              form.addEventListener('submit', function (e) {
+                                  var logo = form.querySelector('input[name="image"]');
+                                  var bg   = form.querySelector('input[name="background"]');
+                                  var jobs = [];
+                                  if (logo && logo.files && logo.files[0]) jobs.push({ input: logo, opts: { maxDim: 1024, name: 'avatar.jpg' } });
+                                  if (bg   && bg.files   && bg.files[0])   jobs.push({ input: bg,   opts: { maxDim: 1920, name: 'background.jpg' } });
+                                  if (!jobs.length) return; // no files picked — plain native submit
+                                  e.preventDefault();
+                                  var status = document.getElementById('mm-admin-upload-status');
+                                  if (status) status.textContent = 'Preparing image…';
+                                  Promise.all(jobs.map(function (j) {
+                                      return window.mmResizeImage(j.input.files[0], j.opts).then(function (file) {
+                                          var dt = new DataTransfer();
+                                          dt.items.add(file);
+                                          j.input.files = dt.files;
+                                      });
+                                  })).then(function () {
+                                      if (status) status.textContent = '';
+                                      // Native submit (skips this handler) — same
+                                      // pattern as the studio photo cropper.
+                                      HTMLFormElement.prototype.submit.call(form);
+                                  }).catch(function (err) {
+                                      if (status) status.textContent = (err && err.message) || 'Couldn\'t read that image.';
+                                  });
+                              });
+                          })();
+                          </script>
                   
                             </div>
                   </section>
