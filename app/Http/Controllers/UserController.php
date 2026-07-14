@@ -1113,6 +1113,14 @@ class UserController extends Controller
         $update = ['theme' => $theme];
         if ($theme !== User::where('id', $userId)->value('theme')) {
             $update['theme_customization'] = null;
+            // The uploaded background is a FILE the bio renderer keys
+            // off directly (linkstack/modules/theme.blade.php checks
+            // file existence, not the blob) — clearing only the blob
+            // left the old photo rendering over the new theme, with
+            // the Remove button hidden because the blob said there was
+            // nothing to remove.
+            \App\Http\Controllers\AppearanceController::removeBackgroundFileIfPresent($userId);
+            \App\Services\PublishedPage::markImageDirty($userId);
         }
         User::where('id', $userId)->update($update);
 

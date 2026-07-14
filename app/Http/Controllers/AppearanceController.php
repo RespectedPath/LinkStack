@@ -127,6 +127,12 @@ class AppearanceController extends Controller
         $user = User::find(Auth::id());
         $user->theme_customization = null;
         $user->save();
+        // The confirm copy promises "clears every color, font, shape,
+        // and background you changed" — the uploaded background is a
+        // FILE, and the bio renderer keys off file existence, so it
+        // must go too or the image survives the reset.
+        self::removeBackgroundFileIfPresent($user->id);
+        \App\Services\PublishedPage::markImageDirty($user->id);
         // The theme gallery and the appearance controls share one pane
         // now — reset always lands on it.
         return redirect('/studio/edit#appearance')->with('success', 'Appearance reset to your theme.');
@@ -248,8 +254,15 @@ class AppearanceController extends Controller
      * Delete any existing background file(s) for this user. Same
      * scandir-directly pattern the avatar cleanup uses so a stale
      * reference never spins us into an infinite loop.
+     *
+     * Public static because the public bio renderer decides the
+     * background by FILE EXISTENCE (linkstack/modules/theme.blade.php),
+     * not by the sparse blob — so every code path that clears the
+     * blob's background override (remove button, theme switch, reset
+     * to theme) MUST also delete the file, or the old image keeps
+     * rendering with no UI left to remove it.
      */
-    private function removeBackgroundFileIfPresent($userId): void
+    public static function removeBackgroundFileIfPresent($userId): void
     {
         $dir = base_path('assets/img/background-img');
         if (!is_dir($dir)) return;

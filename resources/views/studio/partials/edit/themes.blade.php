@@ -193,7 +193,7 @@
     // clearing server-side) — warn before losing work. Re-picking the
     // current theme changes nothing, so no confirm.
     if (mmThemeCustomized && themeName !== mmCurrentTheme &&
-        !confirm('Switching themes resets the appearance changes you made on your current theme. Styles you set on individual blocks are kept. Continue?')) {
+        !confirm('Switching themes resets the appearance changes you made on your current theme, including an uploaded background photo. Styles you set on individual blocks are kept. Continue?')) {
       return;
     }
     var sel = document.getElementById('mm-theme-select');
