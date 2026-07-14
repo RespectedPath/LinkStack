@@ -115,6 +115,23 @@ class AppearanceThemeTest extends TestCase
         $this->assertTrue((bool) $user->has_unpublished_changes, 'background removal must flag the published page as stale');
     }
 
+    public function test_oversized_upload_is_rejected_with_a_readable_message(): void
+    {
+        $user = $this->makeUser(['id' => $this->nextId++]);
+
+        // The Background pill's JS renders the 422 JSON's `message`
+        // verbatim — pin that the contract holds (a raw >2MB file only
+        // reaches the server when the client-side resize was bypassed).
+        $response = $this->actingAs($user)->postJson('/studio/appearance/background-image', [
+            'image' => UploadedFile::fake()->image('huge.jpg', 800, 600)->size(3000),
+        ]);
+
+        $response->assertStatus(422);
+        $this->assertNotEmpty($response->json('message'));
+        $this->assertStringContainsString('2MB', $response->json('message'));
+        $this->assertCount(0, $this->backgroundFiles($user->id), 'rejected upload must not leave a file');
+    }
+
     public function test_upload_stores_file_and_override_then_remove_clears_both(): void
     {
         $user = $this->makeUser(['id' => $this->nextId++]);

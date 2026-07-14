@@ -341,9 +341,16 @@
                 });
             }).then(function (resp) {
                 if (!resp.ok) {
-                    bgSetStatus('Upload failed (' + resp.status + ').', 'err');
-                    bgUploadBtn.disabled = false;
-                    return;
+                    // Laravel's 422 JSON carries the actual reason
+                    // ("The image size should not exceed 2MB." etc.) —
+                    // show it instead of a bare status code.
+                    return resp.json().then(function (j) {
+                        bgSetStatus((j && j.message) || ('Upload failed (' + resp.status + ').'), 'err');
+                    }).catch(function () {
+                        bgSetStatus('Upload failed (' + resp.status + ').', 'err');
+                    }).then(function () {
+                        bgUploadBtn.disabled = false;
+                    });
                 }
                 bgSetStatus('Uploaded, reloading…', 'ok');
                 location.reload();
@@ -411,7 +418,22 @@
         userScale:  1,   // slider multiplier, 1..3
         dx:         0,
         dy:         0,
+        // Decode lifecycle. The submit handler must NEVER let the raw
+        // picked file post natively: it bypasses the client-side
+        // crop/resize, and a >2MB original just bounces off the
+        // server's safety cap ("should not exceed 2MB") — the resize
+        // was our promise, not the user's problem.
+        pendingDecode:   false,  // picked, still decoding
+        decodeFailed:    false,  // picked, undecodable (cloud stub, HEIC, corrupt)
+        submitWhenReady: false,  // user hit Upload mid-decode; go when ready
     };
+
+    var photoStatus = document.getElementById('photo-upload-status');
+    function photoSetStatus(msg, kind) {
+        if (!photoStatus) return;
+        photoStatus.textContent = msg || '';
+        photoStatus.className = 'small mt-2 ' + (kind === 'err' ? 'text-danger' : 'text-muted');
+    }
 
     function layoutImage() {
         var s = photoState;
@@ -444,20 +466,27 @@
 
     photoFile.addEventListener('change', function () {
         var f = photoFile.files && photoFile.files[0];
+        photoState.submitWhenReady = false;
+        photoState.decodeFailed = false;
+        photoSetStatus('');
         if (!f) {
             // user cleared the picker: hide the stage again
             photoStage.style.display = 'none';
             photoState.hasNewFile = false;
+            photoState.pendingDecode = false;
             if (photoEdit) photoEdit.style.display = 'none';
             return;
         }
 
+        photoState.hasNewFile = false;
+        photoState.pendingDecode = true;
         var url = URL.createObjectURL(f);
         var tmp = new Image();
         tmp.onload = function () {
             photoImage.classList.remove('appearance-photo-stage-image-logo');
             photoImage.src = url;
             photoState.hasNewFile = true;
+            photoState.pendingDecode = false;
             photoState.naturalW = tmp.naturalWidth;
             photoState.naturalH = tmp.naturalHeight;
             // "cover" the stage: use the larger required scale.
@@ -468,6 +497,24 @@
             centerImage();
             photoStage.classList.add('is-draggable');
             if (photoEdit) photoEdit.style.display = '';
+            // User already clicked Upload while we were decoding —
+            // resume the submit now that the crop stage is ready.
+            if (photoState.submitWhenReady) {
+                photoState.submitWhenReady = false;
+                photoSetStatus('');
+                if (typeof photoForm.requestSubmit === 'function') {
+                    photoForm.requestSubmit();
+                } else {
+                    photoForm.dispatchEvent(new Event('submit', { cancelable: true }));
+                }
+            }
+        };
+        tmp.onerror = function () {
+            URL.revokeObjectURL(url);
+            photoState.pendingDecode = false;
+            photoState.decodeFailed = true;
+            photoState.submitWhenReady = false;
+            photoSetStatus('Couldn\'t read that image. If it\'s in a cloud drive (Google Drive, iCloud, OneDrive), download it to your device first, then upload. HEIC photos need converting to JPG.', 'err');
         };
         tmp.src = url;
     });
@@ -514,7 +561,29 @@
     // Render the stage's visible crop to a canvas and replace the file
     // input's File before letting the form submit.
     photoForm.addEventListener('submit', function (e) {
-        if (!photoState.hasNewFile) return; // nothing to transform; native submit catches missing-file via required
+        if (!photoState.hasNewFile) {
+            var picked = photoFile.files && photoFile.files[0];
+            if (picked && photoState.pendingDecode) {
+                // Clicked Upload before the photo finished decoding.
+                // Hold the submit — posting the RAW file would skip the
+                // client-side resize and a big original just bounces
+                // off the server's 2MB cap. onload resumes us.
+                e.preventDefault();
+                photoState.submitWhenReady = true;
+                photoSetStatus('Preparing your photo…');
+                return;
+            }
+            if (picked) {
+                // Decode failed (or never started): the raw file is the
+                // only thing we could post, and we promised not to.
+                e.preventDefault();
+                if (!photoState.decodeFailed) {
+                    photoSetStatus('Couldn\'t read that image — try a JPG, PNG, or WebP saved on this device.', 'err');
+                }
+                return;
+            }
+            return; // no file picked: native submit shows the required-field error
+        }
         e.preventDefault();
 
         var ratio = OUTPUT_SIZE / STAGE_SIZE;

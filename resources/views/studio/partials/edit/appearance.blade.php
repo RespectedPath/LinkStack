@@ -58,6 +58,7 @@
                 </button>
               </div>
 
+              <div id="photo-upload-status" class="small mt-2"></div>
               <div id="photo-edit-controls" class="mt-2" style="display:none">
                 <label for="photo-zoom" class="small mb-1 d-block">
                   Zoom
