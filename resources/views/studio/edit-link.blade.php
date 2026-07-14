@@ -41,6 +41,29 @@
         margin-bottom: 0;
         width: auto;
     }
+    /* Collapsed styling section (one styling home). The summary row reads
+       like a section legend: title left, Follows-your-theme / Customized
+       state next to it, chevron on the right. Collapsed by default so the
+       editor leads with content; styling is one click away. */
+    .mm-style-details > summary {
+        list-style: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 1.05rem;
+        font-weight: 600;
+        user-select: none;
+    }
+    .mm-style-details > summary::-webkit-details-marker { display: none; }
+    .mm-style-details > summary .mm-style-follows { font-weight: 400; }
+    .mm-style-details > summary .mm-style-chevron {
+        margin-left: auto;
+        font-size: 0.9rem;
+        opacity: 0.6;
+        transition: transform 0.15s ease;
+    }
+    .mm-style-details[open] > summary .mm-style-chevron { transform: rotate(180deg); }
     .mm-edit-back {
         display: inline-flex;
         align-items: center;
@@ -480,6 +503,16 @@
                             $apShape     = $existingTP['appearance_shape']     ?? $mmBaseline['shape'];
                             $apHover     = $existingTP['appearance_hover']     ?? 'lift';
                             $apAdvanced  = $existingTP['appearance_advanced']  ?? '';
+
+                            // Has this block's STYLING diverged from the theme?
+                            // custom_css is only ever saved when the user diverges
+                            // (matchesBaseline() empties it otherwise) and the
+                            // heading color is its own channel. The icon is
+                            // deliberately NOT counted — icon is content, not
+                            // styling (it also survives Reset to theme). Drives
+                            // the initial Customized/Follows state on the
+                            // collapsed styling section; the JS keeps it live.
+                            $mmStyleDiverged = trim($existingCss) !== '' || $apHeading !== '';
                         @endphp
 
                         <a href="{{ url('studio/links') }}" class="mm-edit-back"><i class="bi bi-arrow-left"></i> Back to Blocks</a>
@@ -522,8 +555,14 @@
                                            rehydrate controls without parsing CSS. --}}
                                     @if($blockAppearanceMode === 'full' || $blockAppearanceMode === 'rich')
                                     <fieldset class="mm-edit-section mm-appearance" id="appearance">
-                                        <legend><i class="bi bi-palette"></i> Appearance</legend>
-                                        <p class="text-muted small mb-3">
+                                        <details class="mm-style-details">
+                                        <summary>
+                                            <i class="bi bi-palette"></i> Styling
+                                            <span class="badge bg-soft-primary mm-edited-badge" id="mmStyleBadge" @if(!$mmStyleDiverged) style="display:none" @endif title="This block has its own styling on top of your theme">Customized</span>
+                                            <span class="small text-muted mm-style-follows" id="mmStyleFollows" @if($mmStyleDiverged) style="display:none" @endif>Follows your theme</span>
+                                            <i class="bi bi-chevron-down mm-style-chevron"></i>
+                                        </summary>
+                                        <p class="text-muted small mb-3 mt-3">
                                             Your theme styles this block automatically &mdash; tweak the
                                             style, colors, shape, or icon only if you want this one block
                                             to stand out. Changes preview live on the right.
@@ -736,12 +775,19 @@
                                         @endif
 
                                         <script nonce="{{ csp_nonce() }}">window.MM_BLOCK_BASELINE = @json($mmBaseline);</script>
+                                        </details>
                                     </fieldset>
                                     @elseif($blockAppearanceMode === 'color')
                                     {{-- Text + heading blocks: one knob — text color.
                                          Off = theme's text color; on = this block only. --}}
                                     <fieldset class="mm-edit-section">
-                                        <legend><i class="bi bi-palette"></i> Appearance</legend>
+                                        <details class="mm-style-details">
+                                        <summary>
+                                            <i class="bi bi-palette"></i> Styling
+                                            <span class="badge bg-soft-primary mm-edited-badge" id="mmStyleBadge" @if($apColor === '') style="display:none" @endif title="This block has its own styling on top of your theme">Customized</span>
+                                            <span class="small text-muted mm-style-follows" id="mmStyleFollows" @if($apColor !== '') style="display:none" @endif>Follows your theme</span>
+                                            <i class="bi bi-chevron-down mm-style-chevron"></i>
+                                        </summary>
                                         <div class="mm-control-group">
                                             <label class="mm-control-label" for="mmColorCustom">Text color</label>
                                             <div class="d-flex align-items-center" style="gap: 12px;">
@@ -754,6 +800,7 @@
                                             <small class="text-muted">Off &mdash; this block follows your theme's text color.</small>
                                         </div>
                                         <input type="hidden" name="appearance_color" id="appColor" value="{{ $apColor }}">
+                                        </details>
                                     </fieldset>
                                     <script nonce="{{ csp_nonce() }}">
                                     (function () {
@@ -761,48 +808,45 @@
                                         var picker = document.getElementById('mmColorPicker');
                                         var hidden = document.getElementById('appColor');
                                         if (!toggle || !picker || !hidden) return;
+                                        // Keep the summary's Customized/Follows state truthful.
+                                        function syncBadge() {
+                                            var diverged = hidden.value !== '';
+                                            var badge   = document.getElementById('mmStyleBadge');
+                                            var follows = document.getElementById('mmStyleFollows');
+                                            if (badge)   badge.style.display   = diverged ? '' : 'none';
+                                            if (follows) follows.style.display = diverged ? 'none' : '';
+                                        }
                                         toggle.addEventListener('change', function () {
                                             picker.style.display = this.checked ? '' : 'none';
                                             hidden.value = this.checked ? picker.value : '';
+                                            syncBadge();
                                         });
                                         picker.addEventListener('input', function () {
                                             if (toggle.checked) hidden.value = this.value;
+                                            syncBadge();
                                         });
                                     })();
                                     </script>
                                     @else
-                                    {{-- custom_html blocks (contact form, payments, text, …)
-                                         never consume per-block CSS — the controls used to
-                                         show here anyway and silently did nothing. Explain
-                                         instead of leaving a hole where a section was. --}}
+                                    {{-- Embed/spacer-style blocks never consume per-block
+                                         CSS — the controls used to show here anyway and
+                                         silently did nothing. Same collapsed Styling row as
+                                         every other block, with the explanation inside. --}}
                                     <fieldset class="mm-edit-section">
-                                        <legend><i class="bi bi-palette"></i> Appearance</legend>
-                                        <p class="text-muted small mb-0">
+                                        <details class="mm-style-details">
+                                        <summary>
+                                            <i class="bi bi-palette"></i> Styling
+                                            <span class="small text-muted mm-style-follows">Follows your theme</span>
+                                            <i class="bi bi-chevron-down mm-style-chevron"></i>
+                                        </summary>
+                                        <p class="text-muted small mb-0 mt-3">
                                             This block is styled by your theme automatically &mdash; it
                                             doesn't have per-block style controls. To change your page's
-                                            overall look, use the <strong>Themes</strong> and
-                                            <strong>Appearance</strong> tabs.
+                                            overall look, use the <strong>Appearance</strong> tab.
                                         </p>
+                                        </details>
                                     </fieldset>
                                     @endif
-
-                                    {{-- ===== Settings section ===== --}}
-                                    <fieldset class="mm-edit-section">
-                                        <legend><i class="bi bi-toggles"></i> Settings</legend>
-                                        <p class="text-muted small mb-2">
-                                            Page-level toggles for this block. Block-specific options
-                                            (like the contact form's collapsed toggle) live inside the
-                                            Content section above.
-                                        </p>
-                                        {{-- Placeholder — when we have page-level block settings
-                                             (e.g. enabled/disabled, scheduled visibility), they'll
-                                             land here. Currently the only per-block setting is the
-                                             "Start collapsed" toggle which lives inside each
-                                             custom_html block's own form. --}}
-                                        <p class="text-muted small fst-italic mb-0">
-                                            More settings coming soon.
-                                        </p>
-                                    </fieldset>
 
                                     <div class="d-flex align-items-center pt-2">
                                         <a class="btn btn-danger me-3" href="{{ url('studio/links') }}">{{__('messages.Cancel')}}</a>
@@ -902,7 +946,11 @@ function submitFormWithParam(paramValue) {
         primary:   $hPrimary.value   || '#3b82f6',
         text:      $hText.value      || '#ffffff',
         secondary: $hSecondary.value || '#764ba2',
-        shape:     parseInt($hShape.value, 10) || 16,
+        /* NOT `parseInt(...) || 16` — shape 0 (Square) is falsy and would
+           silently become 16 (Rounded), making every pristine block on a
+           square-button theme read as "diverged" (reset enabled, Customized
+           badge, preview drawn with the wrong corners). */
+        shape:     isNaN(parseInt($hShape.value, 10)) ? 16 : parseInt($hShape.value, 10),
         hover:     $hHover.value     || 'lift',
         icon:      $iconInput.value  || '',
         advanced:  $hAdvanced.value  || ''
@@ -1109,6 +1157,13 @@ function submitFormWithParam(paramValue) {
             : "Put this block back on your theme's styling";
         var msg = document.getElementById('mmResetMsg');
         if (msg && !atTheme) msg.style.display = 'none';
+        // The collapsed section header tells the same truth: the
+        // Customized badge and the "Follows your theme" note swap as
+        // the user diverges from / returns to the theme baseline.
+        var badge   = document.getElementById('mmStyleBadge');
+        var follows = document.getElementById('mmStyleFollows');
+        if (badge)   badge.style.display   = atTheme ? 'none' : '';
+        if (follows) follows.style.display = atTheme ? '' : 'none';
     }
 
     /* --------- Treatment toggling ---------
