@@ -2,6 +2,10 @@
 use App\Models\UserData;
 $GLOBALS['activenotify'] = true;
 $compromised = false;
+// Guarded: this layout can render more than once per PHP process
+// (tests, queue-rendered mail, Octane) — an unguarded declaration
+// fatals with "Cannot redeclare" on the second render.
+if (!function_exists('notification')) {
 function notification($dismiss = '', $ntid, $heading, $body) {
     $closeMSG = __('messages.Close');
     $dismissMSG = __('messages.Dismiss');
@@ -31,7 +35,9 @@ function notification($dismiss = '', $ntid, $heading, $body) {
     </div>
 MODAL;
 }
+}
 
+if (!function_exists('notificationCard')) {
 function notificationCard($ntid, $icon, $heading, $subheading) {
   echo "<a data-bs-target=\"#{$ntid}\" data-bs-toggle=\"modal\" style=\"cursor:pointer!important;\" class=\"iq-sub-card\">
           <div class=\"d-flex align-items-center\">
@@ -45,23 +51,26 @@ function notificationCard($ntid, $icon, $heading, $subheading) {
           </div>
         </a>";
 }
+}
 
 //security check, checks if config files got compromised
 if(auth()->user()->role == 'admin'){
 
+if (!function_exists('getUrlSatusCodesb')) {
 function getUrlSatusCodesb($urlsb, $timeoutsb = 3)
  {
  $chsb = curl_init();
  $optssb = array(CURLOPT_RETURNTRANSFER => true, // do not output to browser
- CURLOPT_URL => $urlsb, 
+ CURLOPT_URL => $urlsb,
  CURLOPT_NOBODY => true, // do a HEAD request only
- CURLOPT_TIMEOUT => $timeoutsb); 
+ CURLOPT_TIMEOUT => $timeoutsb);
  curl_setopt_array($chsb, $optssb);
  curl_exec($chsb);
  $status = curl_getinfo($chsb, CURLINFO_HTTP_CODE);
  curl_close($chsb);
  return $status;
  }
+}
 
 // Files or directories to test if accessible externally
 $url1sb = getUrlSatusCodesb(url('.env'));

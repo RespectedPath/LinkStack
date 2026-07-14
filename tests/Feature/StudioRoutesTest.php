@@ -1,0 +1,51 @@
+<?php
+
+namespace Tests\Feature;
+
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+/**
+ * Studio navigation after the "one styling home" merge: the theme
+ * gallery lives on the Appearance pane; the old standalone routes and
+ * #themes deep-links must land customers there, never on a dead page.
+ */
+class StudioRoutesTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_studio_theme_redirects_customers_to_appearance(): void
+    {
+        $user = $this->makeUser();
+
+        $this->actingAs($user)
+            ->get('/studio/theme')
+            ->assertRedirect('/studio/edit#appearance');
+    }
+
+    public function test_studio_appearance_redirects_into_the_editor(): void
+    {
+        $user = $this->makeUser();
+
+        $this->actingAs($user)
+            ->get('/studio/appearance')
+            ->assertRedirect('/studio/edit#appearance');
+    }
+
+    public function test_editor_has_no_standalone_themes_tab(): void
+    {
+        $user = $this->makeUser();
+
+        $response = $this->actingAs($user)->get('/studio/edit');
+        $response->assertSuccessful();
+        // The tab row must not offer a separate Themes destination …
+        $response->assertDontSee('data-mm-tab="themes"', false);
+        // … while the gallery itself lives inside the Appearance pane.
+        $response->assertSee('mm-theme-modal', false);
+    }
+
+    public function test_guests_cannot_open_the_studio(): void
+    {
+        $this->get('/studio/edit')->assertRedirect();
+    }
+}

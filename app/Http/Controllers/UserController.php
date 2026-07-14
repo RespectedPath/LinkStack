@@ -295,11 +295,13 @@ class UserController extends Controller
                 'type' => $request->typename // Save the link type
             ];
         } else {
-            $linkTypePath = base_path("blocks/{$linkType->typename}/handler.php");
-            if (file_exists($linkTypePath)) {
-                include $linkTypePath;
-                $result = handleLinkType($request, $linkType);
-                
+            // Namespaced loader, NOT a bare include: every handler.php
+            // declares the same global function, which fatals on the
+            // second save in one process (tests / queue workers).
+            $handler = \App\Services\BlockHandler::for($linkType->typename);
+            if ($handler !== null) {
+                $result = $handler($request, $linkType);
+
                 // Extract rules and linkData from the result
                 $rules = $result['rules'];
                 $linkData = $result['linkData'];
@@ -351,6 +353,15 @@ class UserController extends Controller
             if ($request->has($appKey)) {
                 $linkData[$appKey] = $request->input($appKey);
             }
+        }
+
+        // ConvertEmptyStringsToNull turns a posted empty icon into
+        // null, but links.custom_icon is NOT NULL in the migration
+        // schema — inserting a new block with the field present-but-
+        // empty would 500. Coerce to '' (custom_css gets the same
+        // treatment in the sparse-discipline block below).
+        if (array_key_exists('custom_icon', $linkData) && $linkData['custom_icon'] === null) {
+            $linkData['custom_icon'] = '';
         }
 
         // Sanitize per-block CSS at rest (defense in depth) — neutralize
@@ -499,13 +510,14 @@ class UserController extends Controller
             return response()->json(['html' => null]);
         }
 
-        $handlerPath = base_path("blocks/{$linkType->typename}/handler.php");
-        if (!file_exists($handlerPath)) {
+        // Same namespaced loader saveLink uses (no bare include — the
+        // global handleLinkType() redeclares in long-lived processes).
+        $handler = \App\Services\BlockHandler::for($linkType->typename);
+        if ($handler === null) {
             return response()->json(['html' => null]);
         }
-        include $handlerPath;
         try {
-            $result = handleLinkType($request, $linkType);
+            $result = $handler($request, $linkType);
         } catch (\Throwable $e) {
             // A half-typed form can trip a handler; just skip this frame.
             return response()->json(['html' => null]);
