@@ -85,7 +85,11 @@ class AppearanceController extends Controller
                 'style' => 'filled',   // filled | outline | soft
             ],
             'avatar' => [
-                'shape' => 'circle',   // circle | rounded_square
+                'shape'    => 'circle', // circle | rounded_square
+                // theme = the theme's disc behind the photo (generated
+                // themes paint the button color there); none = fully
+                // see-through, transparent avatars blend with the page.
+                'backdrop' => 'theme',  // theme | none
             ],
             'social_icons' => [
                 'color'            => 'auto',    // auto | brand | custom
@@ -464,7 +468,8 @@ class AppearanceController extends Controller
             'buttons.shape' => ['required', 'in:pill,rounded,square'],
             'buttons.style' => ['required', 'in:filled,outline,soft'],
 
-            'avatar.shape' => ['required', 'in:circle,rounded_square,off'],
+            'avatar.shape'    => ['required', 'in:circle,rounded_square,off'],
+            'avatar.backdrop' => ['required', 'in:theme,none'],
 
             'social_icons.color'            => ['required', 'in:auto,brand,custom'],
             'social_icons.color_custom'     => ['nullable', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],

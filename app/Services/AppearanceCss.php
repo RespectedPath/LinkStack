@@ -30,6 +30,7 @@ class AppearanceCss
         'buttons.shape'                 => ['pill', 'rounded', 'square'],
         'buttons.style'                 => ['filled', 'outline', 'soft'],
         'avatar.shape'                  => ['circle', 'rounded_square', 'off'],
+        'avatar.backdrop'               => ['theme', 'none'],
         'social_icons.color'            => ['auto', 'brand', 'custom'],
         'social_icons.size'             => ['small', 'medium', 'large', 'xl'],
         'social_icons.spacing'          => ['tight', 'normal', 'loose'],
@@ -152,6 +153,14 @@ class AppearanceCss
                 $radius = $shape === 'rounded_square' ? '14px' : '50%';
                 $rules[] = "#avatar, .rounded-avatar, img.rounded-avatar { border-radius: {$radius} !important; }";
             }
+        }
+        if ($has('avatar.backdrop')
+            && self::enum('avatar.backdrop', $sparse['avatar']['backdrop'], 'theme') === 'none') {
+            // Generated themes paint a disc behind the photo
+            // (background-color + ring shadow, both !important in the
+            // theme css) — 'none' strips both so a transparent avatar
+            // is genuinely see-through against the page background.
+            $rules[] = '#avatar, .rounded-avatar, img.rounded-avatar { background-color: transparent !important; box-shadow: none !important; }';
         }
 
         // ----- social icons ----------------------------------------------

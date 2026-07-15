@@ -132,6 +132,22 @@ class AppearanceThemeTest extends TestCase
         $this->assertTrue((bool) $user->has_unpublished_changes, 'background removal must flag the published page as stale');
     }
 
+    public function test_avatar_backdrop_none_emits_transparent_css(): void
+    {
+        // "See-through" profile photos: transparency survives the upload
+        // (PNG path), but generated themes paint a disc behind the
+        // avatar. backdrop=none strips it via the override-CSS channel.
+        $defaults = \App\Http\Controllers\AppearanceController::defaults();
+        $css = \App\Services\AppearanceCss::build(['avatar' => ['backdrop' => 'none']], $defaults);
+        $this->assertStringContainsString('.rounded-avatar', $css);
+        $this->assertStringContainsString('background-color: transparent !important', $css);
+        $this->assertStringContainsString('box-shadow: none !important', $css);
+
+        // Default 'theme' emits nothing — a pristine page stays pristine.
+        $cssDefault = \App\Services\AppearanceCss::build([], $defaults);
+        $this->assertStringNotContainsString('background-color: transparent', $cssDefault);
+    }
+
     public function test_oversized_upload_is_rejected_with_a_readable_message(): void
     {
         $user = $this->makeUser(['id' => $this->nextId++]);

@@ -97,6 +97,19 @@
             @endforeach
           </div>
         </fieldset>
+
+        <fieldset class="appearance-section">
+          <legend>Photo backdrop @include('studio.partials.edited-badge', ['keys' => 'avatar.backdrop'])</legend>
+          @foreach([['theme', "Theme's disc", "A colored circle behind the photo — keeps logos visible on any background."], ['none', 'None — see-through', 'Transparent parts of your photo show the page background through them.']] as [$val, $lab, $hint])
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="avatar[backdrop]" id="avatar-backdrop-{{ $val }}" value="{{ $val }}" form="appearance-form" @if(($saved['avatar']['backdrop'] ?? 'theme') === $val) checked @endif>
+              <label class="form-check-label" for="avatar-backdrop-{{ $val }}">
+                <strong>{{ $lab }}</strong>
+                <span class="small text-muted d-block">{{ $hint }}</span>
+              </label>
+            </div>
+          @endforeach
+        </fieldset>
       </div>
 
       {{-- ===== Colors tab ===== --}}
