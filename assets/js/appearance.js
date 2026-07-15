@@ -572,6 +572,17 @@
         canvas.height = OUTPUT_SIZE;
         var ctx = canvas.getContext('2d');
 
+        // Transparency: JPEG can't carry alpha and a bare export turns
+        // transparent pixels BLACK. Logo-style sources keep their
+        // transparency as PNG (512px logos are tiny); opaque photos get
+        // a white base + JPEG, so nothing can ever flatten to black.
+        var srcType  = (photoFile.files[0] && photoFile.files[0].type) || '';
+        var keepAlpha = !!(window.mmImageHasAlpha && window.mmImageHasAlpha(photoImage, srcType));
+        if (!keepAlpha) {
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, OUTPUT_SIZE, OUTPUT_SIZE);
+        }
+
         var s = photoState;
         var rw = s.naturalW * s.baseScale * s.userScale;
         var rh = s.naturalH * s.baseScale * s.userScale;
@@ -581,12 +592,14 @@
             if (!blob) { photoForm.submit(); return; }
             var originalName = (photoFile.files[0] && photoFile.files[0].name) || 'avatar.jpg';
             var baseName = originalName.replace(/\.[^.]+$/, '');
-            var file = new File([blob], baseName + '.jpg', { type: 'image/jpeg' });
+            var file = keepAlpha
+                ? new File([blob], baseName + '.png', { type: 'image/png' })
+                : new File([blob], baseName + '.jpg', { type: 'image/jpeg' });
             var dt = new DataTransfer();
             dt.items.add(file);
             photoFile.files = dt.files;
             // Now submit natively so the browser does the multipart upload.
             HTMLFormElement.prototype.submit.call(photoForm);
-        }, 'image/jpeg', 0.92);
+        }, keepAlpha ? 'image/png' : 'image/jpeg', 0.92);
     });
 })();
